@@ -332,6 +332,7 @@ void VulkanEngine::run()
                 }
             }
 
+            mainCamera.processSDLEvent(e);
             ImGui_ImplSDL3_ProcessEvent(&e);
         }
 
@@ -1045,13 +1046,21 @@ void VulkanEngine::update_scene()
 
     loadedNodes["Suzanne"]->Draw(glm::mat4{ 1.f }, mainDrawContext);
 
-    sceneData.view = glm::translate(glm::vec3{ 0,0,-5 });
+    glm::mat4 view = mainCamera.getViewMatrix();
+
     // camera projection
-    sceneData.proj = glm::perspective(glm::radians(70.f), (float)_windowExtent.width / (float)_windowExtent.height, 10000.f, 0.1f);
+    glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)_windowExtent.width / (float)_windowExtent.height, 10000.f, 0.1f);
 
     // invert the Y direction on projection matrix so that we are more similar
     // to opengl and gltf axis
-    sceneData.proj[1][1] *= -1;
+    projection[1][1] *= -1;
+
+    mainCamera.update();
+
+    sceneData.view = view;
+    // camera projection
+    sceneData.proj = projection;
+
     sceneData.viewproj = sceneData.proj * sceneData.view;
 
     //some default lighting parameters

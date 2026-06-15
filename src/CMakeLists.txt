@@ -1,21 +1,21 @@
 add_executable(vkR
-    vkR.cpp
-    vkR_types.h
-    vkR_initializers.cpp
-    vkR_initializers.h
-    vkR_images.h
-    vkR_images.cpp 
-    vkR_descriptors.h
-    vkR_descriptors.cpp
-    vkR_pipelines.h
-    vkR_pipelines.cpp
-    vkR_engine.h
-    vkR_engine.cpp
-    vkR_loader.h
-    vkR_loader.cpp
-    camera.cpp
-    camera.h
-)
+    "main.cpp"
+    "application/Application.h" 
+    "application/Application.cpp" 
+    "assets/AssetManager.h" 
+    "assets/AssetManager.cpp"
+    "assets/AssetTypes.h"
+    "assets/GLTFLoader.h" 
+    "assets/GLTFLoader.cpp" 
+    "backend/VulkanContext.h" 
+    "backend/VulkanContext.cpp"
+    "render/Renderer.h" 
+    "render/Renderer.cpp"
+    "scene/Scene.h" 
+    "scene/Scene.cpp" 
+    "platform/SDLWindow.h"  
+    "platform/SDLWindow.cpp" 
+    "VKCommon.h"  "render/RenderResourceManager.h" "render/RenderResourceManager.cpp")
 
 target_include_directories(
     vkR
@@ -32,12 +32,6 @@ target_link_libraries(
         vk-bootstrap
         imgui
         fastgltf::fastgltf
-)
-
-target_compile_definitions(vkR
-    PRIVATE
-        GLM_ENABLE_EXPERIMENTAL
-        GLM_FORCE_DEPTH_ZERO_TO_ONE
 )
 
 add_dependencies(
