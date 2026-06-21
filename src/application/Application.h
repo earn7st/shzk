@@ -1,23 +1,25 @@
 #pragma once
 
-#include "platform/SDLWindow.h"
-#include "assets/AssetManager.h"
+#include "application/SDLWindow.h"
 #include "render/Renderer.h"
+#include "resource/ResourceManager.h"
 #include "scene/Scene.h"
 
 class Application
 {
 
-private:
-
-	SDLWindow _window;
-	Scene _scene;
-	AssetManager _assetManager;
-	Renderer _renderer;
-
 public:
-	void Init();
+	void Initialize(const std::string& name, uint32_t width = 1920, uint32_t height = 1080);
 	void Run();
+	void Tick(double deltaTime);
 	void Shutdown();
 
+private:
+
+	SDLWindow window;
+	ResourceManager resourceManager;
+	Scene scene;
+	Renderer renderer;
+
+	double deltaTime;
 };

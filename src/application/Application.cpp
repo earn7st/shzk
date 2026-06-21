@@ -1,20 +1,12 @@
 #include "application/Application.h"
 
-#include "VKCommon.h"
+#include <SDL3/SDL.h>
 
-void Application::Init()
+void Application::Initialize(const std::string& name, uint32_t width, uint32_t height)
 {
+	window.Initialize(name, width, height);
+	renderer.Initialize(window);
 
-	_window.Init();
-	_renderer.Init(_window);
-
-	const auto gltf = _assetManager.LoadGLTF("basicmesh", "assets/basicmesh.glb");
-	if (gltf) {
-		for (const auto& node : gltf->topNodes) {
-			_scene.AddRoot(node);
-		}
-		_scene.RefreshTransforms();
-	}
 }
 
 void Application::Run()
@@ -27,14 +19,17 @@ void Application::Run()
 			if (e.type == SDL_EVENT_QUIT) bWindowShouldClose = true;
 		}
 
-		_scene.RefreshTransforms();
-		_renderer.Draw(_scene);
+		this->Tick(deltaTime);
 	}
 	
 }
 
+void Application::Tick(double dt)
+{
+
+}
+
 void Application::Shutdown()
 {
-	_scene.Clear();
-	_assetManager.Clear();
+
 }

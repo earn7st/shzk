@@ -4,7 +4,7 @@ int main(int argc, char* argv[])
 {
 	Application application;
 
-	application.Init();
+	application.Initialize("vkR");
 
 	application.Run();
 

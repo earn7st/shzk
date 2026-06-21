@@ -1,20 +1,22 @@
 #pragma once
 
-#include "VKCommon.h"
+#include <memory>
 
+struct SDLWindow;
 struct VulkanContext;
-class SDLWindow;
+struct SwapchainContext;
 class Scene;
+
 
 class Renderer
 {
 private:
-	std::unique_ptr<VulkanContext> _vkContext;
+	std::unique_ptr<VulkanContext> vulkanContext;
+	std::unique_ptr<SwapchainContext> swapchainContext;
 
 public:
 	Renderer();
 	~Renderer();
 
-	void Init(const SDLWindow& window);
-	void Draw(const Scene& scene);
+	void Initialize(const SDLWindow& window);
 };
