@@ -10,26 +10,14 @@ target_link_libraries(
         vkR_core
 )
 
-# Test ECS
-add_executable(
-    test_ecs
-    test_ecs.cpp
-)
-
-target_link_libraries(
-    test_ecs
-    PRIVATE
-        vkR_core
-)
-
 # Test Resource Manager
 add_executable(
-    test_resource_manager
-    test_resource_manager.cpp
+    test_gltf_loading
+    test_gltf_loading.cpp
 )
 
 target_link_libraries(
-    test_resource_manager
+    test_gltf_loading
     PRIVATE
         vkR_core
 )

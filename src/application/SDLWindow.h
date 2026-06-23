@@ -16,6 +16,8 @@ struct SDLWindow
 	const char* name = "vkR";
 
 public:
-	void Initialize(const std::string& name, uint32_t width = 1920, uint32_t height = 1080);
+	SDLWindow() = default;
+	SDLWindow(const std::string& name, uint32_t width = 1920, uint32_t height = 1080);
 
+	~SDLWindow() = default;
 };

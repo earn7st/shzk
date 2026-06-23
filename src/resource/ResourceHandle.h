@@ -2,42 +2,25 @@
 
 class ResourceManager;
 
+struct Mesh;
+struct MaterialInstance;
+struct Geometry;
+struct Material;
+struct Texture;
+
 template<typename T>
-class ResourceHandle {
-private:
-    std::string resourceId;
-    ResourceManager* resourceManager;
+struct ResourceHandle
+{
+	uint32_t id = InvalidID;
+	ResourceManager* resourceManager;
 
-public:
-    ResourceHandle() : resourceManager(nullptr) {}
+	bool IsValid() const { return (id != InvalidID); }
 
-    ResourceHandle(const std::string& id, ResourceManager* manager)
-        : resourceId(id), resourceManager(manager) {
-    }
-
-    T* Get() const {
-        if (!resourceManager) return nullptr;
-        return resourceManager->GetResource<T>(resourceId);
-    }
-
-    bool IsValid() const {
-        return resourceManager && resourceManager->HasResource<T>(resourceId);
-    }
-
-    const std::string& GetId() const {
-        return resourceId;
-    }
-
-    // Convenience operators
-    T* operator->() const {
-        return Get();
-    }
-
-    T& operator*() const {
-        return *Get();
-    }
-
-    operator bool() const {
-        return IsValid();
-    }
+	static constexpr uint32_t InvalidID = UINT32_MAX;
 };
+
+using MeshHandle = ResourceHandle<Mesh>;
+using MaterialInstanceHandle = ResourceHandle<MaterialInstance>;
+using GeometryHandle = ResourceHandle<Geometry>;
+using MaterialHandle = ResourceHandle<Material>;
+using TextureHandle = ResourceHandle<Texture>;

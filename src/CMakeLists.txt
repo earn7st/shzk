@@ -8,17 +8,14 @@ add_library(
     "application/Application.cpp"
     "application/SDLWindow.cpp"
 
-    "backend/VulkanContext.cpp"
-    "backend/SwapchainContext.cpp"
+    "vulkan/SwapchainContext.cpp"
+    "vulkan/VulkanContext.cpp"
+    "vulkan/UploadContext.cpp"
+    "vulkan/VulkanHelpers.cpp"
 
-    "ecs/Entity.cpp"
-    "ecs/components/Component.cpp"
-    "ecs/components/TransformComponent.cpp"
-    "ecs/components/MeshComponent.cpp"
-    "ecs/components/CameraComponent.cpp"
+    "gltf/gltfLoader.cpp"
 
     "resource/ResourceManager.cpp"
-    "resource/Texture.cpp"
 
     "render/Renderer.cpp"
 

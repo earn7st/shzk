@@ -2,11 +2,13 @@
 
 #include <SDL3/SDL.h>
 
-void Application::Initialize(const std::string& name, uint32_t width, uint32_t height)
-{
-	window.Initialize(name, width, height);
-	renderer.Initialize(window);
+Application::Application(const std::string& name, uint32_t width, uint32_t height) :
+	window(name, width, height), renderer(window) 
+{ 
+}
 
+void Application::Initialize()
+{
 }
 
 void Application::Run()
