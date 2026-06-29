@@ -25,4 +25,6 @@ private:
 	VulkanContext* _vulkanContext;
 	UploadContext* _uploadContext;
 	ResourceManager* _resourceManager;
+
+	void LoadDefaultScene(Scene& scene);
 };

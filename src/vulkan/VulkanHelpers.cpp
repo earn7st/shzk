@@ -1,6 +1,6 @@
 #include "VulkanHelpers.h"
-
 #include <vma/vk_mem_alloc.h>
+#include <fstream>
 #include "resource/resource_types/Geometry.h"
 #include "resource/cpu_types/GeometryData.h"
 #include "vulkan/VulkanContext.h"
@@ -14,14 +14,14 @@ Geometry CreateGeometry(const VulkanContext& vulkanContext, const UploadContext&
 	result.vertexBuffer = CreateBuffer(
 		vulkanContext.allocator,
 		vertexBufferSize,
-		VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst, 
 		VMA_MEMORY_USAGE_GPU_ONLY);
 
 	const size_t indexBufferSize = data.indices.size() * sizeof(uint32_t);
 	result.indexBuffer = CreateBuffer(
 		vulkanContext.allocator, 
 		indexBufferSize, 
-		VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+		vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst,
 		VMA_MEMORY_USAGE_GPU_ONLY);
 
 	result.vertexCount = static_cast<uint32_t>(data.vertices.size());
@@ -31,7 +31,7 @@ Geometry CreateGeometry(const VulkanContext& vulkanContext, const UploadContext&
 	AllocatedBuffer staging = CreateBuffer(
 		vulkanContext.allocator,
 		vertexBufferSize + indexBufferSize,
-		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		vk::BufferUsageFlagBits::eTransferSrc,
 		VMA_MEMORY_USAGE_CPU_ONLY);
 
 	void* stagingData = staging.info.pMappedData;
@@ -68,17 +68,18 @@ Geometry CreateGeometry(const VulkanContext& vulkanContext, const UploadContext&
 
 void DestroyGeometry(VulkanContext* vulkanContext, Geometry& geometry)
 {
-
+	DestroyBuffer(vulkanContext->allocator, geometry.vertexBuffer);
+	DestroyBuffer(vulkanContext->allocator, geometry.indexBuffer);
 }
 
 // Buffer
-AllocatedBuffer CreateBuffer(VmaAllocator& allocator, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+AllocatedBuffer CreateBuffer(VmaAllocator& allocator, size_t allocSize, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage)
 {
 	VkBufferCreateInfo bufferInfo = { .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
 	bufferInfo.pNext = nullptr;
 	bufferInfo.size = allocSize;
 
-	bufferInfo.usage = usage;
+	bufferInfo.usage = static_cast<VkBufferUsageFlags>(usage);
 
 	VmaAllocationCreateInfo vmaAllocInfo = {};
 	vmaAllocInfo.usage = memoryUsage;
@@ -91,8 +92,65 @@ AllocatedBuffer CreateBuffer(VmaAllocator& allocator, size_t allocSize, VkBuffer
 	return newBuffer;
 }
 
-// Image
+void DestroyBuffer(VmaAllocator& allocator, AllocatedBuffer& buffer)
+{
+	vmaDestroyBuffer(allocator, buffer.buffer, buffer.allocation);
+}
 
+// Image
+AllocatedImage CreateImage(
+	VmaAllocator allocator,
+	vk::Extent3D extent,
+	vk::Format format,
+	vk::ImageUsageFlags flags,
+	VmaMemoryUsage memUsage)
+{
+	VkImageCreateInfo imageInfo = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
+	imageInfo.imageType = VK_IMAGE_TYPE_2D;
+	imageInfo.format = static_cast<VkFormat>(format);
+	imageInfo.extent = { extent.width, extent.height, extent.depth };
+	imageInfo.mipLevels = 1;
+	imageInfo.arrayLayers = 1;
+	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+	imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+	imageInfo.usage = static_cast<VkImageUsageFlags>(flags);
+	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+	VmaAllocationCreateInfo allocInfo = {};
+	allocInfo.usage = memUsage;
+
+	AllocatedImage result;
+	result.extent = extent;
+	result.format = format;
+
+	VkImage image;
+	VK_CHECK(vmaCreateImage(allocator, &imageInfo, &allocInfo, &image,
+		&result.allocation, &result.info));
+	result.image = image;
+
+	return result;
+}
+
+vk::ImageView CreateImageView(vk::Device device, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectFlags)
+{
+	vk::ImageViewCreateInfo viewInfo{};
+	viewInfo.setImage(image);
+	viewInfo.setViewType(vk::ImageViewType::e2D);
+	viewInfo.setFormat(format);
+	viewInfo.subresourceRange
+		.setAspectMask(aspectFlags)
+		.setBaseMipLevel(0)
+		.setLevelCount(1)
+		.setBaseArrayLayer(0)
+		.setLayerCount(1);
+
+	return device.createImageView(viewInfo);
+}
+
+void DestroyImage(VmaAllocator& allocator, AllocatedImage& image)
+{
+	vmaDestroyImage(allocator, image.image, image.allocation);
+}
 
 // Immediate Submit
 void ImmediateSubmit(const VulkanContext& vulkanContext, const UploadContext& uploadContext, std::function<void(vk::CommandBuffer cmd)>&& function)
@@ -121,4 +179,84 @@ void ImmediateSubmit(const VulkanContext& vulkanContext, const UploadContext& up
 	vulkanContext.graphicsQueue.submit(submitInfo, uploadContext.uploadFence);
 
 	VK_CHECK(vulkanContext.device.waitForFences(uploadContext.uploadFence, true, UINT64_MAX));
+}
+
+// TransitionImageLayout
+void TransitionImageLayout(
+	vk::CommandBuffer cmd,
+	vk::Image image,
+	vk::ImageLayout oldLayout,
+	vk::ImageLayout newLayout,
+	vk::ImageAspectFlags aspectFlags)
+{
+	vk::ImageMemoryBarrier2 barrier{};
+	barrier.setSrcStageMask(vk::PipelineStageFlagBits2::eAllCommands);
+	barrier.setSrcAccessMask(vk::AccessFlagBits2::eMemoryWrite);
+	barrier.setDstStageMask(vk::PipelineStageFlagBits2::eAllCommands);
+	barrier.setDstAccessMask(
+		vk::AccessFlagBits2::eMemoryWrite | vk::AccessFlagBits2::eMemoryRead);
+
+	barrier.setOldLayout(oldLayout);
+	barrier.setNewLayout(newLayout);
+	barrier.setImage(image);
+	barrier.subresourceRange
+		.setAspectMask(aspectFlags)
+		.setBaseMipLevel(0)
+		.setLevelCount(VK_REMAINING_MIP_LEVELS)
+		.setBaseArrayLayer(0)
+		.setLayerCount(VK_REMAINING_ARRAY_LAYERS);
+
+	vk::DependencyInfo depInfo{};
+	depInfo.setImageMemoryBarriers(barrier);
+
+	cmd.pipelineBarrier2(depInfo);
+}
+
+// Shader
+vk::ShaderModule LoadShaderModule(vk::Device device, const std::string& filePath)
+{
+	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
+	if (!file.is_open())
+	{
+		fmt::println("[Vulkan Error] Failed to open shader file: {}", filePath);
+		abort();
+	}
+
+	size_t fileSize = static_cast<size_t>(file.tellg());
+	std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+	file.seekg(0);
+	file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
+	file.close();
+
+	vk::ShaderModuleCreateInfo createInfo{};
+	createInfo.setCode(buffer);
+
+	return device.createShaderModule(createInfo);
+}
+
+// Sampler
+vk::Sampler CreateSampler(
+	vk::Device device,
+	vk::Filter magFilter,
+	vk::Filter minFilter,
+	vk::SamplerAddressMode addressModeU,
+	vk::SamplerAddressMode addressModeV)
+{
+	vk::SamplerCreateInfo samplerCI{};
+	samplerCI.setMagFilter(magFilter)
+		.setMinFilter(minFilter)
+		.setAddressModeU(addressModeU)
+		.setAddressModeV(addressModeV)
+		.setAddressModeW(vk::SamplerAddressMode::eRepeat)
+		.setAnisotropyEnable(false)
+		.setMaxAnisotropy(1.0f)
+		.setBorderColor(vk::BorderColor::eIntOpaqueBlack)
+		.setUnnormalizedCoordinates(false)
+		.setCompareEnable(false)
+		.setCompareOp(vk::CompareOp::eAlways)
+		.setMipmapMode(vk::SamplerMipmapMode::eLinear)
+		.setMinLod(0.0f)
+		.setMaxLod(0.0f);
+
+	return device.createSampler(samplerCI);
 }

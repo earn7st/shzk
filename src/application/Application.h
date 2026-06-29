@@ -3,6 +3,7 @@
 #include <string>
 #include "application/SDLWindow.h"
 #include "render/Renderer.h"
+#include "render/SceneRenderer.h"
 #include "resource/ResourceManager.h"
 #include "scene/Scene.h"
 
@@ -15,17 +16,20 @@ public:
 
 	~Application() = default;
 
-	void Initialize();
+	void Init();
 	void Run();
-	void Tick(double deltaTime);
+
 	void Shutdown();
 
 private:
 	SDLWindow window;
-	ResourceManager resourceManager;
 	Scene scene;
+	ResourceManager resourceManager;
 	Renderer renderer;
+	SceneRenderer sceneRenderer;
 
 	std::string applicationName;
 	double deltaTime;
+
+	void Tick(double deltaTime);
 };

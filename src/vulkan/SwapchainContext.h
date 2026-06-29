@@ -1,6 +1,8 @@
 #pragma once
 
+#include <vector>
 #include <vulkan/vulkan.hpp>
+
 
 struct SDLWindow;
 struct VulkanContext;

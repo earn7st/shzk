@@ -2,9 +2,9 @@
 
 int main(int argc, char* argv[])
 {
-	Application application;
+	Application application("vkR");
 
-	application.Initialize("vkR");
+	application.Init();
 
 	application.Run();
 

@@ -11,7 +11,7 @@ struct Primitive
 	uint32_t firstIndex = 0;
 	uint32_t indexCount;
 
-	MaterialInstanceHandle materialInstance;
+	MaterialHandle material;
 };
 
 struct Mesh

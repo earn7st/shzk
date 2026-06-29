@@ -17,7 +17,13 @@ add_library(
 
     "resource/ResourceManager.cpp"
 
+    "render/descriptor/DescriptorAllocator.cpp"
+    "render/descriptor/DescriptorSetLayout.cpp"
+    "render/descriptor/DescriptorSetLayoutCache.cpp"
+    "render/pipeline/Pipeline.cpp"
+    "render/pipeline/PipelineBuilder.cpp"
     "render/Renderer.cpp"
+    "render/SceneRenderer.cpp"
 
     "scene/Scene.cpp"
 )

@@ -20,7 +20,6 @@ struct ResourceHandle
 };
 
 using MeshHandle = ResourceHandle<Mesh>;
-using MaterialInstanceHandle = ResourceHandle<MaterialInstance>;
 using GeometryHandle = ResourceHandle<Geometry>;
 using MaterialHandle = ResourceHandle<Material>;
 using TextureHandle = ResourceHandle<Texture>;

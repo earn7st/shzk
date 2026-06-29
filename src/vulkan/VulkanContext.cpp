@@ -111,6 +111,8 @@ std::unique_ptr<VulkanContext> CreateVulkanContext(const SDLWindow& window)
 
     vulkanContext->physicalDevice = physicalDevice;
     vulkanContext->device = device;
+    
+    vulkanContext->surface = vk::SurfaceKHR(surface);
 
     vulkanContext->graphicsQueue = graphicsQueue;
     vulkanContext->graphicsQueueFamily = graphicsQueueFamily;
