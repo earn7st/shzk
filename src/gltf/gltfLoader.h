@@ -8,23 +8,30 @@ class Scene;
 class ResourceManager;
 struct VulkanContext;
 struct UploadContext;
+class DescriptorAllocator;
 
 class gltfLoader
 {
 public:
-	gltfLoader(VulkanContext* vulkanContext, UploadContext* uploadContext, ResourceManager* resourceManager);
+	gltfLoader(
+		VulkanContext* vulkanContext, 
+		UploadContext* uploadContext, 
+		DescriptorAllocator* descAllocator,
+		ResourceManager* resourceManager);
 
 	bool LoadGltf(Scene* scene, const std::string& filePath);
-	void LoadImage(fastgltf::Image& image);
-	void LoadMesh(fastgltf::Mesh& mesh);
-	void LoadMaterial(fastgltf::Material& material);
-	void LoadCamera(fastgltf::Camera& camera);
+	
 
 private:
 	fastgltf::Asset _asset;
 	VulkanContext* _vulkanContext;
 	UploadContext* _uploadContext;
+	DescriptorAllocator* _descAllocator;
 	ResourceManager* _resourceManager;
 
+	void LoadImage(fastgltf::Image& image);
+	void LoadMaterial(fastgltf::Material& material);
+	void LoadMesh(fastgltf::Mesh& mesh);
+	void LoadCamera(fastgltf::Camera& camera);
 	void LoadDefaultScene(Scene& scene);
 };

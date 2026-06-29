@@ -72,6 +72,15 @@ Renderer::Renderer(const SDLWindow& window)
 
 }
 
+void Renderer::ResizeSwapchain(uint32_t width, uint32_t height)
+{
+
+}
+
+void Renderer::DrawFrame(const RenderView& renderView)
+{
+}
+
 Renderer::~Renderer() = default;
 
 namespace

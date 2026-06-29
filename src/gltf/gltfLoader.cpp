@@ -13,6 +13,8 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "render/descriptor/DescriptorAllocator.h"
+
 #include "resource/cpu_types/GeometryData.h"
 #include "resource/resource_types/Mesh.h"
 #include "resource/resource_types/Geometry.h"
@@ -29,11 +31,16 @@
 
 #undef LoadImage
 
-gltfLoader::gltfLoader(VulkanContext* vulkanContext, UploadContext* uploadContext, ResourceManager* resourceManager)
+gltfLoader::gltfLoader(
+    VulkanContext* vulkanContext, 
+    UploadContext* uploadContext, 
+    DescriptorAllocator* descAllocator,
+    ResourceManager* resourceManager)
 {
     _vulkanContext = vulkanContext;
     _uploadContext = uploadContext;
     _resourceManager = resourceManager;
+    _descAllocator = descAllocator;
 }
 
 
@@ -86,14 +93,14 @@ bool gltfLoader::LoadGltf(Scene* scene, const std::string& filePath)
         LoadImage(image);
     }
 
-    for (auto& mesh : _asset.meshes)
-    {
-        LoadMesh(mesh);
-    }
-
     for (auto& material : _asset.materials)
     {
         LoadMaterial(material);
+    }
+
+    for (auto& mesh : _asset.meshes)
+    {
+        LoadMesh(mesh);
     }
 
     LoadDefaultScene(*scene);
@@ -224,6 +231,82 @@ void gltfLoader::LoadImage(fastgltf::Image& image)
     _resourceManager->textures.push_back(std::move(tex));
 }
 
+void gltfLoader::LoadMaterial(fastgltf::Material& material)
+{
+    Material outMat{};
+
+    const auto& pbr = material.pbrData;
+    outMat.baseColorFactor = glm::make_vec4(pbr.baseColorFactor.data());
+    outMat.metallicFactor = pbr.metallicFactor;
+    outMat.roughnessFactor = pbr.roughnessFactor;
+    outMat.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
+    outMat.emissiveStrength = material.emissiveStrength;
+    outMat.alphaCutoff = material.alphaCutoff;
+    outMat.alphaMode = static_cast<int32_t>(material.alphaMode);
+
+    if (material.normalTexture.has_value())
+        outMat.normalScale = material.normalTexture->scale;
+    if (material.occlusionTexture.has_value())
+        outMat.occlusionStrength = material.occlusionTexture->strength;
+
+    vk::Device device = _vulkanContext->device;
+
+    auto resolveTexture = [&](const auto& texInfo, uint32_t Material::* slot)
+        {
+            if (!texInfo.has_value()) return;
+
+            uint32_t gltfTexIdx = static_cast<uint32_t>(texInfo->textureIndex);
+            const auto& gltfTex = _asset.textures[gltfTexIdx];
+            uint32_t imageIdx = static_cast<uint32_t>(gltfTex.imageIndex.value());
+
+            vk::Filter             magFilter = vk::Filter::eLinear;
+            vk::Filter             minFilter = vk::Filter::eLinear;
+            vk::SamplerAddressMode wrapU = vk::SamplerAddressMode::eRepeat;
+            vk::SamplerAddressMode wrapV = vk::SamplerAddressMode::eRepeat;
+
+            if (gltfTex.samplerIndex.has_value())
+            {
+                const auto& s = _asset.samplers[gltfTex.samplerIndex.value()];
+
+                magFilter = (s.magFilter == fastgltf::Filter::Nearest)
+                    ? vk::Filter::eNearest : vk::Filter::eLinear;
+
+                minFilter = (s.minFilter == fastgltf::Filter::Nearest
+                    || s.minFilter == fastgltf::Filter::NearestMipMapNearest
+                    || s.minFilter == fastgltf::Filter::NearestMipMapLinear)
+                    ? vk::Filter::eNearest : vk::Filter::eLinear;
+
+                switch (s.wrapS)
+                {
+                case fastgltf::Wrap::ClampToEdge:    wrapU = vk::SamplerAddressMode::eClampToEdge; break;
+                case fastgltf::Wrap::MirroredRepeat: wrapU = vk::SamplerAddressMode::eMirroredRepeat; break;
+                default:                             wrapU = vk::SamplerAddressMode::eRepeat; break;
+                }
+
+                switch (s.wrapT)
+                {
+                case fastgltf::Wrap::ClampToEdge:    wrapV = vk::SamplerAddressMode::eClampToEdge; break;
+                case fastgltf::Wrap::MirroredRepeat: wrapV = vk::SamplerAddressMode::eMirroredRepeat; break;
+                default:                             wrapV = vk::SamplerAddressMode::eRepeat; break;
+                }
+            }
+
+            auto& tex = _resourceManager->textures[imageIdx];
+            device.destroySampler(tex.sampler);
+            tex.sampler = CreateSampler(device, magFilter, minFilter, wrapU, wrapV);
+
+            outMat.*slot = imageIdx;
+        };
+
+    resolveTexture(material.pbrData.baseColorTexture, &Material::baseColorTextureIdx);
+    resolveTexture(material.normalTexture, &Material::normalTextureIdx);
+    resolveTexture(material.pbrData.metallicRoughnessTexture, &Material::metallicRoughnessTextureIdx);
+    resolveTexture(material.occlusionTexture, &Material::occlusionTextureIdx);
+    resolveTexture(material.emissiveTexture, &Material::emissiveTextureIdx);
+
+    _resourceManager->materials.push_back(std::move(outMat));
+}
+
 void gltfLoader::LoadMesh(fastgltf::Mesh& mesh)
 {
     Mesh outMesh = {};
@@ -332,88 +415,19 @@ void gltfLoader::LoadMesh(fastgltf::Mesh& mesh)
         outPrimitive.indexCount = indexAccessor.count;
         outPrimitive.topology = vk::PrimitiveTopology::eTriangleList;
 
+        if (it->materialIndex.has_value())
+        {
+            outPrimitive.material = MaterialHandle{
+                static_cast<uint32_t>(it->materialIndex.value()),
+                _resourceManager
+            };
+        }
     }
 
     auto& meshes = _resourceManager->meshes;
     meshes.push_back(outMesh);
 
     return;
-}
-
-void gltfLoader::LoadMaterial(fastgltf::Material& material)
-{
-    Material outMat{};
-
-    const auto& pbr = material.pbrData;
-    outMat.baseColorFactor = glm::make_vec4(pbr.baseColorFactor.data());
-    outMat.metallicFactor = pbr.metallicFactor;
-    outMat.roughnessFactor = pbr.roughnessFactor;
-    outMat.emissiveFactor = glm::make_vec3(material.emissiveFactor.data());
-    outMat.emissiveStrength = material.emissiveStrength;
-    outMat.alphaCutoff = material.alphaCutoff;
-    outMat.alphaMode = static_cast<int32_t>(material.alphaMode);
-
-    if (material.normalTexture.has_value())
-        outMat.normalScale = material.normalTexture->scale;
-    if (material.occlusionTexture.has_value())
-        outMat.occlusionStrength = material.occlusionTexture->strength;
-
-    vk::Device device = _vulkanContext->device;
-
-    auto resolveTexture = [&](const auto& texInfo, uint32_t Material::* slot)
-        {
-            if (!texInfo.has_value()) return;
-
-            uint32_t gltfTexIdx = static_cast<uint32_t>(texInfo->textureIndex);
-            const auto& gltfTex = _asset.textures[gltfTexIdx];
-            uint32_t imageIdx = static_cast<uint32_t>(gltfTex.imageIndex.value());
-
-            vk::Filter             magFilter = vk::Filter::eLinear;
-            vk::Filter             minFilter = vk::Filter::eLinear;
-            vk::SamplerAddressMode wrapU = vk::SamplerAddressMode::eRepeat;
-            vk::SamplerAddressMode wrapV = vk::SamplerAddressMode::eRepeat;
-
-            if (gltfTex.samplerIndex.has_value())
-            {
-                const auto& s = _asset.samplers[gltfTex.samplerIndex.value()];
-
-                magFilter = (s.magFilter == fastgltf::Filter::Nearest)
-                    ? vk::Filter::eNearest : vk::Filter::eLinear;
-
-                minFilter = (s.minFilter == fastgltf::Filter::Nearest
-                    || s.minFilter == fastgltf::Filter::NearestMipMapNearest
-                    || s.minFilter == fastgltf::Filter::NearestMipMapLinear)
-                    ? vk::Filter::eNearest : vk::Filter::eLinear;
-
-                switch (s.wrapS)
-                {
-                case fastgltf::Wrap::ClampToEdge:    wrapU = vk::SamplerAddressMode::eClampToEdge; break;
-                case fastgltf::Wrap::MirroredRepeat: wrapU = vk::SamplerAddressMode::eMirroredRepeat; break;
-                default:                             wrapU = vk::SamplerAddressMode::eRepeat; break;
-                }
-
-                switch (s.wrapT)
-                {
-                case fastgltf::Wrap::ClampToEdge:    wrapV = vk::SamplerAddressMode::eClampToEdge; break;
-                case fastgltf::Wrap::MirroredRepeat: wrapV = vk::SamplerAddressMode::eMirroredRepeat; break;
-                default:                             wrapV = vk::SamplerAddressMode::eRepeat; break;
-                }
-            }
-
-            auto& tex = _resourceManager->textures[imageIdx];
-            device.destroySampler(tex.sampler);
-            tex.sampler = CreateSampler(device, magFilter, minFilter, wrapU, wrapV);
-
-            outMat.*slot = imageIdx;
-        };
-
-    resolveTexture(material.pbrData.baseColorTexture, &Material::baseColorTextureIdx);
-    resolveTexture(material.normalTexture, &Material::normalTextureIdx);
-    resolveTexture(material.pbrData.metallicRoughnessTexture, &Material::metallicRoughnessTextureIdx);
-    resolveTexture(material.occlusionTexture, &Material::occlusionTextureIdx);
-    resolveTexture(material.emissiveTexture, &Material::emissiveTextureIdx);
-
-    _resourceManager->materials.push_back(std::move(outMat));
 }
 
 void gltfLoader::LoadCamera(fastgltf::Camera& camera)

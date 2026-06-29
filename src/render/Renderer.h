@@ -13,7 +13,7 @@ struct UploadContext;
 class DescriptorAllocator;
 class DescriptorSetLayoutCache;
 class Scene;
-
+struct RenderView;
 
 #define FRAME_OVERLAP 2
 
@@ -29,7 +29,7 @@ private:
 
 	Pipeline whitePipeline;
 
-	uint64_t currentFrame = 0;
+	uint32_t currentFrame = 0;
 	std::array<FrameSlot, FRAME_OVERLAP> frameSlots;
 
 public:
@@ -41,6 +41,13 @@ public:
 	VulkanContext* GetVulkanContext() { return vulkanContext.get(); }
 	SwapchainContext* GetSwapchainContext() { return swapchainContext.get(); }
 	UploadContext* GetUpladContext() { return uploadContext.get(); }
+	DescriptorAllocator* GetDescriptorAllocator() { return descAllocator.get(); }
+
+	uint32_t GetCurrentFrame() { return currentFrame;  }
+
+	void ResizeSwapchain(uint32_t width, uint32_t height);
+
+	void DrawFrame(const RenderView& view);
 };
 
 namespace

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <glm/glm.hpp>
+
+#include "vulkan/VulkanResource.h"
+
 struct Material
 {
     glm::vec4 baseColorFactor{ 1.0f, 1.0f, 1.0f, 1.0f };
@@ -26,4 +29,9 @@ struct Material
     uint32_t metallicRoughnessTextureIdx{ InvalidIdx };
     uint32_t occlusionTextureIdx{ InvalidIdx };
     uint32_t emissiveTextureIdx{ InvalidIdx };
+
+
+    // GPU Side
+    vk::DescriptorSet descSet;
+    AllocatedBuffer materialUBO;
 };

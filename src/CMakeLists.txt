@@ -25,6 +25,7 @@ add_library(
     "render/Renderer.cpp"
     "render/SceneRenderer.cpp"
 
+    "scene/Camera.cpp"
     "scene/Scene.cpp"
 )
 

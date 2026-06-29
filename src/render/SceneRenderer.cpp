@@ -84,6 +84,7 @@ void SceneRenderer::CollectDrawsForNode(
         }
         else
         {
+           
         }
 
         view.opaqueDraws.push_back(cmd);
