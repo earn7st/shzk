@@ -63,6 +63,8 @@ Geometry CreateGeometry(const VulkanContext& vulkanContext, const UploadContext&
 				indexCopy);
 		});
 
+	DestroyBuffer(vulkanContext.allocator, staging);
+
 	return result;
 }
 

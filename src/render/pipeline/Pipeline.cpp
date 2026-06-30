@@ -6,7 +6,7 @@
 #include "resource/cpu_types/Vertex.h"
 #include "vulkan/VulkanHelpers.h"
 
-Pipeline CreateWhitePipeline(
+Pipeline CreateDefaultPipeline(
 	vk::Device device,
 	vk::DescriptorSetLayout frameLayout,
 	vk::DescriptorSetLayout materialLayout,

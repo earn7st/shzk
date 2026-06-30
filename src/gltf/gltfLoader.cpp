@@ -13,7 +13,11 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "render/Renderer.h"
+#include "render/MaterialUniforms.h"
 #include "render/descriptor/DescriptorAllocator.h"
+#include "render/descriptor/DescriptorSetLayoutCache.h"
+
 
 #include "resource/cpu_types/GeometryData.h"
 #include "resource/resource_types/Mesh.h"
@@ -29,18 +33,16 @@
 #include "vulkan/UploadContext.h"
 #include "vulkan/VulkanHelpers.h"
 
-#undef LoadImage
-
 gltfLoader::gltfLoader(
     VulkanContext* vulkanContext, 
     UploadContext* uploadContext, 
-    DescriptorAllocator* descAllocator,
+    Renderer* renderer,
     ResourceManager* resourceManager)
 {
     _vulkanContext = vulkanContext;
     _uploadContext = uploadContext;
     _resourceManager = resourceManager;
-    _descAllocator = descAllocator;
+    _renderer = renderer;
 }
 
 
@@ -92,6 +94,10 @@ bool gltfLoader::LoadGltf(Scene* scene, const std::string& filePath)
     {
         LoadImage(image);
     }
+
+    LoadSamplers();
+
+    LoadTextures();
 
     for (auto& material : _asset.materials)
     {
@@ -219,7 +225,7 @@ void gltfLoader::LoadImage(fastgltf::Image& image)
         vk::Format::eR8G8B8A8Srgb,
         vk::ImageAspectFlagBits::eColor);
 
-    // Default Sampler: Linear, will be override by newly-created sampler when LoadMaterial()
+    // Default Sampler: Linear, will be override
     vk::Sampler defaultSampler = CreateSampler(
         device,
         vk::Filter::eLinear,
@@ -229,6 +235,77 @@ void gltfLoader::LoadImage(fastgltf::Image& image)
 
     Texture tex{ std::move(gpuImage), imageView, defaultSampler };
     _resourceManager->textures.push_back(std::move(tex));
+}
+
+void gltfLoader::LoadSamplers()
+{
+    _samplerDefs.resize(_asset.samplers.size());
+
+    for (size_t i = 0; i < _asset.samplers.size(); ++i)
+    {
+        const auto& s = _asset.samplers[i];
+        auto& def = _samplerDefs[i];
+
+        def.magFilter = (s.magFilter == fastgltf::Filter::Nearest)
+            ? vk::Filter::eNearest : vk::Filter::eLinear;
+        def.minFilter = (s.magFilter == fastgltf::Filter::Nearest)
+            ? vk::Filter::eNearest : vk::Filter::eLinear;
+        switch (s.wrapS)
+        {
+            case fastgltf::Wrap::ClampToEdge: 
+                def.wrapU = vk::SamplerAddressMode::eClampToEdge;
+                break;
+            case fastgltf::Wrap::MirroredRepeat: 
+                def.wrapU = vk::SamplerAddressMode::eMirroredRepeat;
+                break;
+            default:
+                def.wrapU = vk::SamplerAddressMode::eRepeat;
+                break;
+        }
+        switch (s.wrapT)
+        {
+        case fastgltf::Wrap::ClampToEdge:
+            def.wrapV = vk::SamplerAddressMode::eClampToEdge;
+            break;
+        case fastgltf::Wrap::MirroredRepeat:
+            def.wrapV = vk::SamplerAddressMode::eMirroredRepeat;
+            break;
+        default:
+            def.wrapV = vk::SamplerAddressMode::eRepeat;
+            break;
+        }
+    }
+
+}
+
+void gltfLoader::LoadTextures()
+{
+    vk::Device& device = _vulkanContext->device;
+
+    for (const auto& gltfTex : _asset.textures)
+    {
+        if (!gltfTex.imageIndex.has_value()) continue;
+
+        uint32_t imageIdx = static_cast<uint32_t>(gltfTex.imageIndex.value());
+        auto& tex = _resourceManager->textures[imageIdx];
+
+        vk::Filter             mag = vk::Filter::eLinear;
+        vk::Filter             min = vk::Filter::eLinear;
+        vk::SamplerAddressMode u = vk::SamplerAddressMode::eRepeat;
+        vk::SamplerAddressMode v = vk::SamplerAddressMode::eRepeat;
+
+        if (gltfTex.samplerIndex.has_value())
+        {
+            const auto& def = _samplerDefs[gltfTex.samplerIndex.value()];
+            mag = def.magFilter;
+            min = def.minFilter;
+            u = def.wrapU;
+            v = def.wrapV;
+        }
+
+        device.destroySampler(tex.sampler);
+        tex.sampler = CreateSampler(device, mag, min, u, v);
+    }
 }
 
 void gltfLoader::LoadMaterial(fastgltf::Material& material)
@@ -259,42 +336,6 @@ void gltfLoader::LoadMaterial(fastgltf::Material& material)
             const auto& gltfTex = _asset.textures[gltfTexIdx];
             uint32_t imageIdx = static_cast<uint32_t>(gltfTex.imageIndex.value());
 
-            vk::Filter             magFilter = vk::Filter::eLinear;
-            vk::Filter             minFilter = vk::Filter::eLinear;
-            vk::SamplerAddressMode wrapU = vk::SamplerAddressMode::eRepeat;
-            vk::SamplerAddressMode wrapV = vk::SamplerAddressMode::eRepeat;
-
-            if (gltfTex.samplerIndex.has_value())
-            {
-                const auto& s = _asset.samplers[gltfTex.samplerIndex.value()];
-
-                magFilter = (s.magFilter == fastgltf::Filter::Nearest)
-                    ? vk::Filter::eNearest : vk::Filter::eLinear;
-
-                minFilter = (s.minFilter == fastgltf::Filter::Nearest
-                    || s.minFilter == fastgltf::Filter::NearestMipMapNearest
-                    || s.minFilter == fastgltf::Filter::NearestMipMapLinear)
-                    ? vk::Filter::eNearest : vk::Filter::eLinear;
-
-                switch (s.wrapS)
-                {
-                case fastgltf::Wrap::ClampToEdge:    wrapU = vk::SamplerAddressMode::eClampToEdge; break;
-                case fastgltf::Wrap::MirroredRepeat: wrapU = vk::SamplerAddressMode::eMirroredRepeat; break;
-                default:                             wrapU = vk::SamplerAddressMode::eRepeat; break;
-                }
-
-                switch (s.wrapT)
-                {
-                case fastgltf::Wrap::ClampToEdge:    wrapV = vk::SamplerAddressMode::eClampToEdge; break;
-                case fastgltf::Wrap::MirroredRepeat: wrapV = vk::SamplerAddressMode::eMirroredRepeat; break;
-                default:                             wrapV = vk::SamplerAddressMode::eRepeat; break;
-                }
-            }
-
-            auto& tex = _resourceManager->textures[imageIdx];
-            device.destroySampler(tex.sampler);
-            tex.sampler = CreateSampler(device, magFilter, minFilter, wrapU, wrapV);
-
             outMat.*slot = imageIdx;
         };
 
@@ -303,6 +344,81 @@ void gltfLoader::LoadMaterial(fastgltf::Material& material)
     resolveTexture(material.pbrData.metallicRoughnessTexture, &Material::metallicRoughnessTextureIdx);
     resolveTexture(material.occlusionTexture, &Material::occlusionTextureIdx);
     resolveTexture(material.emissiveTexture, &Material::emissiveTextureIdx);
+
+    // Fill materialUBO in Material
+    MaterialUniforms matUniforms{};
+    matUniforms.baseColorFactor     = outMat.baseColorFactor;
+    matUniforms.metallicFactor      = outMat.metallicFactor;
+    matUniforms.roughnessFactor     = outMat.roughnessFactor;
+    matUniforms.normalScale         = outMat.normalScale;
+    matUniforms.occlusionStrength   = outMat.occlusionStrength;
+    matUniforms.emissiveFactor      =    glm::vec4(outMat.emissiveFactor, 0.0f); // vec4: Alignment
+    matUniforms.emissiveStrength    = outMat.emissiveStrength;
+    matUniforms.alphaCutoff         = outMat.alphaCutoff;
+    matUniforms.alphaMode           = outMat.alphaMode;
+
+    outMat.materialUBO = CreateBuffer(
+        _vulkanContext->allocator,
+        sizeof(MaterialUniforms),
+        vk::BufferUsageFlagBits::eUniformBuffer,
+        VMA_MEMORY_USAGE_CPU_TO_GPU);
+
+    memcpy(outMat.materialUBO.info.pMappedData, &matUniforms, sizeof(MaterialUniforms));
+
+    // Create DescriptorSet 
+    DescriptorAllocator* descAllocator = _renderer->GetDescriptorAllocator();
+    const DescriptorSetLayout& materialLayout = _renderer->GetDescriptorSetLayoutCache()->defaultMaterialLayout;
+    outMat.descSet = descAllocator->AllocateMaterialSet(materialLayout.descSetLayout);
+
+    vk::DescriptorBufferInfo uboInfo{};
+    uboInfo.buffer = outMat.materialUBO.buffer;
+    uboInfo.offset = 0;
+    uboInfo.range = sizeof(MaterialUniforms);
+
+    auto resolveTex = [&](uint32_t texIdx) -> const Texture&
+        {
+            if (texIdx != Material::InvalidIdx)
+                return _resourceManager->textures[texIdx];
+            return _resourceManager->defaultWhiteTexture;
+        };
+
+    const uint32_t slots[5] =
+    {
+        outMat.baseColorTextureIdx,
+        outMat.normalTextureIdx,
+        outMat.metallicRoughnessTextureIdx,
+        outMat.occlusionTextureIdx,
+        outMat.emissiveTextureIdx
+    };
+
+    std::array<vk::DescriptorImageInfo, 5> imageInfos{};
+    for (int i = 0; i < 5; ++i)
+    {
+        const auto& tex = resolveTex(slots[i]);
+        imageInfos[i]
+            .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal)
+            .setImageView(tex.imageView)
+            .setSampler(tex.sampler);
+    }
+
+    std::array<vk::WriteDescriptorSet, 6> writes{};
+
+    writes[0]
+        .setDstSet(outMat.descSet)
+        .setDstBinding(0)
+        .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+        .setBufferInfo(uboInfo);
+    
+    for (int i = 0; i < 5; ++i)
+    {
+        writes[i + 1]
+            .setDstSet(outMat.descSet)
+            .setDstBinding(i + 1)
+            .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
+            .setImageInfo(imageInfos[i]);
+    }
+
+    device.updateDescriptorSets(writes, {});
 
     _resourceManager->materials.push_back(std::move(outMat));
 }

@@ -14,5 +14,5 @@ public:
 	float farPlane	= 1000.0f;
 
 	glm::mat4 GetViewMatrix() const;
-	glm::mat3 GetProjectionMatrix(float aspect) const;
+	glm::mat4 GetProjectionMatrix(float aspect) const;
 };

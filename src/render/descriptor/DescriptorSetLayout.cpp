@@ -14,7 +14,7 @@ void DescriptorSetLayout::AddBinding(uint32_t index, vk::DescriptorType descType
 	bindings.push_back(binding);
 }
 
-// FrameData's Structure:
+// Frame Data's Structure:
 /*
 layout(set = 0, binding = 0) uniform FrameData {
 
@@ -61,21 +61,21 @@ DescriptorSetLayout CreateDefaultFrameDescriptorLayout(vk::Device device)
 /*
 struct MaterialData
 {
-	vec4 baseColorFactor;
-	float metallicFactor;
-	float roughnessFactor;
-	float normalScale = 1.0;
-	float occlusionStrength = 1.0;
-	vec3 emmisiveFactor;
-	float emissiveStrength;
-	float alphaCutoff;
-	enum alphaMode;
+	vec4 baseColorFactor;				// 16
+	float metallicFactor;				// 20
+	float roughnessFactor;				// 24
+	float normalScale = 1.0;			// 28
+	float occlusionStrength = 1.0;		// 32
+	vec4 emmisiveFactor;				// 48
+	float emissiveStrength;				// 52
+	float alphaCutoff;					// 56
+	uint32_t alphaMode;					// 60
 
-	TextureHandle baseColorTexture;
+	TextureHandle baseColorTexture;		
 	TextureHandle normalTexture;
 	TextureHandle metallicRoughnessTexture;
-	TextureHandle occlusionTexture;
-	TextureHandle emissiveTexture;
+	TextureHandle occlusionTexture;	
+	TextureHandle emissiveTexture;		// 64
 }
 */
 

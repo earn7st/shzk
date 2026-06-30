@@ -5,6 +5,8 @@
 
 #include "gltf/gltfLoader.h"
 
+#include "render/descriptor/DescriptorSetLayoutCache.h"
+
 Application::Application(const std::string& name, uint32_t width, uint32_t height) :
 	window(name, width, height), renderer(window), sceneRenderer(&scene, &resourceManager)
 {
@@ -12,10 +14,18 @@ Application::Application(const std::string& name, uint32_t width, uint32_t heigh
 
 void Application::Init()
 {
+    // Init Default Resoures: fallback Material, ...
+    DefaultResourceInit::InitDefaultResources(
+        renderer.GetVulkanContext(), 
+        renderer.GetUploadContext(), 
+        renderer.GetDescriptorAllocator(),
+        renderer.GetDescriptorSetLayoutCache()->defaultMaterialLayout,
+        & resourceManager);
+
     gltfLoader loader(
         renderer.GetVulkanContext(),
-        renderer.GetUpladContext(),
-        renderer.GetDescriptorAllocator(),
+        renderer.GetUploadContext(),
+        & renderer,
         & resourceManager);
 
     bool ok = loader.LoadGltf(&scene, "C:/Users/earn/workspace/glTF-Sample-Assets/Models/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf");
@@ -29,6 +39,10 @@ void Application::Init()
         scene.nodes.size(),
         resourceManager.meshes.size(),
         resourceManager.geometries.size());
+
+    // Input
+    SDL_SetWindowRelativeMouseMode(window.window, true);
+
 }
 
 void Application::Run()
@@ -79,13 +93,13 @@ void Application::Render()
 
     // Swapchain extent should be the only truth aspect source, but here we use window's extent,
     // Only if we carefully keep window's extent and swapchain's extent identical
-    float  aspect = window.extent.width / window.extent.height;
+    float aspect = window.extent.width / window.extent.height;
 
     FrameUniforms frameData{};
     frameData.view = mainCamera.GetViewMatrix();
     frameData.proj = mainCamera.GetProjectionMatrix(aspect);
     frameData.viewProj = frameData.proj * frameData.view;
-    frameData.invViewProj = glm::inverse(frameData.invViewProj);
+    frameData.invViewProj = glm::inverse(frameData.viewProj);
     frameData.cameraPosition = glm::vec4(mainCamera.position, 1.0f);
 
     frameData.time = { totalTime, deltaTime, std::sin(totalTime), renderer.GetCurrentFrame()};

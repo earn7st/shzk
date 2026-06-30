@@ -109,5 +109,12 @@ std::unique_ptr<SwapchainContext> CreateSwapchainContext(const VulkanContext& vu
         ctx->imageViews[i] = v;
     }
 
+    ctx->renderSemaphores.resize(ctx->images.size());
+    vk::SemaphoreCreateInfo semInfo{};
+    for (size_t i = 0; i < ctx->images.size(); ++i)
+    {
+        ctx->renderSemaphores[i] = device.createSemaphore(semInfo);
+    }
+
     return ctx;
 }

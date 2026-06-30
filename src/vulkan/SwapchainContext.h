@@ -14,6 +14,7 @@ struct SwapchainContext
 	vk::Extent2D extent;
 	std::vector<VkImage> images;
 	std::vector<VkImageView> imageViews;
+	std::vector<vk::Semaphore> renderSemaphores;
 };
 
 std::unique_ptr<SwapchainContext> CreateSwapchainContext(const VulkanContext& vulkanContext, uint32_t width, uint32_t height);

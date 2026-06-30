@@ -28,7 +28,7 @@ private:
 	Scene scene;
 	Camera mainCamera;
 	ResourceManager resourceManager;
-
+	
 	Renderer renderer;
 	SceneRenderer sceneRenderer;
 

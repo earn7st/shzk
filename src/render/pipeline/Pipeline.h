@@ -10,7 +10,7 @@ struct Pipeline
 	std::vector<vk::DescriptorSetLayout> descriptorSetLayouts;
 };
 
-Pipeline CreateWhitePipeline(
+Pipeline CreateDefaultPipeline(
 	vk::Device device,
 	vk::DescriptorSetLayout frameLayout,
 	vk::DescriptorSetLayout materialLayout,

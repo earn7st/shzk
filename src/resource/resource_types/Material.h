@@ -32,6 +32,6 @@ struct Material
 
 
     // GPU Side
-    vk::DescriptorSet descSet;
     AllocatedBuffer materialUBO;
+    vk::DescriptorSet descSet;
 };

@@ -12,7 +12,6 @@ struct FrameSlot
 
     vk::Fence renderFence;
     vk::Semaphore swapchainSemaphore;
-    vk::Semaphore renderSemaphore;
 
     AllocatedImage depthImage;
     vk::ImageView depthImageView;

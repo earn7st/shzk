@@ -27,7 +27,7 @@ private:
 	std::unique_ptr<DescriptorAllocator> descAllocator;
 	std::unique_ptr<DescriptorSetLayoutCache> descSetLayoutCache;
 
-	Pipeline whitePipeline;
+	Pipeline defaultPipeline;
 
 	uint32_t currentFrame = 0;
 	std::array<FrameSlot, FRAME_OVERLAP> frameSlots;
@@ -40,8 +40,9 @@ public:
 
 	VulkanContext* GetVulkanContext() { return vulkanContext.get(); }
 	SwapchainContext* GetSwapchainContext() { return swapchainContext.get(); }
-	UploadContext* GetUpladContext() { return uploadContext.get(); }
+	UploadContext* GetUploadContext() { return uploadContext.get(); }
 	DescriptorAllocator* GetDescriptorAllocator() { return descAllocator.get(); }
+	DescriptorSetLayoutCache* GetDescriptorSetLayoutCache() { return descSetLayoutCache.get();  }
 
 	uint32_t GetCurrentFrame() { return currentFrame;  }
 

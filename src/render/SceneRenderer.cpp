@@ -77,14 +77,12 @@ void SceneRenderer::CollectDrawsForNode(
 
         if (primitive.material.IsValid())
         {
-            // Phase 2: resolve MaterialInstance → descriptor set
-            // const MaterialInstance& matInst =
-            //     _resourceManager->materialInstances[primitive.materialInstance.id];
-            // cmd.materialSet = matInst.gpuDescriptorSet;
+            const Material& mat = _resourceManager->materials[primitive.material.id];
+            cmd.materialSet = mat.descSet;
         }
         else
         {
-           
+            cmd.materialSet = _resourceManager->defaultMaterial.descSet;
         }
 
         view.opaqueDraws.push_back(cmd);

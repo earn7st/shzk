@@ -11,7 +11,7 @@ glm::mat4 Camera::GetViewMatrix() const
 	return glm::lookAt(position, position + forward, up);
 }
 
-glm::mat3 Camera::GetProjectionMatrix(float aspect) const
+glm::mat4 Camera::GetProjectionMatrix(float aspect) const
 {
 	return glm::perspective(fovY, aspect, nearPlane, farPlane);
 }
