@@ -15,4 +15,7 @@ public:
 
 	glm::mat4 GetViewMatrix() const;
 	glm::mat4 GetProjectionMatrix(float aspect) const;
+	glm::vec3 GetForward() const;
+	glm::vec3 GetRight() const;
+	void SetYawPitch(float yaw, float pitch);
 };

@@ -26,6 +26,7 @@ add_library(
     "render/SceneRenderer.cpp"
 
     "scene/Camera.cpp"
+    "scene/FPSCameraController.cpp"
     "scene/Scene.cpp"
 )
 

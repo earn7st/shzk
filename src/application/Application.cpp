@@ -28,7 +28,7 @@ void Application::Init()
         & renderer,
         & resourceManager);
 
-    bool ok = loader.LoadGltf(&scene, "C:/Users/earn/workspace/glTF-Sample-Assets/Models/CesiumMilkTruck/glTF/CesiumMilkTruck.gltf");
+    bool ok = loader.LoadGltf(&scene, "C:/Users/earn/workspace/glTF-Sample-Assets/Models/DamagedHelmet/glTF/DamagedHelmet.gltf");
     if (!ok)
     {
         fmt::println("[Error] Failed to load glTF");
@@ -39,9 +39,6 @@ void Application::Init()
         scene.nodes.size(),
         resourceManager.meshes.size(),
         resourceManager.geometries.size());
-
-    // Input
-    SDL_SetWindowRelativeMouseMode(window.window, true);
 
 }
 
@@ -58,10 +55,33 @@ void Application::Run()
             case SDL_EVENT_QUIT:
                 bWindowShouldClose = true;
                 break;
+            case SDL_EVENT_KEY_DOWN:
+                if (e.key.scancode == SDL_SCANCODE_ESCAPE)
+					bWindowShouldClose = true;
+                break;
             
             case SDL_EVENT_WINDOW_RESIZED:
             case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-
+                int newWidth, newHeight;
+				SDL_GetWindowSize(window.window, &newWidth, &newHeight);
+                OnWindowResized(newWidth, newHeight);
+                break;
+            case SDL_EVENT_MOUSE_BUTTON_DOWN:
+                if (e.button.button == SDL_BUTTON_MIDDLE)
+                {
+                    SDL_SetWindowRelativeMouseMode(window.window, true);
+                    fpsController.SetUseMouseMotion(true);
+                }
+				break;
+            case SDL_EVENT_MOUSE_BUTTON_UP:
+                if (e.button.button == SDL_BUTTON_MIDDLE)
+                {
+                    SDL_SetWindowRelativeMouseMode(window.window, false);
+                    fpsController.SetUseMouseMotion(false);
+				}
+                break;
+            case SDL_EVENT_MOUSE_MOTION: 
+                fpsController.OnMouseMove(e.motion.xrel, e.motion.yrel);
                 break;
             }
         }
@@ -80,7 +100,9 @@ void Application::Run()
 
 void Application::Tick(double deltaTime)
 {
-
+    int numKeys = 0;
+	const bool* keyState = SDL_GetKeyboardState(&numKeys);
+    fpsController.Update(mainCamera, static_cast<float>(deltaTime), keyState, numKeys);
 }
 
 void Application::Render()
@@ -119,7 +141,7 @@ void Application::Shutdown()
 
 }
 
-void Application::OnWindwoResized(uint32_t width, uint32_t height)
+void Application::OnWindowResized(uint32_t width, uint32_t height)
 {
     window.extent.width = width;
     window.extent.height = height;

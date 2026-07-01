@@ -7,13 +7,14 @@
 #include "resource/ResourceManager.h"
 #include "scene/Camera.h"
 #include "scene/Scene.h"
+#include "scene/FPSCameraController.h"
 
 class Application
 {
 
 public:
 	Application() = default;
-	Application(const std::string& name, uint32_t width = 1920, uint32_t height = 1080);
+	Application(const std::string& name, uint32_t width = 1600, uint32_t height = 900);
 
 	~Application() = default;
 
@@ -26,19 +27,22 @@ private:
 	std::string applicationName;
 	SDLWindow window;
 	Scene scene;
+	FPSCameraController fpsController;
 	Camera mainCamera;
 	ResourceManager resourceManager;
 	
 	Renderer renderer;
 	SceneRenderer sceneRenderer;
 
-	double totalTime = 0.0f;
-	double deltaTime = 0.0f;
-
 	void Tick(double deltaTime);
 	void Render();
 
+	double totalTime = 0.0f;
+	double deltaTime = 0.0f;
+
+	// Window Resize
 	bool bSwapchainDirty = false;
-	void OnWindwoResized(uint32_t width, uint32_t height);
+	void OnWindowResized(uint32_t width, uint32_t height);
+
 };
 

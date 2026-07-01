@@ -75,6 +75,38 @@ Renderer::Renderer(const SDLWindow& window)
 
 void Renderer::ResizeSwapchain(uint32_t width, uint32_t height)
 {
+    vkDeviceWaitIdle(vulkanContext->device);
+    DestroySwapchain();
+	swapchainContext = CreateSwapchainContext(*vulkanContext, width, height);
+}
+
+void Renderer::DestroySwapchain()
+{
+    if (!swapchainContext) return;
+	vk::Device device = vulkanContext->device;
+
+    // Destroy Render Semaphores
+    for (auto& sem : swapchainContext->renderSemaphores)
+    {
+		device.destroySemaphore(sem);
+    }
+	swapchainContext->renderSemaphores.clear();
+
+	// Destroy Image Views
+    for (auto& view  : swapchainContext->imageViews)
+    {   
+        if (view)
+        {
+            device.destroyImageView(view);
+        }
+	}
+    swapchainContext->imageViews.clear();
+
+    device.destroySwapchainKHR(swapchainContext->swapchain);
+
+    swapchainContext->images.clear();
+
+    swapchainContext.reset();
 
 }
 

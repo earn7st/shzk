@@ -10,6 +10,7 @@
 #include <fastgltf/tools.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FROTH_DEPTH_ZERO_TO_ONE
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
 

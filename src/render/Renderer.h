@@ -47,6 +47,7 @@ public:
 	uint32_t GetCurrentFrame() { return currentFrame;  }
 
 	void ResizeSwapchain(uint32_t width, uint32_t height);
+	void DestroySwapchain();
 
 	void DrawFrame(const RenderView& view);
 };
