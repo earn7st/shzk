@@ -67,14 +67,14 @@ void Application::Run()
                 OnWindowResized(newWidth, newHeight);
                 break;
             case SDL_EVENT_MOUSE_BUTTON_DOWN:
-                if (e.button.button == SDL_BUTTON_MIDDLE)
+                if (e.button.button == SDL_BUTTON_RIGHT)
                 {
                     SDL_SetWindowRelativeMouseMode(window.window, true);
                     fpsController.SetUseMouseMotion(true);
                 }
 				break;
             case SDL_EVENT_MOUSE_BUTTON_UP:
-                if (e.button.button == SDL_BUTTON_MIDDLE)
+                if (e.button.button == SDL_BUTTON_RIGHT)
                 {
                     SDL_SetWindowRelativeMouseMode(window.window, false);
                     fpsController.SetUseMouseMotion(false);
@@ -127,9 +127,9 @@ void Application::Render()
     frameData.time = { totalTime, deltaTime, std::sin(totalTime), renderer.GetCurrentFrame()};
     frameData.resolution = { window.extent.width, window.extent.height, 1.0f / window.extent.width, 1.0f / window.extent.height };
 
-    frameData.ambientColor = { 0.02f, 0.02f, 0.02f, 1.0f };
-    frameData.sunDirection = { 0.5f, 1.0f, 0.3f, 0.0f };
-    frameData.sunColor = { 1.0f, 0.95f, 0.8f, 1.0f };
+    frameData.ambientColor = { 0.3f, 0.3f, 0.3f, 1.0f };
+    frameData.sunDirection = { 0.5f, 1.0f, 0.3f, 1.0f };
+    frameData.sunColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
     RenderView view = sceneRenderer.BuildRenderView(frameData);
 
