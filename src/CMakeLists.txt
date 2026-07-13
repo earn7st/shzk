@@ -3,42 +3,30 @@
 # =========================
 
 add_library(
-    vkR_core
+    vkR_runtime
 
-    "application/Application.cpp"
-    "application/SDLWindow.cpp"
+    "runtime/core/Engine.cpp"
+    "runtime/core/WindowSystem.cpp"
 
-    "vulkan/SwapchainContext.cpp"
-    "vulkan/VulkanContext.cpp"
-    "vulkan/UploadContext.cpp"
-    "vulkan/VulkanHelpers.cpp"
+    "runtime/framework/component/TransformComponent.cpp"
+    "runtime/framework/component/MeshComponent.cpp"
 
-    "gltf/gltfLoader.cpp"
+    "runtime/render/RenderSystem.cpp"
 
-    "resource/ResourceManager.cpp"
-
-    "render/descriptor/DescriptorAllocator.cpp"
-    "render/descriptor/DescriptorSetLayout.cpp"
-    "render/descriptor/DescriptorSetLayoutCache.cpp"
-    "render/pipeline/Pipeline.cpp"
-    "render/pipeline/PipelineBuilder.cpp"
-    "render/Renderer.cpp"
-    "render/SceneRenderer.cpp"
-
-    "scene/Camera.cpp"
-    "scene/FPSCameraController.cpp"
-    "scene/Scene.cpp"
+    "runtime/rhi/RHIDevice.cpp"
+    "runtime/rhi/RHIUtil.cpp"
+    
 )
 
 target_include_directories(
-    vkR_core
+    vkR_runtime
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/extern
 )
 
 target_link_libraries(
-    vkR_core
+    vkR_runtime
     PUBLIC
         Vulkan::Vulkan
         fmt::fmt
@@ -48,13 +36,13 @@ target_link_libraries(
 )
 
 target_compile_definitions(
-    vkR_core
+    vkR_runtime
     PUBLIC
         VK_USE_PLATFORM_WIN32_KHR
 )
 
 add_dependencies(
-    vkR_core
+    vkR_runtime
     Shaders
 )
 
@@ -63,12 +51,13 @@ add_dependencies(
 # =========================
 
 add_executable(
-    vkR
-    main.cpp
+    vkR_editor
+    "editor/main.cpp"
+    "editor/Editor.cpp"
 )
 
 target_link_libraries(
-    vkR
+    vkR_editor
     PRIVATE
-        vkR_core
+        vkR_runtime
 )
