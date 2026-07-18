@@ -4,6 +4,7 @@
 
 #include <vector>
 #include <memory>
+#include <functional>
 
 #include <vulkan/vulkan.h>
 #include <SDL3/SDL.h>
@@ -17,6 +18,10 @@ namespace vkR
 	namespace rhi
 	{
 
+		class CommandList;
+		class Queue;
+		class Swapchain;
+
 		struct RHIInitInfo
 		{
 			std::shared_ptr<WindowSystem> windowSystem;
@@ -28,21 +33,24 @@ namespace vkR
 			Device() = default;
 
 			void Initialize(const RHIInitInfo& initInfo);
-		
+			void Shutdown();
+
+			void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& func);
+
+			// --- Getters ---
+			std::shared_ptr<Swapchain> GetSwapchain() const { return m_swapchain; }
+			Queue* GetGraphicsQueue() const { return m_graphicsQueue.get(); }
 
 		private:
 			void CreateInstance();
-			void CreateSurface();
-			void CreateDeviceAndQueues();
+			void CreatePhysicalAndLogicalDevice();
 			void CreateAllocator();
-			
+			void CreateQueues();
+			void CreateSurface();
 			void CreateSwapchain();
-			void CreateImageViews();
 
-			void CreateImmediateCommandPool();
-			void CreateFrameCommandPools();
-			void CreateFrameCommandBuffers();
-			void CreateFrameSyncs();
+			void CreateImmediateCommandPoolGraphics();
+			void CreateImmediateFence();
 
 			SwapchainSupportDetails QuerySwapchainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface);
 			VkSurfaceFormatKHR ChooseSwapchainSurfaceFormatFromDetails(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -50,47 +58,34 @@ namespace vkR
 			VkExtent2D ChooseSwapchainExtentFromDetails(const VkSurfaceCapabilitiesKHR& capabilities);
 
 		private:
-			VkDebugUtilsMessengerEXT m_debugMessenger = nullptr;
-			const std::vector<char const*> m_validationLayers{ "VK_LAYER_KHRONOS_validation" };
+			VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
 
 			static uint32_t kFramesInFlight;
 
-			SDL_Window* m_window;
+			SDL_Window* m_window = nullptr;
 
 			// --- Device ---
-			VkInstance m_instance;
-			VkSurfaceKHR m_surface;
-			VkPhysicalDevice m_physicalDevice;
-			VkDevice m_device;
-			uint32_t m_graphicsQueueFamily;
-			VkQueue m_graphicsQueue;
+			VkInstance m_instance = VK_NULL_HANDLE;
+			VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+			VkPhysicalDevice m_physicalDevice = VK_NULL_HANDLE;
+			VkDevice m_device = VK_NULL_HANDLE;
 
-			// --- Swapchain ---
-			VkSwapchainKHR m_swapchain;
-			VkFormat m_swapchainFormat;
-			VkExtent2D m_swapchainExtent;
-			std::vector<VkImage> m_swapchainImages;
-			std::vector<VkImageView> m_swapchainImageViews;
-
-			VkRect2D m_scissor;
+			VkRect2D m_scissor = {};
 
 			// --- Allocator ---
-			VmaAllocator m_allocator;
+			VmaAllocator m_allocator = VK_NULL_HANDLE;
+
+			// --- Queues ---
+			std::shared_ptr<Queue> m_graphicsQueue;
+			std::shared_ptr<Queue> m_computeQueue;
+			std::shared_ptr<Queue> m_immediateQueue;
+
+			// --- Swapchain ---
+			std::shared_ptr<Swapchain> m_swapchain;
 
 			// --- Immediate Submit ---
-			VkFence m_immediateFence;
-			VkCommandPool m_immediateCommandPool;
-
-			// --- Frames ---
-			std::vector<VkCommandPool>		m_commandPools;
-			std::vector<VkCommandBuffer>	m_commandBuffers;
-
-			// --- Synchronization ---
-			std::vector<VkFence>			m_fences;
-			std::vector<VkSemaphore>		m_imageAcquiredSemaphores;
-			std::vector<VkSemaphore>		m_renderFinishedSemaphore;
-
-			QueueFamilyIndices m_queueFamilyIndices;
+			VkFence m_immediateFence = VK_NULL_HANDLE;
+			VkCommandPool m_immediateCommandPool = VK_NULL_HANDLE;			
 
 		};
 	}

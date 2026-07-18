@@ -11,7 +11,7 @@ namespace vkR
 		Node() = default;
 		~Node() = default;
 
-		void Tick();
+		void Tick(float deltaTime);
 
         template<typename T, typename... Args>
         T* AddComponent(Args&&... args) {
@@ -30,12 +30,6 @@ namespace vkR
                 }
             }
             return nullptr;
-        }
-
-        void Update(float deltaTime) {
-            for (auto& component : components) {
-                component->Update(deltaTime);
-            }
         }
 
 	private:

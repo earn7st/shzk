@@ -1,8 +1,10 @@
 #include "RHIDevice.h"
 #include "runtime/core/WindowSystem.h"
 
+#include "RHICommandList.h"
+#include "RHIQueue.h"
 #include "RHIStructs.h"
-
+#include "RHISwapchain.h"
 #include "RHIUtil.h"
 
 #include <algorithm>
@@ -17,9 +19,12 @@ namespace vkR::rhi
     namespace 
     {
         vkb::Instance vkbInstance;
+        vkb::Device vkbDevice;
     }
 
     uint32_t Device::kFramesInFlight = 3;
+
+// --- public functions ---
 
 	void Device::Initialize(const RHIInitInfo& initInfo)
 	{
@@ -27,23 +32,74 @@ namespace vkR::rhi
 
         CreateInstance();
         CreateSurface();
-        CreateDeviceAndQueues();
+        CreatePhysicalAndLogicalDevice();
         CreateAllocator();
-        
-        CreateImmediateCommandPool();
-        CreateFrameCommandPools();
-        CreateFrameCommandBuffers();
-        CreateFrameSyncs();
-
+        CreateQueues();
         CreateSwapchain();
-        CreateImageViews();
-
+        CreateImmediateCommandPoolGraphics();
+        CreateImmediateFence();
         
         /*
         createDescriptorPool();
         */
 	}
 
+    void Device::Shutdown()
+    {
+        vkDeviceWaitIdle(m_device);
+
+        m_graphicsQueue->Shutdown();
+        m_computeQueue->Shutdown();
+        m_swapchain->Shutdown();
+
+        vkDestroyCommandPool(m_device, m_immediateCommandPool, nullptr);
+        vkDestroyFence(m_device, m_immediateFence, nullptr);
+
+        vmaDestroyAllocator(m_allocator);
+        vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+        vkDestroyDevice(m_device, nullptr);
+
+        // Destroy both DebugMessenger and Instance by vkb
+        vkb::destroy_instance(vkbInstance);
+    }
+
+    void Device::ImmediateSubmit(std::function<void(VkCommandBuffer commandBuffer)>&& func)
+    {
+
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = m_immediateCommandPool;
+        allocInfo.commandBufferCount = 1;
+
+        VkCommandBuffer oneTimeCommandBuffer;
+        vkAllocateCommandBuffers(m_device, &allocInfo, &oneTimeCommandBuffer);
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+        vkBeginCommandBuffer(oneTimeCommandBuffer, &beginInfo);
+
+        func(oneTimeCommandBuffer);
+
+        vkEndCommandBuffer(oneTimeCommandBuffer);
+
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &oneTimeCommandBuffer;
+
+        vkQueueSubmit(m_graphicsQueue->GetQueue(), 1, &submitInfo, m_immediateFence);
+
+        vkWaitForFences(m_device, 1, &m_immediateFence, true, UINT32_MAX);
+        vkResetFences(m_device, 1, &m_immediateFence);
+
+        vkFreeCommandBuffers(m_device, m_immediateCommandPool, 1, &oneTimeCommandBuffer);
+    }
+
+
+// --- private functions ---
     void Device::CreateInstance()
     {
         vkb::InstanceBuilder builder;
@@ -65,20 +121,7 @@ namespace vkR::rhi
         m_debugMessenger = vkbInstance.debug_messenger;
     }
 
-    void Device::CreateSurface()
-    {
-
-        if (!SDL_Vulkan_CreateSurface(
-            m_window,
-            m_instance,
-            nullptr,
-            &m_surface))
-        {
-            throw std::runtime_error("[Error] Device::CreateSurface() : Failed to create surface");
-        }
-    }
-
-    void Device::CreateDeviceAndQueues()
+    void Device::CreatePhysicalAndLogicalDevice()
     {
         VkPhysicalDeviceVulkan13Features features13{
             .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
@@ -109,23 +152,17 @@ namespace vkR::rhi
 
         vkb::DeviceBuilder deviceBuilder{ vkbPhysicalDevice };
 
-        auto devRet = deviceBuilder.build();
+        auto deviceRet = deviceBuilder.build();
 
-        if (!devRet)
+        if (!deviceRet)
         {
             throw std::runtime_error("[Error] Device::CreateDeviceAndQueues() : Failed to create device");
         }
 
-        vkb::Device vkbDevice = devRet.value();
+        vkbDevice = deviceRet.value();
 
         m_physicalDevice = vkbPhysicalDevice.physical_device;
         m_device = vkbDevice.device;
-
-        m_queueFamilyIndices.graphicsFamily = vkbDevice.get_queue_index(vkb::QueueType::graphics).value();
-		m_queueFamilyIndices.presentFamily = vkbDevice.get_queue_index(vkb::QueueType::present).value();
-		m_queueFamilyIndices.computeFamily = vkbDevice.get_queue_index(vkb::QueueType::compute).value();
-
-        m_graphicsQueue = vkbDevice.get_queue(vkb::QueueType::graphics).value();
     }
 
     void Device::CreateAllocator()
@@ -139,162 +176,69 @@ namespace vkR::rhi
         vmaCreateAllocator(&allocatorInfo, &m_allocator);
     }
 
+    void Device::CreateQueues()
+    {
+        m_graphicsQueue = std::make_shared<Queue>();
+        m_graphicsQueue->Initialize(
+            m_device,
+            vkbDevice.get_queue(vkb::QueueType::graphics).value(),
+            RHIQueueType::Graphics,
+            vkbDevice.get_queue_index(vkb::QueueType::graphics).value());
+
+        m_computeQueue = std::make_shared<Queue>();
+        m_computeQueue->Initialize(
+            m_device,
+            vkbDevice.get_queue(vkb::QueueType::compute).value(),
+            RHIQueueType::Compute,
+            vkbDevice.get_queue_index(vkb::QueueType::compute).value());
+    }
+
+    void Device::CreateSurface()
+    {
+
+        if (!SDL_Vulkan_CreateSurface(
+            m_window,
+            m_instance,
+            nullptr,
+            &m_surface))
+        {
+            throw std::runtime_error("[Error] Device::CreateSurface() : Failed to create surface");
+        }
+    }
+
     void Device::CreateSwapchain()
     {
-		SwapchainSupportDetails swapchainSupport = std::move(QuerySwapchainSupport(m_physicalDevice, m_surface));
-        
-        VkSurfaceFormatKHR chosenSurfaceFormat =
-            ChooseSwapchainSurfaceFormatFromDetails(swapchainSupport.formats);
+        SwapchainSupportDetails swapchainSupport =
+            QuerySwapchainSupport(m_physicalDevice, m_surface);
 
-        VkPresentModeKHR chosenPresentMode =
-            ChooseSwapchainPresentModeFromDetails(swapchainSupport.presentModes);
-
-        VkExtent2D chosenExtent = ChooseSwapchainExtentFromDetails(swapchainSupport.capabilities);
-
-        uint32_t imageCount = swapchainSupport.capabilities.minImageCount + 1;
-        if (swapchainSupport.capabilities.maxImageCount > 0 &&
-            imageCount > swapchainSupport.capabilities.maxImageCount)
-        {
-            imageCount = swapchainSupport.capabilities.maxImageCount;
-        }
-
-        VkSwapchainCreateInfoKHR createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        createInfo.surface = m_surface;
-
-        createInfo.minImageCount = imageCount;
-        createInfo.imageFormat = chosenSurfaceFormat.format;
-        createInfo.imageColorSpace = chosenSurfaceFormat.colorSpace;
-        createInfo.imageExtent = chosenExtent;
-        createInfo.imageArrayLayers = 1;
-        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-        uint32_t queueFamilyIndices[] = { m_queueFamilyIndices.graphicsFamily.value(), m_queueFamilyIndices.presentFamily.value() };
-
-        if (m_queueFamilyIndices.graphicsFamily != m_queueFamilyIndices.presentFamily)
-        {
-            createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-            createInfo.queueFamilyIndexCount = 2;
-            createInfo.pQueueFamilyIndices = queueFamilyIndices;
-        }
-        else
-        {
-            createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        }
-
-        createInfo.preTransform = swapchainSupport.capabilities.currentTransform;
-        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        createInfo.presentMode = chosenPresentMode;
-        createInfo.clipped = VK_TRUE;
-
-        createInfo.oldSwapchain = VK_NULL_HANDLE;
-
-        VK_CHECK(vkCreateSwapchainKHR(m_device, &createInfo, nullptr, &m_swapchain));
-
-        VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, nullptr));
-        m_swapchainImages.resize(imageCount);
-        VK_CHECK(vkGetSwapchainImagesKHR(m_device, m_swapchain, &imageCount, m_swapchainImages.data()));
-
-		// Make kFramesInFlight equals to the number of swapchain images
-		kFramesInFlight = imageCount;
-
-        m_swapchainFormat = chosenSurfaceFormat.format;
-        m_swapchainExtent.height = chosenExtent.height;
-        m_swapchainExtent.width = chosenExtent.width;
-
-        m_scissor = { {0, 0}, {m_swapchainExtent.width, m_swapchainExtent.height} };
+        m_swapchain = std::make_shared<Swapchain>();
+        m_swapchain->Initialize(
+            m_window,
+            m_physicalDevice,
+            m_device,
+            m_surface,
+            swapchainSupport
+        );
     }
 
-    void Device::CreateImageViews()
+    void Device::CreateImmediateCommandPoolGraphics()
     {
-        m_swapchainImageViews.resize(m_swapchainImages.size());
-        
-        for (size_t i = 0; i < m_swapchainImages.size(); i++)
-        {
-            m_swapchainImageViews[i] = RHIUtil::CreateImageView(
-                m_device,
-                m_swapchainImages[i],
-                m_swapchainFormat,
-                VK_IMAGE_ASPECT_COLOR_BIT,
-                VK_IMAGE_VIEW_TYPE_2D,
-                1,
-                1);
-        }
-    }
-
-    void Device::CreateImmediateCommandPool()
-    {
-
         VkCommandPoolCreateInfo commandPoolCreateInfo{};
         commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         commandPoolCreateInfo.pNext = NULL;
-        commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        commandPoolCreateInfo.queueFamilyIndex = m_queueFamilyIndices.graphicsFamily.value();
-
+        commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT | VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+        commandPoolCreateInfo.queueFamilyIndex = m_graphicsQueue->GetQueueFamilyIndex();
+    
         VK_CHECK(vkCreateCommandPool(m_device, &commandPoolCreateInfo, nullptr, &m_immediateCommandPool));
     }
 
-    void Device::CreateFrameCommandPools()
+    void Device::CreateImmediateFence()
     {
-        VkCommandPoolCreateInfo commandPoolCreateInfo;
-        commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        commandPoolCreateInfo.pNext = NULL;
-        commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-        commandPoolCreateInfo.queueFamilyIndex = m_queueFamilyIndices.graphicsFamily.value();
-
-        m_commandPools.resize(kFramesInFlight);
-
-        for (uint32_t i = 0; i < kFramesInFlight; ++i)
-        {
-            VK_CHECK(vkCreateCommandPool(m_device, &commandPoolCreateInfo, NULL, &m_commandPools[i]));
-        }
-    }
-
-    void Device::CreateFrameCommandBuffers()
-    {
-        VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
-        commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        commandBufferAllocateInfo.commandBufferCount = 1U;
-
-        m_commandBuffers.resize(kFramesInFlight);
-
-        for (uint32_t i = 0; i < kFramesInFlight; ++i)
-        {
-            commandBufferAllocateInfo.commandPool = m_commandPools[i];
-            VK_CHECK(vkAllocateCommandBuffers(m_device, &commandBufferAllocateInfo, &m_commandBuffers[i]));
-        }
-    }
-
-    void Device::CreateFrameSyncs()
-    {
-        VkSemaphoreCreateInfo semaphoreCreateInfo{};
-        semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
         VkFenceCreateInfo fenceCreateInfo{};
         fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // the fence is initialized as signaled
+        fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        m_imageAcquiredSemaphores.resize(kFramesInFlight);
-        m_renderFinishedSemaphore.resize(kFramesInFlight);
-        m_fences.resize(kFramesInFlight);
-
-        for (uint32_t i = 0; i < kFramesInFlight; i++)
-        {
-            VK_CHECK(vkCreateSemaphore(
-                m_device,
-                &semaphoreCreateInfo,
-                nullptr,
-                &m_imageAcquiredSemaphores[i]));
-
-            VK_CHECK(vkCreateSemaphore(
-                m_device,
-                &semaphoreCreateInfo,
-                nullptr,
-                &m_renderFinishedSemaphore[i]));
-
-            VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_fences[i]));
-        }
+        VK_CHECK(vkCreateFence(m_device, &fenceCreateInfo, nullptr, &m_immediateFence));
     }
 
     SwapchainSupportDetails Device::QuerySwapchainSupport(VkPhysicalDevice physicalDevice, VkSurfaceKHR surface)
@@ -316,52 +260,5 @@ namespace vkR::rhi
             vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, details.presentModes.data());
         }
         return details;
-    }
-
-    VkSurfaceFormatKHR Device::ChooseSwapchainSurfaceFormatFromDetails(const std::vector<VkSurfaceFormatKHR>& formats)
-    {
-        for (const auto& format : formats)
-        {
-            if (format.format == VK_FORMAT_B8G8R8A8_UNORM &&
-                format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-            {
-                return format;
-            }
-        }
-        return formats[0];
-    }
-        
-    VkPresentModeKHR Device::ChooseSwapchainPresentModeFromDetails(const std::vector<VkPresentModeKHR>& availablePresentModes)
-    {
-        for (VkPresentModeKHR presentMode : availablePresentModes)
-        {
-            if (VK_PRESENT_MODE_MAILBOX_KHR == presentMode)
-            {
-                return VK_PRESENT_MODE_MAILBOX_KHR;
-            }
-        }
-        return VK_PRESENT_MODE_FIFO_KHR;
-    }
-
-    VkExtent2D Device::ChooseSwapchainExtentFromDetails(const VkSurfaceCapabilitiesKHR& capabilities)
-    {
-        if (capabilities.currentExtent.width != UINT32_MAX)
-        {
-            return capabilities.currentExtent;
-        }
-        else
-        {
-            int width, height;
-            SDL_GetWindowSize(m_window, &width, &height);
-
-            VkExtent2D actualExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height) };
-
-            actualExtent.width =
-                std::clamp(actualExtent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-            actualExtent.height =
-                std::clamp(actualExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-
-            return actualExtent;
-        }
     }
 }

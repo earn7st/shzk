@@ -9,6 +9,8 @@ namespace vkR
 	namespace rhi
 	{
 		class Device;
+		class CommandList;
+		class Swapchain;
 	}
 
 	struct RenderSystemInitInfo
@@ -26,9 +28,13 @@ namespace vkR
 		void Tick();
 		void Shutdown();
 
+		void ProduceFrame();
+		void SubmitAndPresent();
+
 	private:
 		std::shared_ptr<rhi::Device> m_device;
-
-			
+		std::shared_ptr<rhi::Swapchain> m_swapchain;
+		rhi::CommandList* m_currentCmdListGraphics = nullptr;
+		rhi::CommandList* m_currentCmdListCompute = nullptr;
 	};
 }

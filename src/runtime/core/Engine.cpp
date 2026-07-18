@@ -21,7 +21,7 @@ namespace vkR
 	void Engine::Tick()
 	{
 		m_windowSystem->Tick();
-		//m_renderSystem->Tick();
+		m_renderSystem->Tick();
 	}
 
 	void Engine::Shutdown()
