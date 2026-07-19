@@ -5,31 +5,19 @@
 
 namespace vkR::rhi
 {
-	VkImageView RHIUtil::CreateImageView(
-		VkDevice           device,
-		VkImage& image,
-		VkFormat           format,
-		VkImageAspectFlags image_aspect_flags,
-		VkImageViewType    view_type,
-		uint32_t           layout_count,
-		uint32_t           miplevels)
-	{
-		VkImageViewCreateInfo viewInfo{};
-		viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		viewInfo.image = image;
-		viewInfo.viewType = view_type;
-		viewInfo.format = format;
-		viewInfo.subresourceRange.aspectMask = image_aspect_flags;
-		viewInfo.subresourceRange.baseMipLevel = 0;
-		viewInfo.subresourceRange.levelCount = miplevels;
-		viewInfo.subresourceRange.baseArrayLayer = 0;
-		viewInfo.subresourceRange.layerCount = layout_count;
-		VkImageView imageView;
-		if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS)
-		{
-			fmt::println("[Vulkan Error] Failed to create image view");
-			throw std::runtime_error("[Error] RHIUtils::CreatImageView() : Failed to create image view");
-		}
-		return imageView;
-	}
+    void RHIUtil::SetBufferDebugName(
+        PFN_vkSetDebugUtilsObjectNameEXT pfn,
+        VkDevice device,
+        VkBuffer buffer,
+        const char* name)
+    {
+        if (!pfn) return;
+
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(buffer);
+        nameInfo.pObjectName = name;
+        pfn(device, &nameInfo);
+    }
 }

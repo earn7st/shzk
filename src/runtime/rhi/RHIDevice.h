@@ -21,6 +21,7 @@ namespace vkR
 		class CommandList;
 		class Queue;
 		class Swapchain;
+		class Buffer;
 
 		struct RHIInitInfo
 		{
@@ -31,14 +32,31 @@ namespace vkR
 		{
 		public:
 			Device() = default;
+			~Device() = default;
 
 			void Initialize(const RHIInitInfo& initInfo);
 			void Shutdown();
 
 			void ImmediateSubmit(std::function<void(VkCommandBuffer)>&& func);
 
+			// --- Buffer ---
+			bool MemoryCreateBuffer(
+				VkBuffer* outBuffer,
+				VmaAllocation* outAllocation,
+				void** outMappedData,
+				VkDeviceSize                 size,
+				VkBufferUsageFlags           usage,
+				VkMemoryPropertyFlags        memoryFlags,
+				const char* name);
+			void MemoryDestroyBuffer(VkBuffer buffer, VmaAllocation allocation);
+			void UploadDataToBuffer(VkBuffer dstBuffer, const void* data, size_t size);
+
+			// --- Image --- 
+
 			// --- Getters ---
+			VkDevice GetDevice() const { return m_device; }
 			std::shared_ptr<Swapchain> GetSwapchain() const { return m_swapchain; }
+			VmaAllocator GetAllocator() const { return m_allocator; }
 			Queue* GetGraphicsQueue() const { return m_graphicsQueue.get(); }
 
 		private:
@@ -48,6 +66,7 @@ namespace vkR
 			void CreateQueues();
 			void CreateSurface();
 			void CreateSwapchain();
+			void CreateExtFunctions();
 
 			void CreateImmediateCommandPoolGraphics();
 			void CreateImmediateFence();
@@ -58,7 +77,7 @@ namespace vkR
 			VkExtent2D ChooseSwapchainExtentFromDetails(const VkSurfaceCapabilitiesKHR& capabilities);
 
 		private:
-			VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
+			
 
 			static uint32_t kFramesInFlight;
 
@@ -87,6 +106,11 @@ namespace vkR
 			VkFence m_immediateFence = VK_NULL_HANDLE;
 			VkCommandPool m_immediateCommandPool = VK_NULL_HANDLE;			
 
+			// --- Debug Messenger --
+			VkDebugUtilsMessengerEXT m_debugMessenger = VK_NULL_HANDLE;
+
+			// --- Extension Functions ---
+			PFN_vkSetDebugUtilsObjectNameEXT m_pfnSetDebugUtilsObjectNameEXT = nullptr;
 		};
 	}
 	

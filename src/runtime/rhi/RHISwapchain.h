@@ -15,6 +15,9 @@ namespace vkR
 		class Swapchain
 		{
 		public:
+			Swapchain()		= default;
+			~Swapchain()	= default;
+
 			void Initialize(
 				SDL_Window* window,
 				VkPhysicalDevice physicalDevice,

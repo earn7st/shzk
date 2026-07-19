@@ -10,7 +10,7 @@ namespace vkR
         void CommandList::Initialize(VkDevice device, Queue* queue, VkCommandPool cmdPool, uint32_t queueFamilyIndex)
         {
             m_device = device;
-            m_queue = queue;
+            m_rhiQueue = queue;
             m_cmdPool = cmdPool;
             
             VkCommandBufferAllocateInfo allocInfo{};
@@ -43,7 +43,7 @@ namespace vkR
 
             m_cmd = VK_NULL_HANDLE;
             m_cmdPool = VK_NULL_HANDLE;
-            m_queue = VK_NULL_HANDLE;
+            m_rhiQueue = nullptr;
             m_device = VK_NULL_HANDLE;
         }
 
@@ -116,7 +116,7 @@ namespace vkR
             // TODO : Flush Barriers
             VK_CHECK(vkEndCommandBuffer(m_cmd));
 
-            m_queue->Submit(
+            m_rhiQueue->Submit(
                 m_cmd,
                 VkPipelineStageFlagBits::VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                 semaphoreWait,

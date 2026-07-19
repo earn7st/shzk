@@ -1,6 +1,7 @@
 #include "RHIDevice.h"
 #include "runtime/core/WindowSystem.h"
 
+#include "RHIBuffer.h"
 #include "RHICommandList.h"
 #include "RHIQueue.h"
 #include "RHIStructs.h"
@@ -38,6 +39,8 @@ namespace vkR::rhi
         CreateSwapchain();
         CreateImmediateCommandPoolGraphics();
         CreateImmediateFence();
+
+        CreateExtFunctions();
         
         /*
         createDescriptorPool();
@@ -96,6 +99,104 @@ namespace vkR::rhi
         vkResetFences(m_device, 1, &m_immediateFence);
 
         vkFreeCommandBuffers(m_device, m_immediateCommandPool, 1, &oneTimeCommandBuffer);
+    }
+
+    bool Device::MemoryCreateBuffer(VkBuffer* outBuffer, VmaAllocation* outAllocation, void** outMappedData, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memoryFlags, const char* name)
+    {
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = size;
+        bufferInfo.usage = usage;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VmaAllocationCreateInfo allocInfo{};
+
+        bool isHostVisible = (memoryFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) != 0;
+        bool isDeviceLocal = (memoryFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) != 0;
+
+        if (isDeviceLocal && !isHostVisible)
+        {
+            allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+        }
+        else if (isHostVisible)
+        {
+            allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+            allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT
+                | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        }
+
+        VmaAllocationInfo allocInfo2{};
+        VkResult result = vmaCreateBuffer(m_allocator, &bufferInfo, &allocInfo,
+            outBuffer, outAllocation, &allocInfo2);
+
+        if (result != VK_SUCCESS)
+        {
+            fmt::println("[Device] Failed to create buffer '{}'", name);
+            return false;
+        }
+
+        *outMappedData = isHostVisible ? allocInfo2.pMappedData : nullptr;
+
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+        nameInfo.objectHandle = reinterpret_cast<uint64_t>(*outBuffer);
+        nameInfo.pObjectName = name; 
+
+        m_pfnSetDebugUtilsObjectNameEXT(m_device, &nameInfo);
+
+        return true;
+    }
+
+    void Device::MemoryDestroyBuffer(VkBuffer buffer, VmaAllocation allocation)
+    {
+        if (buffer != VK_NULL_HANDLE)
+        {
+            vmaDestroyBuffer(m_allocator, buffer, allocation);
+        }
+    }
+
+    void Device::UploadDataToBuffer(VkBuffer dstBuffer, const void* data, size_t size)
+    {
+
+        assert(dstBuffer != nullptr);
+        assert(data != nullptr);
+        assert(size > 0);
+
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = size;
+        bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT; 
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VmaAllocationCreateInfo allocInfo{};
+        allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT
+            | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+
+        VkBuffer      stagingBuffer = VK_NULL_HANDLE;
+        VmaAllocation stagingAlloc = VK_NULL_HANDLE;
+        VmaAllocationInfo stagingAllocInfo{};
+
+        VK_CHECK(vmaCreateBuffer(
+            m_allocator,
+            &bufferInfo,
+            &allocInfo,
+            &stagingBuffer,
+            &stagingAlloc,
+            &stagingAllocInfo));
+
+        memcpy(stagingAllocInfo.pMappedData, data, size);
+
+        ImmediateSubmit([&](VkCommandBuffer cmd) {
+            VkBufferCopy copyRegion{};
+            copyRegion.srcOffset = 0;
+            copyRegion.dstOffset = 0;
+            copyRegion.size = size;
+            vkCmdCopyBuffer(cmd, stagingBuffer, dstBuffer, 1, &copyRegion);
+            });
+
+        vmaDestroyBuffer(m_allocator, stagingBuffer, stagingAlloc);
     }
 
 
@@ -219,6 +320,13 @@ namespace vkR::rhi
             m_surface,
             swapchainSupport
         );
+    }
+
+    void Device::CreateExtFunctions()
+    {
+        m_pfnSetDebugUtilsObjectNameEXT =
+            reinterpret_cast<PFN_vkSetDebugUtilsObjectNameEXT>(
+                vkGetDeviceProcAddr(m_device, "vkSetDebugUtilsObjectNameEXT"));
     }
 
     void Device::CreateImmediateCommandPoolGraphics()

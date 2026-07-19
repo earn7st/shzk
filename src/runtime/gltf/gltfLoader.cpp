@@ -33,6 +33,7 @@
 #include "vulkan/VulkanContext.h"
 #include "vulkan/UploadContext.h"
 #include "vulkan/VulkanHelpers.h"
+#include "gltfLoader.h"
 
 gltfLoader::gltfLoader(
     VulkanContext* vulkanContext, 
@@ -649,4 +650,8 @@ void gltfLoader::LoadDefaultScene(Scene& scene)
         scene.rootNodes.push_back(
             static_cast<NodeID>(rootNodeIndex));
     }
+}
+
+void vkR::gltfLoader::Load(std::string filePath)
+{
 }

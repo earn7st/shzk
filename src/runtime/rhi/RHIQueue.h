@@ -15,12 +15,15 @@ namespace vkR
 			Graphics,
 			Compute,
 			Copy,
-			Undefined
+			Max
 		};
 
 		class Queue
 		{
 		public:
+			Queue()		= default;
+			~Queue()	= default;
+
 			void Initialize(VkDevice device, VkQueue queue, RHIQueueType type, uint32_t index);
 			void Shutdown();
 
@@ -42,7 +45,7 @@ namespace vkR
 			VkDevice m_device = VK_NULL_HANDLE;
 
 			VkQueue m_queue = VK_NULL_HANDLE;
-			RHIQueueType m_type = RHIQueueType::Undefined;
+			RHIQueueType m_type = RHIQueueType::Max;
 			uint32_t m_queueFamilyIndex = 0;
 
 			VkCommandPool m_cmdPool = VK_NULL_HANDLE;

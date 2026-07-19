@@ -22,6 +22,7 @@ namespace vkR
 	{
 		m_windowSystem->Tick();
 		m_renderSystem->Tick();
+
 	}
 
 	void Engine::Shutdown()

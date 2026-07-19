@@ -49,10 +49,10 @@ namespace vkR
 				uint32_t baseArrayLayer = 0, uint32_t layerCount = 1);
 
 			const RHICommandListState GetState() const { return m_state; }
-			Queue* GetQueue() const { return m_queue; }
+			Queue* GetQueue() const { return m_rhiQueue; }
 
 		private:
-			Queue* m_queue = nullptr;
+			Queue* m_rhiQueue = nullptr;
 
 			VkDevice m_device = VK_NULL_HANDLE;
 			VkCommandPool m_cmdPool = VK_NULL_HANDLE;

@@ -13,6 +13,7 @@ add_library(
 
     "runtime/render/RenderSystem.cpp"
 
+    "runtime/rhi/RHIBuffer.cpp"
     "runtime/rhi/RHICommandList.cpp"
     "runtime/rhi/RHIDevice.cpp"
     "runtime/rhi/RHIQueue.cpp"
