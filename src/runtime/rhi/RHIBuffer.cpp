@@ -23,7 +23,7 @@ namespace vkR::rhi
 		m_mappable = mappable;
 		m_name = name;
 
-		CreateResource(data);
+		CreateResource();
 	}
 
 	Buffer::~Buffer() { DestroyResource(); }
@@ -45,7 +45,7 @@ namespace vkR::rhi
 		}
 	}
 
-	void Buffer::CreateResource(const void* data)
+	void Buffer::CreateResource()
 	{
 		const VkDeviceSize size = static_cast<VkDeviceSize>(m_stride) * m_elementCount;
 		const VkBufferUsageFlags usage = GetUsageFlags();
@@ -64,11 +64,6 @@ namespace vkR::rhi
 		if (m_mappable)
 		{
 			assert(m_mappedData != nullptr);
-		}
-
-		if (data)
-		{
-			UploadData(data);
 		}
 	}
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "RHIStructs.h"
+#include "RHIDefs.h"
 
 #include <vector>
 #include <memory>
@@ -49,9 +49,26 @@ namespace vkR
 				VkMemoryPropertyFlags        memoryFlags,
 				const char* name);
 			void MemoryDestroyBuffer(VkBuffer buffer, VmaAllocation allocation);
-			void UploadDataToBuffer(VkBuffer dstBuffer, const void* data, size_t size);
+			void UploadDataToBuffer(VkBuffer dstBuffer, const void* data, VkDeviceSize size);
 
 			// --- Image --- 
+			bool MemoryCreateImage(
+				VkImage*			outImage,
+				VmaAllocation*		outAllocation,
+				VkExtent3D			extent,
+				VkFormat			format,
+				VkImageUsageFlags	usage,
+				uint32_t			mipLevels,
+				VkSampleCountFlagBits samples,
+				const char*			name
+			);
+			void MemoryDestroyImage(VkImage image, VmaAllocation allocation);
+			void UploadDataToImage(
+				VkImage             dstImage,
+				VkExtent3D          extent,
+				VkImageUsageFlags   usage,
+				const void*			data,
+				VkDeviceSize        size);
 
 			// --- Getters ---
 			VkDevice GetDevice() const { return m_device; }

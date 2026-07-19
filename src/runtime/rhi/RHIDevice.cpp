@@ -3,8 +3,8 @@
 
 #include "RHIBuffer.h"
 #include "RHICommandList.h"
+#include "RHIDefs.h"
 #include "RHIQueue.h"
-#include "RHIStructs.h"
 #include "RHISwapchain.h"
 #include "RHIUtil.h"
 
@@ -137,14 +137,15 @@ namespace vkR::rhi
 
         *outMappedData = isHostVisible ? allocInfo2.pMappedData : nullptr;
 
-        VkDebugUtilsObjectNameInfoEXT nameInfo{};
-        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-        nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
-        nameInfo.objectHandle = reinterpret_cast<uint64_t>(*outBuffer);
-        nameInfo.pObjectName = name; 
-
-        m_pfnSetDebugUtilsObjectNameEXT(m_device, &nameInfo);
-
+        if (m_pfnSetDebugUtilsObjectNameEXT)
+        {
+            VkDebugUtilsObjectNameInfoEXT nameInfo{};
+            nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+            nameInfo.objectType = VK_OBJECT_TYPE_BUFFER;
+            nameInfo.objectHandle = reinterpret_cast<uint64_t>(*outBuffer);
+            nameInfo.pObjectName = name;
+            m_pfnSetDebugUtilsObjectNameEXT(m_device, &nameInfo);
+        }
         return true;
     }
 
@@ -156,9 +157,8 @@ namespace vkR::rhi
         }
     }
 
-    void Device::UploadDataToBuffer(VkBuffer dstBuffer, const void* data, size_t size)
+    void Device::UploadDataToBuffer(VkBuffer dstBuffer, const void* data, VkDeviceSize size)
     {
-
         assert(dstBuffer != nullptr);
         assert(data != nullptr);
         assert(size > 0);
@@ -194,6 +194,143 @@ namespace vkR::rhi
             copyRegion.dstOffset = 0;
             copyRegion.size = size;
             vkCmdCopyBuffer(cmd, stagingBuffer, dstBuffer, 1, &copyRegion);
+            });
+
+        vmaDestroyBuffer(m_allocator, stagingBuffer, stagingAlloc);
+    }
+
+    bool Device::MemoryCreateImage(VkImage* outImage, VmaAllocation* outAllocation, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels, VkSampleCountFlagBits samples, const char* name)
+    {
+        VkImageCreateInfo imageInfo{};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.format = format;
+        imageInfo.extent = extent;
+        imageInfo.mipLevels = mipLevels;
+        imageInfo.arrayLayers = 1;
+        imageInfo.samples = samples;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.usage = usage;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+        VmaAllocationCreateInfo allocInfo{};
+        allocInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+
+        VK_CHECK(vmaCreateImage(
+            m_allocator, &imageInfo, &allocInfo,
+            outImage, outAllocation, nullptr));
+
+        // Debug
+        if (m_pfnSetDebugUtilsObjectNameEXT)
+        {
+            VkDebugUtilsObjectNameInfoEXT nameInfo{};
+            nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+            nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
+            nameInfo.objectHandle = reinterpret_cast<uint64_t>(*outImage);
+            nameInfo.pObjectName = name;
+            m_pfnSetDebugUtilsObjectNameEXT(m_device, &nameInfo);
+        }
+        return true;
+    }
+
+    void Device::MemoryDestroyImage(VkImage image, VmaAllocation allocation)
+    {
+        if (image != VK_NULL_HANDLE)
+        {
+            vmaDestroyImage(m_allocator, image, allocation);
+        }
+    }
+
+    void Device::UploadDataToImage(
+        VkImage             dstImage,
+        VkExtent3D          extent,
+        VkImageUsageFlags   usage,
+        const void*         data,
+        VkDeviceSize        size)
+    {
+        assert(dstImage != VK_NULL_HANDLE);
+        assert(data != nullptr);
+        assert(size > 0);
+
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = size;
+        bufferInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        VmaAllocationCreateInfo allocInfo{};
+        allocInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT
+            | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+
+        VkBuffer      stagingBuffer = VK_NULL_HANDLE;
+        VmaAllocation stagingAlloc = VK_NULL_HANDLE;
+        VmaAllocationInfo stagingInfo{};
+
+        VK_CHECK(vmaCreateBuffer(m_allocator, &bufferInfo, &allocInfo,
+            &stagingBuffer, &stagingAlloc, &stagingInfo));
+
+        memcpy(stagingInfo.pMappedData, data, static_cast<size_t>(size));
+
+        VkImageLayout finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+            finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        else if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+            finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        ImmediateSubmit([&](VkCommandBuffer cmd) {
+
+            VkImageMemoryBarrier2 barrier1{};
+            barrier1.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+            barrier1.srcStageMask = VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT;
+            barrier1.srcAccessMask = VK_ACCESS_2_NONE;
+            barrier1.dstStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+            barrier1.dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+            barrier1.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            barrier1.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier1.image = dstImage;
+            barrier1.subresourceRange = {
+                VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1
+            };
+
+            VkDependencyInfo depInfo1{};
+            depInfo1.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+            depInfo1.imageMemoryBarrierCount = 1;
+            depInfo1.pImageMemoryBarriers = &barrier1;
+            vkCmdPipelineBarrier2(cmd, &depInfo1);
+
+            VkBufferImageCopy copyRegion{};
+            copyRegion.bufferOffset = 0;
+            copyRegion.bufferRowLength = 0;
+            copyRegion.bufferImageHeight = 0;
+            copyRegion.imageSubresource = {
+                VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1
+            };
+            copyRegion.imageOffset = { 0, 0, 0 };
+            copyRegion.imageExtent = extent;
+
+            vkCmdCopyBufferToImage(cmd, stagingBuffer, dstImage,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+
+            VkImageMemoryBarrier2 barrier2{};
+            barrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+            barrier2.srcStageMask = VK_PIPELINE_STAGE_2_COPY_BIT;
+            barrier2.srcAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+            barrier2.dstStageMask = VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT;
+            barrier2.dstAccessMask = VK_ACCESS_2_SHADER_READ_BIT;
+            barrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            barrier2.newLayout = finalLayout;
+            barrier2.image = dstImage;
+            barrier2.subresourceRange = {
+                VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1
+            };
+
+            VkDependencyInfo depInfo2{};
+            depInfo2.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+            depInfo2.imageMemoryBarrierCount = 1;
+            depInfo2.pImageMemoryBarriers = &barrier2;
+            vkCmdPipelineBarrier2(cmd, &depInfo2);
             });
 
         vmaDestroyBuffer(m_allocator, stagingBuffer, stagingAlloc);

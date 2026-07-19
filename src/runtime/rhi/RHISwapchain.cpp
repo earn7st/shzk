@@ -1,7 +1,7 @@
 #include "RHISwapchain.h"
 #include "RHICommandList.h"
 #include "RHIQueue.h"
-#include "RHIStructs.h"
+#include "RHIDefs.h"
 #include "RHIUtil.h"
 
 #include <algorithm>

@@ -16,6 +16,7 @@ add_library(
     "runtime/rhi/RHIBuffer.cpp"
     "runtime/rhi/RHICommandList.cpp"
     "runtime/rhi/RHIDevice.cpp"
+    "runtime/rhi/RHIImage.cpp"
     "runtime/rhi/RHIQueue.cpp"
     "runtime/rhi/RHISwapchain.cpp"
     "runtime/rhi/RHIUtil.cpp"

@@ -27,7 +27,7 @@ namespace vkR::rhi
 			Device* device,
 			RHIBufferType type,
 			uint32_t stride,
-			uint32_t element_count,
+			uint32_t elementCount,
 			bool mappable,
 			const void* data,
 			const char* name);
@@ -38,7 +38,7 @@ namespace vkR::rhi
 		VkBuffer GetBuffer() const { return m_buffer; }
 	
 	private:
-		void CreateResource(const void* data);
+		void CreateResource();
 		void DestroyResource();
 
 		VkBufferUsageFlags    GetUsageFlags()     const;
