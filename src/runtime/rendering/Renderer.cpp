@@ -1,8 +1,6 @@
 #include "Renderer.h"
 #include <VkBootstrap.h>
 #include <SDL3/SDL_vulkan.h>
-#define VMA_IMPLEMENTATION
-#include <vma/vk_mem_alloc.h>
 #include "application/SDLWindow.h"
 #include "render/FrameUniforms.h"
 #include "render/RenderView.h"

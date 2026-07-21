@@ -20,7 +20,8 @@ add_library(
     "runtime/rhi/RHIQueue.cpp"
     "runtime/rhi/RHISwapchain.cpp"
     "runtime/rhi/RHIUtil.cpp"
-    
+    "runtime/rhi/VmaImpl.cpp"
+
 )
 
 target_include_directories(
@@ -30,6 +31,11 @@ target_include_directories(
         ${CMAKE_SOURCE_DIR}/extern
 )
 
+# macOS: system-installed headers (glm, etc.) from Homebrew
+if(APPLE)
+    target_include_directories(vkR_runtime PUBLIC /opt/homebrew/include)
+endif()
+
 target_link_libraries(
     vkR_runtime
     PUBLIC
@@ -38,12 +44,6 @@ target_link_libraries(
         vk-bootstrap
         imgui
         fastgltf::fastgltf
-)
-
-target_compile_definitions(
-    vkR_runtime
-    PUBLIC
-        VK_USE_PLATFORM_WIN32_KHR
 )
 
 add_dependencies(

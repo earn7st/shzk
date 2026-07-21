@@ -1,0 +1,34 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "macOS-Debug",
+      "displayName": "macOS Debug",
+      "description": "Apple Silicon macOS with Ninja",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_PREFIX_PATH": "/opt/homebrew"
+      }
+    },
+    {
+      "name": "macOS-Release",
+      "displayName": "macOS Release",
+      "description": "Apple Silicon macOS with Ninja (Release)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_PREFIX_PATH": "/opt/homebrew"
+      }
+    },
+    {
+      "name": "Windows-Debug",
+      "displayName": "Windows Debug",
+      "description": "x64 Windows with Ninja + MSVC",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}"
+    }
+  ]
+}
