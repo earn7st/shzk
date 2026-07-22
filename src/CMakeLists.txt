@@ -3,29 +3,13 @@
 # =========================
 
 add_library(
-    vkR_runtime
+    SHZK_runtime
 
-    "runtime/core/Engine.cpp"
-    "runtime/core/WindowSystem.cpp"
-
-    "runtime/framework/component/TransformComponent.cpp"
-    "runtime/framework/component/MeshComponent.cpp"
-
-    "runtime/render/RenderSystem.cpp"
-
-    "runtime/rhi/RHIBuffer.cpp"
-    "runtime/rhi/RHICommandList.cpp"
-    "runtime/rhi/RHIDevice.cpp"
-    "runtime/rhi/RHIImage.cpp"
-    "runtime/rhi/RHIQueue.cpp"
-    "runtime/rhi/RHISwapchain.cpp"
-    "runtime/rhi/RHIUtil.cpp"
-    "runtime/rhi/VmaImpl.cpp"
-
+    "runtime/engine.cpp"
 )
 
 target_include_directories(
-    vkR_runtime
+    SHZK_runtime
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/extern
@@ -33,11 +17,11 @@ target_include_directories(
 
 # macOS: system-installed headers (glm, etc.) from Homebrew
 if(APPLE)
-    target_include_directories(vkR_runtime PUBLIC /opt/homebrew/include)
+    target_include_directories(SHZK_runtime PUBLIC /opt/homebrew/include)
 endif()
 
 target_link_libraries(
-    vkR_runtime
+    SHZK_runtime
     PUBLIC
         Vulkan::Vulkan
         fmt::fmt
@@ -47,22 +31,22 @@ target_link_libraries(
 )
 
 add_dependencies(
-    vkR_runtime
+    SHZK_runtime
     Shaders
 )
 
 # =========================
-# Main executable
+# Editor executable
 # =========================
 
 add_executable(
-    vkR_editor
+    SHZK_editor
+
     "editor/main.cpp"
-    "editor/Editor.cpp"
 )
 
 target_link_libraries(
-    vkR_editor
+    SHZK_editor
     PRIVATE
-        vkR_runtime
+        SHZK_runtime
 )

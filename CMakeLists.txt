@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(vkR LANGUAGES C CXX)
+project(SHZK LANGUAGES C CXX)
 
 #
 # C++ Settings
