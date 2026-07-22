@@ -3,13 +3,16 @@
 # =========================
 
 add_library(
-    SHZK_runtime
+    shzk_runtime
 
-    "runtime/engine.cpp"
+    "runtime/WindowSystem.cpp"
+    "runtime/global/Engine.cpp"
+    "runtime/render/RenderSystem.cpp"
+
 )
 
 target_include_directories(
-    SHZK_runtime
+    shzk_runtime
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/extern
@@ -17,11 +20,11 @@ target_include_directories(
 
 # macOS: system-installed headers (glm, etc.) from Homebrew
 if(APPLE)
-    target_include_directories(SHZK_runtime PUBLIC /opt/homebrew/include)
+    target_include_directories(shzk_runtime PUBLIC /opt/homebrew/include)
 endif()
 
 target_link_libraries(
-    SHZK_runtime
+    shzk_runtime
     PUBLIC
         Vulkan::Vulkan
         fmt::fmt
@@ -31,7 +34,7 @@ target_link_libraries(
 )
 
 add_dependencies(
-    SHZK_runtime
+    shzk_runtime
     Shaders
 )
 
@@ -40,13 +43,14 @@ add_dependencies(
 # =========================
 
 add_executable(
-    SHZK_editor
-
+    shzk_editor
+    
+    "editor/Editor.cpp"
     "editor/main.cpp"
 )
 
 target_link_libraries(
-    SHZK_editor
+    shzk_editor
     PRIVATE
-        SHZK_runtime
+        shzk_runtime
 )
