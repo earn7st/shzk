@@ -6,6 +6,8 @@ namespace shzk
 {
 	void WindowSystem::Init(const WindowSystemInitInfo& windowSystemInitInfo)
 	{
+		SDL_Init(SDL_INIT_VIDEO);
+
 		m_window = SDL_CreateWindow(
 			windowSystemInitInfo.title,
 			windowSystemInitInfo.width,

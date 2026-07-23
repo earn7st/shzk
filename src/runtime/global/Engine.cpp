@@ -1,7 +1,7 @@
 #include "engine.h"
-
 #include "runtime/WindowSystem.h"
 #include "runtime/render/RenderSystem.h"
+#include "runtime/rhi/RHI.h"
 
 namespace shzk
 {
@@ -15,7 +15,8 @@ namespace shzk
 		windowInitInfo.height = engineInitInfo.height;
 		engine->m_windowSystem = std::make_shared<WindowSystem>();
 		engine->m_windowSystem->Init(windowInitInfo);
-
+	
+		engine->m_rhi = RHI::Init({ .type = RHIBackendType::Vulkan, .debug = true});
 
 		engine->m_renderSystem = std::make_shared<RenderSystem>();
 		engine->m_renderSystem->Init();

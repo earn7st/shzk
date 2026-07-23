@@ -11,6 +11,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Disable chinese character warning
+add_compile_options(/wd4828) 
+
 #
 # Platform Detection
 #
