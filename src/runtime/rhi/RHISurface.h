@@ -4,18 +4,13 @@
 
 namespace shzk
 {
-    struct RHISurfaceInfo
-    {
-        Extent2D extent;
-    };
-
     class RHISurface
     {
     public:
-        RHISurface() = delete;
-        RHISurface(const RHISurfaceInfo& info) : m_info(info){}
+        RHISurface() = default;
+        inline Extent2D GetExetent() const { return m_extent; }
 
-    private:
-        RHISurfaceInfo m_info;
+    protected:
+        Extent2D m_extent;
     };
 }

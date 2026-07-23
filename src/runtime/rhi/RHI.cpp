@@ -23,4 +23,9 @@ namespace shzk
 		}
 		return rhi;
 	}
+
+	void RHI::Shutdown()
+	{
+
+	}
 }

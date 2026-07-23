@@ -25,6 +25,8 @@ namespace shzk
 		void Tick();
 		bool ShouldClose() const { return m_shouldClose; }
 
+		SDL_Window* GetWindow() const { return m_window; }
+
 	private:
 		SDL_Window* m_window = nullptr;
 		bool m_shouldClose = false;

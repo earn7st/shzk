@@ -5,15 +5,22 @@
 add_library(
     shzk_runtime
 
-    "runtime/WindowSystem.cpp"
-    
+    # global
     "runtime/global/Engine.cpp"
     
+    # render
     "runtime/render/RenderSystem.cpp"
     
+    # rhi
     "runtime/rhi/RHI.cpp"
     "runtime/rhi/RHIResource.cpp"
+
+    # vulkan rhi
     "runtime/rhi/vulkan/VulkanRHI.cpp"
+    "runtime/rhi/vulkan/VulkanRHISurface.cpp"
+
+    # others in runtime
+    "runtime/WindowSystem.cpp"
 
 )
 

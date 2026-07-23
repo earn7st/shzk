@@ -30,9 +30,8 @@ namespace shzk
 		static void Shutdown();
 		static bool ShouldClose();
 		static std::shared_ptr<Engine>& Get() { return engine; }
-
-		std::shared_ptr<WindowSystem>& GetWindowSystem() { return m_windowSystem; }
-		std::shared_ptr<RenderSystem>& GetRenderSystem() { return m_renderSystem; }
+		static std::shared_ptr<WindowSystem>& GetWindowSystem() { return engine->m_windowSystem; }
+		static std::shared_ptr<RenderSystem>& GetRenderSystem() { return engine->m_renderSystem; }
 
 	private:
 		std::shared_ptr<WindowSystem> m_windowSystem;

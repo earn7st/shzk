@@ -1,5 +1,6 @@
 #include "VulkanRHI.h"
-#include "VulkanUtils.h"
+#include "VulkanUtil.h"
+#include "VulkanRHISurface.h"
 
 #define  VOLK_IMPLEMENTATION
 #include <volk/volk.h>
@@ -19,6 +20,14 @@ namespace shzk
 		CreateMemoryAllocator();
 		CreateDescriptorPool();
 		CreateImmediateCommand();
+	}
+
+	std::shared_ptr<RHISurface> VulkanRHI::CreateSurface(SDL_Window* window)
+	{
+		std::shared_ptr<RHISurface> surface = std::make_shared<VulkanRHISurface>(window, *this);
+		assert(surface);
+		SHZK_LOG_INFO("Vulkan surface created.");
+		return surface;
 	}
 
 	void VulkanRHI::CreateInstance()
@@ -131,7 +140,80 @@ namespace shzk
 
 	void VulkanRHI::CreateQueues()
 	{	
+		uint32_t queueFamilyCount = 0;
+		vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &queueFamilyCount, nullptr);
+		m_queueFamilyProperties.resize(queueFamilyCount);
+		vkGetPhysicalDeviceQueueFamilyProperties(m_physicalDevice, &queueFamilyCount, m_queueFamilyProperties.data());
 
+		for (auto& index : m_queueIndices) index = -1;
+
+		for (auto& queueFamilyProperty : m_queueFamilyProperties)
+		{
+			SHZK_LOG_INFO("Queue count: {}", queueFamilyProperty.queueCount);
+			SHZK_LOG_INFO("Queue flags: {}", queueFamilyProperty.queueFlags);
+		}
+
+		std::vector<uint32_t> allocatedCounts(m_queueFamilyProperties.size());
+		for (int i = 0; i < m_queueFamilyProperties.size(); i++)
+		{
+			auto& queueFamily = queueFamilyProperties[i];
+			uint32_t queueCount = queueFamily.queueCount;   // 多个不同属性的队列可以从同一个队列族分配，只要数量够就行，队列族不只支持一种属性
+			// 背包问题 XD
+			if (queueCount > MAX_QUEUE_CNT &&
+				queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT &&
+				m_queueIndices[QUEUE_TYPE_GRAPHICS] < 0)
+			{
+				queueIndices[QUEUE_TYPE_GRAPHICS] = i;
+				queueCount -= MAX_QUEUE_CNT;
+			}
+			if (queueCount > MAX_QUEUE_CNT &&
+				queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT &&
+				queueIndices[QUEUE_TYPE_COMPUTE] < 0)
+			{
+				queueIndices[QUEUE_TYPE_COMPUTE] = i;
+				queueCount -= MAX_QUEUE_CNT;
+			}
+			if (queueCount > MAX_QUEUE_CNT &&
+				queueFamily.queueFlags & VK_QUEUE_TRANSFER_BIT &&
+				queueIndices[QUEUE_TYPE_TRANSFER] < 0)
+			{
+				queueIndices[QUEUE_TYPE_TRANSFER] = i;
+				queueCount -= MAX_QUEUE_CNT;
+			}
+
+			allocatedCounts[i] = queueFamily.queueCount - queueCount;
+
+			// 好像graphics queue就支持了？不需要单独处理？
+			// // 窗口支持
+			// VkBool32 presentSupport = false;
+			// vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &presentSupport);
+			// if (queueFamily.queueCount > 0 && presentSupport && presentFamily < 0 && graphicsFamily != i) { //强行使用不同的queue
+			//     presentFamily = i;
+			// }
+		}
+		for (int i = 0; i < QUEUE_TYPE_MAX_ENUM; i++) if (queueIndices[i] < 0) LOG_FATAL("Fail to allocate queue!");
+
+		std::vector<uint32_t> offsets{};
+		offsets.resize(m_queueFamilyProperties.size());
+		(m_queueFamilyProperties.size(), { 0 });
+		for (uint32_t i = 0; i < QUEUE_TYPE_MAX_ENUM; i++)
+		{
+			for (uint32_t j = 0; j < MAX_QUEUE_CNT; j++)
+			{
+				VkQueue queue;
+				vkGetDeviceQueue(logicalDevice, queueIndices[i], offsets[i], &queue);
+
+				RHIQueueInfo info =
+				{
+					.type = (QueueType)i,
+					.index = j,
+				};
+				queues[i][j] = std::make_shared<VulkanRHIQueue>(info, queue, queueIndices[i]);
+				RegisterResource(queues[i][j]);
+
+				offsets[i]++;
+			}
+		}
 	}
 
 	void VulkanRHI::CreateDescriptorPool()
