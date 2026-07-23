@@ -2,7 +2,7 @@
 
 #include "RHIDefinitions.h"
 
-namespace SHZK
+namespace shzk
 {
 	class RHIResource
 	{
@@ -11,7 +11,7 @@ namespace SHZK
 		RHIResource(RHIResourceType resourceType) : m_resourceType(resourceType) {}
 		virtual ~RHIResource() {}
 
-		inline RHIResourceType GetType() { return resourceType; }
+		inline RHIResourceType GetType() { return m_resourceType; }
 
 	private:
 		RHIResourceType m_resourceType;

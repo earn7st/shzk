@@ -11,13 +11,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Disable chinese character warning
-add_compile_options(/wd4828) 
-
 #
 # Platform Detection
 #
 if(WIN32)
+    # Disable chinese character warning
+    add_compile_options(/wd4828) 
     set(VKR_PLATFORM_WINDOWS TRUE)
 elseif(APPLE)
     set(VKR_PLATFORM_MACOS TRUE)

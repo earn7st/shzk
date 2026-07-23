@@ -30,6 +30,8 @@ target_include_directories(
 # macOS: system-installed headers (glm, etc.) from Homebrew
 if(APPLE)
     target_include_directories(shzk_runtime PUBLIC /opt/homebrew/include)
+    # VMA (VulkanMemoryAllocator) triggers nullability warnings on Apple Clang
+    target_compile_options(shzk_runtime PRIVATE -Wno-nullability-completeness)
 endif()
 
 target_link_libraries(

@@ -28,10 +28,9 @@ namespace shzk
 		static void Init(const EngineInitInfo& engineInitInfo);
 		static void Tick();
 		static void Shutdown();
-
 		static bool ShouldClose();
-
 		static std::shared_ptr<Engine>& Get() { return engine; }
+
 		std::shared_ptr<WindowSystem>& GetWindowSystem() { return m_windowSystem; }
 		std::shared_ptr<RenderSystem>& GetRenderSystem() { return m_renderSystem; }
 

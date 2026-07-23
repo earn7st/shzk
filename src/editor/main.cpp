@@ -7,8 +7,8 @@ int main()
 {
 	shzk::EngineInitInfo engineInitInfo{};
 	engineInitInfo.name = "shzk";
-	engineInitInfo.width = 1920;
-	engineInitInfo.height = 1080;
+	engineInitInfo.width = 1280;
+	engineInitInfo.height = 720;
 
 	shzk::Engine::Init(engineInitInfo);
 
