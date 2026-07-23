@@ -1,8 +1,10 @@
 #pragma once
 
+#include <memory>
+
 namespace shzk
 {
-	class RHIBackend;
+	class RHI;
 
 	class RenderSystem
 	{
@@ -16,6 +18,6 @@ namespace shzk
 		void Tick();
 
 	private:
-		std::shared_ptr<RHIBackend> m_rhiBackend;
+		std::shared_ptr<RHI> m_rhi;
 	};
 }

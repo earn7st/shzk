@@ -6,10 +6,18 @@ add_library(
     shzk_runtime
 
     "runtime/WindowSystem.cpp"
+    
     "runtime/global/Engine.cpp"
+    
     "runtime/render/RenderSystem.cpp"
+    
+    "runtime/rhi/RHI.cpp"
+    "runtime/rhi/RHIResource.cpp"
+    "runtime/rhi/vulkan/VulkanRHI.cpp"
 
 )
+
+ target_compile_definitions(shzk_runtime PUBLIC VK_NO_PROTOTYPES)
 
 target_include_directories(
     shzk_runtime
@@ -17,6 +25,7 @@ target_include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_SOURCE_DIR}/extern
 )
+
 
 # macOS: system-installed headers (glm, etc.) from Homebrew
 if(APPLE)
