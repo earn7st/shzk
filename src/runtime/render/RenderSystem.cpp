@@ -16,6 +16,7 @@ namespace shzk
 		m_rhiSurface = m_rhi->CreateSurface(Engine::GetWindowSystem()->GetWindow());
 		assert(m_rhiSurface);
 
+		m_rhiGraphicsQueue = m_rhi->GetQueue()
 
 	}
 
