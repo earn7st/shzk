@@ -17,14 +17,16 @@ add_library(
 
     # vulkan rhi
     "runtime/rhi/vulkan/VulkanRHI.cpp"
-    "runtime/rhi/vulkan/VulkanRHISurface.cpp"
 
     # others in runtime
     "runtime/WindowSystem.cpp"
 
 )
 
- target_compile_definitions(shzk_runtime PUBLIC VK_NO_PROTOTYPES)
+target_compile_definitions(shzk_runtime PUBLIC VK_NO_PROTOTYPES)
+if(WIN32)
+    target_compile_definitions(shzk_runtime PUBLIC VK_NO_PROTOTYPES NOMINMAX)
+endif()
 
 target_include_directories(
     shzk_runtime

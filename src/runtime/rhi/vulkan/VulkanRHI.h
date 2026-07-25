@@ -23,11 +23,11 @@ namespace shzk
 
 
 	// virtual functions	
-		//virtual std::shared_ptr<RHIQueue> GetQueue() override final;
+		virtual std::shared_ptr<RHIQueue> GetQueue(const RHIQueueInfo& info) override final;
 		virtual std::shared_ptr<RHISurface> CreateSurface(SDL_Window* window) override final;
 		//virtual std::shared_ptr<RHISwapchain> CreateSwapchain() override final;
 
-	// Getters (Vulkan)
+	// Getters (for Debug, Vulkan Handles)
 		inline VkInstance GetInstance() const { return m_instance; }
 		inline VkDevice GetDevice() const { return m_device; }
 		inline VmaAllocator GetAllocator() const { return m_allocator; }
@@ -35,6 +35,7 @@ namespace shzk
 	private:
 		void CreateInstance();
 		void CreatePhysicalDevice();
+		void SelectQueueFamilies();
 		void CreateLogicalDevice();
 		void CreateMemoryAllocator();
 		void CreateQueues();
@@ -59,7 +60,39 @@ namespace shzk
 		VmaAllocator m_allocator;
 
 		std::vector<VkQueueFamilyProperties> m_queueFamilyProperties;
-		std::array<int32_t, (size_t)RHIQueueType::Max> m_queueIndices;
-		std::array<std::array<std::shared_ptr<RHIQueue>, MAX_QUEUE_CNT>, (size_t)RHIQueueType::Max> m_queues;
+		std::array<int32_t, (size_t)RHIQueueType::Max> m_queueIndices;	// Family indices for a specific queue type
+		std::array<int32_t, (size_t)RHIQueueType::Max> m_queueCounts;	// How many queues we have for a specific queue type
+		std::array<std::array<std::shared_ptr<RHIQueue>, MAX_QUEUE_CNT>, (size_t)RHIQueueType::Max> m_queues;	// Containing RHIQueue type
+	};
+
+// RHIQueue
+	class VulkanRHIQueue : public RHIQueue
+	{
+	public:
+		VulkanRHIQueue(const RHIQueueInfo& info, VkQueue queue, uint32_t queueFamilyIndex)
+			: RHIQueue(info), m_handle(queue), m_queueFamilyIndex(queueFamilyIndex)
+		{
+		}
+
+		// Getters
+		inline VkQueue GetHandle() const { return m_handle; }
+		inline uint32_t GetQueueFamilyIndex() const { return m_queueFamilyIndex; }
+
+	private:
+		VkQueue m_handle;
+		uint32_t m_queueFamilyIndex;
+	};
+
+// RHISurface
+	class VulkanRHISurface : public RHISurface
+	{
+	public:
+		VulkanRHISurface() = delete;
+		VulkanRHISurface(SDL_Window* window, VulkanRHI& rhi);
+
+		inline VkSurfaceKHR GetHandle() const { return m_handle; }
+
+	private:
+		VkSurfaceKHR m_handle;
 	};
 }

@@ -4,7 +4,17 @@
 
 namespace shzk
 {
-#define MAX_QUEUE_CNT 2
+	enum class RHIBackendType : uint8_t
+	{
+		Vulkan,
+		Max
+	};
+
+	typedef struct RHIInfo
+	{
+		RHIBackendType type = RHIBackendType::Vulkan;
+		bool debug = true;
+	}RHIInfo;
 
 	enum class RHIQueueType : uint8_t
 	{
@@ -14,11 +24,24 @@ namespace shzk
 		Max
 	};
 
+#define MAX_QUEUE_CNT 2
 	typedef struct RHIQueueInfo
 	{
 		RHIQueueType type;
-		// uint32_t index;
+		uint32_t index;
 	}RHIQueueInfo;
+
+	struct RHISwapchainInfo
+	{
+
+	};
+
+	struct RHICommandPoolInfo
+	{
+
+	};
+
+// RHI resource definitions
 
 	enum class RHIResourceType : uint8_t
 	{
@@ -27,10 +50,13 @@ namespace shzk
 		Max
 	};
 
+// Other structs
 	typedef struct Extent2D
 	{
 		uint32_t width;
 		uint32_t height;
 	} Extent2D;
 
+
+	
 }

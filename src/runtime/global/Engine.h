@@ -19,7 +19,7 @@ namespace shzk
 	class Engine
 	{
 	private:
-		static std::shared_ptr<Engine> engine;
+		static std::shared_ptr<Engine> g_engine;
 
 	public:
 		Engine() = default;
@@ -29,9 +29,9 @@ namespace shzk
 		static void Tick();
 		static void Shutdown();
 		static bool ShouldClose();
-		static std::shared_ptr<Engine>& Get() { return engine; }
-		static std::shared_ptr<WindowSystem>& GetWindowSystem() { return engine->m_windowSystem; }
-		static std::shared_ptr<RenderSystem>& GetRenderSystem() { return engine->m_renderSystem; }
+		static std::shared_ptr<Engine>& Get() { return g_engine; }
+		static std::shared_ptr<WindowSystem>& GetWindowSystem() { return g_engine->m_windowSystem; }
+		static std::shared_ptr<RenderSystem>& GetRenderSystem() { return g_engine->m_renderSystem; }
 
 	private:
 		std::shared_ptr<WindowSystem> m_windowSystem;
