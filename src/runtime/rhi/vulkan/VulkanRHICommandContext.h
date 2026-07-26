@@ -1,112 +1,23 @@
 #pragma once
 
-#include "RHIDefinitions.h"
+#include "runtime/rhi/RHI.h"
 
-#include <memory>
-
-class SDL_Window;
+#include <vulkan/vulkan.h>
 
 namespace shzk
 {
-	class RHIQueue;
-	class RHISurface;
-	class RHISwapchain;
-	class RHICommandPool;
-	class RHISemaphore;
-	class RHIFence;
-
-	class RHI
-	{
-	private:
-		static std::shared_ptr<RHI> rhi;
-
-	public:
-		static std::shared_ptr<RHI> Init(const RHIInfo& rhiInfo);
-		static std::shared_ptr<RHI> Get() { return rhi; }
-
-		virtual std::shared_ptr<RHIQueue> GetQueue(const RHIQueueInfo& info) = 0;
-		virtual std::shared_ptr<RHISurface> CreateSurface(SDL_Window* window) = 0;
-		virtual std::shared_ptr<RHICommandPool> CreateCommandPool(const RHICommandPoolInfo& info) = 0;
-		virtual std::shared_ptr<RHISemaphore> CreateSemaphore() = 0;
-		virtual std::shared_ptr<RHIFence> CreateFence() = 0;
-		//virtual std::shared_ptr<RHISwapchain> CreateSwapchain() = 0;
-
-	protected:
-		RHI() = delete;
-		RHI(const RHIInfo& rhiInfo) : m_rhiInfo(rhiInfo) {}
-
-		RHIInfo m_rhiInfo;
-	};
-
-	class RHIQueue
+	class VulkanRHICommandContext : public RHICommandContext
 	{
 	public:
-		RHIQueue(const RHIQueueInfo& info) : m_info(info) {}
-		~RHIQueue() = default;
+		VulkanRHICommandContext() = delete;
+		VulkanRHICommandContext(VkCommandBuffer vkCmdBuffer)
+			: m_cmdBuffer(vkCmdBuffer) {
+		}
 
-		inline RHIQueueType GetType() const { return m_info.type; }
-		inline uint32_t GetQueueFamilyIndex() const { return m_info.index; }
+		virtual void BeginCommand() override final;
+		virtual void EndCommand() override final;
 
-	protected:
-		RHIQueueInfo m_info;
-	};
-
-	class RHISurface
-	{
-	public:
-		RHISurface() = default;
-		inline Extent2D GetExetent() const { return m_extent; }
-
-	protected:
-		Extent2D m_extent;
-	};
-
-	class RHISwapchain
-	{
-	public:
-		RHISwapchain() = delete;
-		RHISwapchain(const RHISwapchainInfo& info) : m_info(info) {}
-
-	private:
-		RHISwapchainInfo m_info;
-	};
-
-	class RHISemaphore
-	{
-	public:
-		RHISemaphore() = default;
-	};
-
-	class RHIFence
-	{
-	public:
-		RHIFence() = default;
-
-		virtual void Wait() = 0;
-	};
-
-	class RHICommandContext;
-	class RHICommandPool
-	{
-	public:
-		RHICommandPool(const RHICommandPoolInfo& info)
-			: m_info(info) {}
-
-		virtual std::shared_ptr<RHICommandContext> CreateCommandContext() = 0;
-
-	private:
-		RHICommandPoolInfo m_info;
-	};
-
-	class RHICommandContext
-	{
-	public:
-		RHICommandContext() = default;
-		~RHICommandContext() = default;
-		
-		virtual void BeginCommand() = 0;
-		virtual void EndCommand() = 0;
-
+		inline VkCommandBuffer GetHandle() const { return m_cmdBuffer; }
 		/*
 		virtual void Execute(RHIFenceRef waitFence, RHISemaphoreRef waitSemaphore, RHISemaphoreRef signalSemaphore) = 0;     // 实际提交，如果延迟录制也该在对应线程调用该函数完成录制提交
 
@@ -175,7 +86,7 @@ namespace shzk
 
 		virtual void DrawIndexedIndirect(RHIBufferRef argumentBuffer, uint32_t offset, uint32_t drawCount) = 0;
 
-		// TODO 
+		// TODO
 		// virtual void BeginRenderQuery(RHIRenderQuery* RenderQuery) = 0;
 
 		// virtual void EndRenderQuery(RHIRenderQuery* RenderQuery) = 0;
@@ -186,31 +97,9 @@ namespace shzk
 
 		virtual void ImGuiRenderDrawData(ImGuiDrawFunc func) = 0;
 		*/
-	};
-
-	class RHICommandContextImmediate
-	{
-	public:
-		RHICommandContextImmediate() = default;
 
 	private:
+		VkCommandBuffer m_cmdBuffer;
 
-		/*
-		virtual void Flush() = 0;
-
-		virtual void TextureBarrier(const RHITextureBarrier& barrier) = 0;
-
-		virtual void BufferBarrier(const RHIBufferBarrier& barrier) = 0;
-
-		virtual void CopyTextureToBuffer(RHITextureRef src, TextureSubresourceLayers srcSubresource, RHIBufferRef dst, uint64_t dstOffset) = 0;
-
-		virtual void CopyBufferToTexture(RHIBufferRef src, uint64_t srcOffset, RHITextureRef dst, TextureSubresourceLayers dstSubresource) = 0;
-
-		virtual void CopyBuffer(RHIBufferRef src, uint64_t srcOffset, RHIBufferRef dst, uint64_t dstOffset, uint64_t size) = 0;
-
-		virtual void CopyTexture(RHITextureRef src, TextureSubresourceLayers srcSubresource, RHITextureRef dst, TextureSubresourceLayers dstSubresource) = 0;
-
-		virtual void GenerateMips(RHITextureRef src) = 0;
-		*/
 	};
 }

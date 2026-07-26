@@ -1,0 +1,36 @@
+#include "VulkanRHICommandPool.h"
+#include "VulkanRHI.h"
+#include "VulkanUtil.h"
+#include "VulkanRHICommandContext.h"
+
+#include <volk/volk.h>
+
+namespace shzk
+{
+	VulkanRHICommandPool::VulkanRHICommandPool(const RHICommandPoolInfo& info, VulkanRHI& rhi)
+		: RHICommandPool(info), m_rhi(rhi)
+	{
+		VkCommandPoolCreateInfo cmdPoolCreateInfo{};
+		cmdPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		cmdPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+		cmdPoolCreateInfo.queueFamilyIndex = info.queue->GetQueueFamilyIndex();
+		VK_CHECK(vkCreateCommandPool(rhi.GetDevice(), &cmdPoolCreateInfo, nullptr, &m_handle));
+	}
+	std::shared_ptr<RHICommandContext> VulkanRHICommandPool::CreateCommandContext()
+	{
+		VkCommandBuffer cmdBuffer;
+		VkCommandBufferAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.commandPool = m_handle;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandBufferCount = 1;
+
+		// Command Pool 为了方便创建 Command Context 保存了 VulkanRHI: m_rhi
+		VK_CHECK(vkAllocateCommandBuffers(m_rhi.GetDevice(), &allocInfo, &cmdBuffer));
+
+		std::shared_ptr<RHICommandContext> cmdContext = std::make_shared<VulkanRHICommandContext>(cmdBuffer);
+		assert(cmdContext);
+		SHZK_LOG_INFO("RHI command context created");
+		return cmdContext;
+	}
+}

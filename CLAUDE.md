@@ -2,28 +2,33 @@
 
 C++20 Vulkan 1.3 实时渲染器。参考 Unreal Engine 和 ToyRenderer (可在父目录/ToyRenderer下找到) 的架构。
 RHI 层设计参考 ToyRenderer（UE 风格：FDynamicRHI + IRHICommandContext + FRenderResource）。
-最后更新：2026-07-25
+最后更新：2026-07-27
 
 ---
 
-## ★ 当前阶段目标（2026-07-23）
+## ★ 当前阶段目标（2026-07-27）
 
-### 核心任务：RHI 层按 ToyRenderer/UE 模式重新设计
+### 核心任务：RHI 层 bypass 模式命令录制 + 第一个三角形
 
-当前 `RHI` 只是一个空壳工厂（无虚接口，无资源创建方法），`VulkanRHI` 混入了所有 VK 变量的创建和管理，上层拿不到任何 RHI 资源。
-需要按 ToyRenderer 的 UE 风格重新拆分：
+RHI 层基础框架已搭建完成：
+- ✅ RHI 抽象工厂（`CreateCommandPool`、`CreateSemaphore`、`CreateFence` 等）
+- ✅ VulkanRHI 全局 VK 状态（Instance、Device、VMA、Queues）
+- ✅ RHICommandPool / VulkanRHICommandPool（薄封装 VkCommandPool，不做 Context 池化）
+- ✅ RHICommandContext / VulkanRHICommandContext（BeginCommand / EndCommand）
+- ✅ RHICommandList 全局单例（bypass 模式，forward 到 Context）
+- ✅ RHISemaphore / RHIFence（同步原语）
+- ✅ RenderSystem 维护 PerFrameRHIResource（FRAMES_IN_FLIGHT 个 Context + 同步对象）
 
-1. **RHI（≈ UE FDynamicRHI）** — 平台无关的抽象工厂，纯虚接口，负责所有 RHI 资源的创建，全局单例 `RHI::Get()`
-2. **RHICommandContext（≈ UE IRHICommandContext）** — 平台相关的命令录制，缓存状态上下文，延迟生成 VK 指令
-3. **RHICommandList** — 胶水层，非虚类，bypass 模式直接录制，deferred 模式入队 Command 结构体延迟执行
-4. **RHIResource** — 所有 RHI 对象的基类，带 `RHIResourceType` 枚举，统一资源追踪
-5. **Vulkan 实现层** — `vulkan/VulkanRHI*` 对应实现，平台无关枚举 → VK 枚举的映射仅在 vulkan/ 内部使用
+### 当前 TODO
 
-### 后续 Roadmap（RHI 完成后恢复）
+1. **补 VK 资源析构** — VulkanRHICommandPool/VulkanRHICommandContext/VulkanRHISemaphore/VulkanRHIFence 缺析构函数
+2. **VulkanRHICommandContext 补全** — BeginCommand/EndCommand 实现 vkReset + vkBegin/vkEnd；构造接收 VkDevice + VkCommandPool
+3. **RHIFence::Wait()** — 实现 vkWaitForFences
+4. **RHICommandList 转发方法** — bypass 模式下 Begin/End/SetContext 转发到 Context
+5. **RenderSystem::Tick()** — 帧循环：AcquireNextImage → Begin → 录制 → End → Submit → Present
+6. **Swapchain** — 当前 RHISwapchain 为空壳，需要实现
 
-```
-Resource → Asset → GltfImporter → Pipeline → Descriptor → Camera → Forward Pass
-```
+完成后目标：画出第一个三角形（Clear + Present）
 
 ---
 
@@ -57,8 +62,12 @@ SHZK/
         │       ├── VulkanRHI.h/.cpp              # 工厂实现 + 全局 VK 状态
         │       ├── VulkanRHIResource.h/.cpp      # Vulkan 资源实现（VkBuffer, VkImage, ...）
         │       ├── VulkanRHICommandContext.h/.cpp # Vulkan 命令录制
+        │       ├── VulkanRHICommandPool.h/.cpp    # VkCommandPool 薄封装
         │       ├── VulkanRHISurface.h/.cpp        # Vulkan Surface 实现
-        │       └── VulkanUtils.h                 # VK_CHECK + RHI→VK 转换函数
+        │       ├── VulkanRHIQueue.h               # Vulkan Queue 实现
+        │       ├── VulkanRHISemaphore.h/.cpp      # Vulkan Semaphore 实现
+        │       ├── VulkanRHIFence.h/.cpp           # Vulkan Fence 实现
+        │       └── VulkanUtil.h                   # VK_CHECK + RHI→VK 转换函数
         ├── resource/       # ★ RenderResource 层 — 对 RHI 的渲染向封装
         │   ├── GpuGeometry.h/.cpp            # vertexBuffer + indexBuffer
         │   ├── GpuTexture.h/.cpp             # image + imageView + sampler
@@ -91,6 +100,7 @@ SHZK/
 
 - `m_` 前缀：`m_instance`, `m_device`, `m_allocator`, `m_rhiInfo`, `m_resourceType`
 - 静态单例：`RHI::rhi`
+- 全局单例：`g_RhiCmdList`（静态成员）
 
 ### 命名空间
 
@@ -126,8 +136,6 @@ SHZK/
 平台无关的抽象工厂，全局单例 `RHI::Get()`（返回 `std::shared_ptr<RHI>`）。
 **所有与 CommandList 无关的资源创建都走这里。**
 
-当前 `RHI` 只有 `Init/Shutdown/Get` 三个静态方法和 `m_rhiInfo` 成员——需要扩展为完整的抽象工厂：
-
 ```cpp
 class RHI {
 public:
@@ -139,7 +147,7 @@ public:
 
     // 基本资源
     virtual std::shared_ptr<RHIQueue> GetQueue(const RHIQueueInfo& info) = 0;
-    virtual std::shared_ptr<RHISurface> CreateSurface(void* windowHandle) = 0;
+    virtual std::shared_ptr<RHISurface> CreateSurface(SDL_Window* window) = 0;
     virtual std::shared_ptr<RHISwapchain> CreateSwapChain(const RHISwapchainInfo& info) = 0;
     virtual std::shared_ptr<RHICommandPool> CreateCommandPool(const RHICommandPoolInfo& info) = 0;
     virtual std::shared_ptr<RHICommandContext> CreateCommandContext(
@@ -162,7 +170,7 @@ public:
         const RHIComputePipelineInfo& info) = 0;
 
     // 同步
-    virtual std::shared_ptr<RHIFence> CreateFence(bool signaled) = 0;
+    virtual std::shared_ptr<RHIFence> CreateFence() = 0;
     virtual std::shared_ptr<RHISemaphore> CreateSemaphore() = 0;
 
     // 立即命令
@@ -182,7 +190,7 @@ private:
 };
 ```
 
-**VulkanRHI** 继承 `RHI`，实现所有纯虚工厂方法。内部持有全局 VK 状态（当前已有）：
+**VulkanRHI** 继承 `RHI`，实现所有纯虚工厂方法。内部持有全局 VK 状态：
 - `m_instance` (`VkInstance`)
 - `m_vkbInstance` (`vkb::Instance`)
 - `m_physicalDevice` (`VkPhysicalDevice`)
@@ -232,10 +240,10 @@ private:
 ### 3. RHICommandContext（= UE IRHICommandContext）
 
 平台相关的抽象命令录制接口。通过缓存状态上下文来降低不必要的状态切换指令。
-Vulkan 实现持有 `VkCommandBuffer` 和对应的 `VkCommandPool`。
+Vulkan 实现持有 `VkCommandBuffer` 和对应的 `VkDevice` / `VkCommandPool` 引用（析构时归还）。
 
 ```cpp
-class RHICommandContext : public RHIResource {
+class RHICommandContext {
 public:
     virtual void BeginCommand() = 0;
     virtual void EndCommand() = 0;
@@ -289,30 +297,60 @@ public:
 **不是虚类**。包装 `std::shared_ptr<RHICommandContext>`，提供与 RHICommandContext 完全相同的 API 表面。
 
 两种模式：
-- **bypass = true**：直接调用 `m_context->DrawIndexed(...)`
-- **bypass = false**：将调用参数打包成 `RHICommand*` 结构体入队，Execute 时统一回放
-
-这是 UE 经典的 RHI 命令模式——允许上层代码在任意线程录制命令，推迟到渲染线程执行。
+- **bypass = true**（当前实现）：直接调用 `m_context->DrawIndexed(...)`
+- **bypass = false**（远期）：将调用参数打包成 `RHICommand*` 结构体入队，Execute 时统一回放
 
 ```cpp
 class RHICommandList {
 public:
-    RHICommandList(const CommandListInfo& info) : m_info(info) {}
+    static void Init(bool bypass = true);
+    static std::shared_ptr<RHICommandList> Get();
 
-    void DrawIndexed(...) {
-        if (m_info.bypass) {
-            m_info.context->DrawIndexed(...);   // 直接录制
-        } else {
-            ADD_COMMAND(DrawIndexed, ...);       // 入队
-        }
-    }
+    void Begin();
+    void End();
+    void SetContext(RHICommandContext* context);
+
+    // 每个方法：if (m_bypass) { m_context->Method(...); }
+    void DrawIndexed(...);
+    void SetGraphicsPipeline(...);
+    // ...
+
 private:
-    CommandListInfo m_info;
-    std::vector<RHICommand*> m_commands;  // deferred 模式下的命令队列
+    RHICommandContext* m_context;
+    bool m_bypass;
 };
 ```
 
-### 5. RHI-native 类型
+### 5. PerFrameRHIResource — 帧资源管理
+
+`RenderSystem` 维护 `FRAMES_IN_FLIGHT`（= 2）个 PerFrameRHIResource，不做 Context 池化：
+
+```cpp
+struct PerFrameRHIResource {
+    std::shared_ptr<RHICommandContext> cmdContext;      // 从 RHICommandPool 创建
+    std::shared_ptr<RHISemaphore>      startSemaphore;  // image acquired
+    std::shared_ptr<RHISemaphore>      endSemaphore;    // render finished
+    std::shared_ptr<RHIFence>          fence;           // 帧同步
+};
+```
+
+单线程 bypass 模式下，`FRAMES_IN_FLIGHT` 个 Context 足够循环复用。fence 保证 GPU 先完成上一轮才能 reset CommandBuffer。后期若拆分 RHI 线程且需要并行翻译，才需要池化。
+
+### 6. RHICommandPool — VkCommandPool 薄封装
+
+```cpp
+class RHICommandPool {
+public:
+    RHICommandPool(const RHICommandPoolInfo& info);
+    virtual std::shared_ptr<RHICommandContext> CreateCommandContext() = 0;
+};
+```
+
+`VulkanRHICommandPool` 内部持有 `VkCommandPool`（带 `VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT`），`CreateCommandContext()` 调 `vkAllocateCommandBuffers` 分沚 VkCommandBuffer 然后构造 `VulkanRHICommandContext`。
+
+**不做 Context 池化**（无 idleContexts/ReturnToPool）。Context 数量 = `FRAMES_IN_FLIGHT`，用完循环。
+
+### 7. RHI-native 类型
 
 底层图形 API 完全被屏蔽——上层代码不包含 `<vulkan/vulkan.h>`，不知道 VK 的存在。
 RHI → VK 的枚举转换函数（`VulkanUtils.h`）仅在 `rhi/vulkan/` 内部使用。
@@ -376,39 +414,45 @@ Include 根路径：`src/` + `extern/`
 
 ---
 
-## 当前实现状态（2026-07-25）
+## 当前实现状态（2026-07-27）
 
-### RHI 层现状
+### RHI 层
 
-| 现有文件 | 状态 | 最终归宿 |
-|---|---|---|
-| `RHI.h/.cpp` | `Init/Shutdown/Get` + `GetQueue()` + `CreateSurface()` 虚方法。`RHIQueue`/`RHISurface` 内联定义 | → 扩展为完整抽象工厂（添加 `CreateCommandPool`、`CreateCommandContext` 等） |
-| `RHIDefinitions.h` | `Extent2D` + `RHIResourceType`（只有 Buffer/Texture）+ `RHIQueueInfo` | → 扩展 `RHIResourceType` 枚举，添加 `CommandPool` 等 |
-| `RHIResource.h/.cpp` | 基类 OK，⚠ `namespace SHZK` 错误（应为 `shzk`），`GetType()` return `resourceType` bug | → 修复，RHICommandContext 继承它 |
-| `RHICommandContext.h` | ⚠ 空壳 stub（无虚方法，无继承 RHIResource） | → Phase D：完整纯虚接口 |
-| `RHICommandList.h/.cpp` | ❌ 不存在 | → Phase D：全局单例胶水层 |
-| `RHISurface.h` | 内联定义在 `RHI.h` 中 | → 扩展虚接口，继承 `RHIResource` |
-| `RHISwapchain.h` | 空壳，持有 `RHISwapchainInfo` | → 扩展虚接口，继承 `RHIResource` |
-| `vulkan/VulkanRHI.h/.cpp` | ✅ 全局 VK 状态 + 初始化 + `CreateQueues()` + `CreateSurface()`。`CreateDescriptorPool()` / `CreateImmediateCommand()` 为空 | → 添加 `CreateCommandPool`、`CreateCommandContext` |
-| `vulkan/VulkanRHISurface.h/.cpp` | ✅ 已完成 | |
-| `vulkan/VulkanRHIQueue.h` | ✅ 已完成 | |
-| `vulkan/VulkanRHIContext.h` | ⚠ 只有一个空的 `class VulkanContext`（名字错误） | → Phase E：VulkanRHICommandContext 实现 |
-| `vulkan/VulkanUtils.h` | `VK_CHECK` + `QueueFlagsToString` | 保留，扩展 RHI→VK 枚举转换函数 |
-| `RHIStructs.h` | ❌ 不存在 | → Phase A |
-| `RHICommandConetxt.cpp` | ❌ 不存在（git 显示 untracked 但文件名拼写错误） | → 应为 `RHICommandContext.cpp` |
+| 文件 | 状态 |
+|---|---|
+| `RHI.h/.cpp` | ✅ `Init/Shutdown/Get` + `GetQueue()` + `CreateSurface()` + `CreateCommandPool()` + `CreateSemaphore()` + `CreateFence()` |
+| `RHIDefinitions.h` | ✅ `RHIInfo`, `RHIQueueType`, `RHIQueueInfo`, `RHICommandPoolInfo`, `Extent2D`, `FRAMES_IN_FLIGHT` |
+| `RHIResource.h/.cpp` | ⚠ 基类 OK，`namespace SHZK` 错误（应为 `shzk`），`GetType()` return `resourceType` bug |
+| `RHICommandContext.h` | ✅ 抽象接口 `BeginCommand()` / `EndCommand()`，其余方法注释中待激活 |
+| `RHICommandContext.cpp` | ❌ 不存在 |
+| `RHICommandList.h/.cpp` | ✅ 全局单例（`g_RhiCmdList` 静态成员），bypass 模式，`Begin()`/`End()` + `Init()`/`Get()`/`SetContext()` |
+| `RHISurface.h` | ✅ 内联定义在 `RHI.h` 中 |
+| `RHISwapchain.h` | ⚠ 空壳，持有 `RHISwapchainInfo` |
+| `vulkan/VulkanRHI.h/.cpp` | ✅ 全局 VK 状态 + 初始化 + `GetQueue()` + `CreateSurface()` + `CreateCommandPool()` + `CreateSemaphore()` + `CreateFence()` |
+| `vulkan/VulkanRHIQueue.h` | ✅ 已完成 |
+| `vulkan/VulkanRHISurface.h/.cpp` | ✅ 已完成 |
+| `vulkan/VulkanRHICommandPool.h/.cpp` | ✅ VkCommandPool 薄封装 + `CreateCommandContext()`，**缺析构** |
+| `vulkan/VulkanRHICommandContext.h/.cpp` | ⚠ 头文件完成，cpp 空壳（Begin/End 未实现），**缺 VkDevice/VkPool 成员 + 析构** |
+| `vulkan/VulkanRHISemaphore.h/.cpp` | ✅ 创建完成，**缺析构** |
+| `vulkan/VulkanRHIFence.h/.cpp` | ✅ 创建完成，**缺析构**；`Wait()` 空壳待实现 |
+| `vulkan/VulkanUtil.h` | ✅ `VK_CHECK` + `QueueFlagsToString` |
+| `RHIStructs.h` | ❌ 待创建 |
 
-### 当前架构 vs 目标架构
+### RenderSystem 层
 
-```
-当前：
-  RHI (空壳, 3 static 方法) → VulkanRHI (VK 变量全混在一起，无接口分离)
+| 文件 | 状态 |
+|---|---|
+| `RenderSystem.h/.cpp` | ✅ `Init()` 创建 RHI → Surface → Queue → CommandPool → 全局 CommandList → PerFrameRHIResources；`Tick()` 空壳 |
+| PerFrameRHIResource | ✅ `std::array<PerFrameRHIResource, FRAMES_IN_FLIGHT>`，包含 cmdContext + startSemaphore + endSemaphore + fence |
 
-目标：
-  RHI (抽象工厂, N 个纯虚 Create*) → VulkanRHI (实现 + VK 全局状态)
-  RHICommandContext (抽象录制) → VulkanRHICommandContext (实现 + VkCmdBuffer)
-  RHIResource (基类) → N 个具体 RHI 类型 → VulkanRHI* 子类实现
-  RHICommandList (胶水，非虚)
-```
+### 同步与帧循环
+
+| 组件 | 状态 |
+|---|---|
+| Semaphore / Fence | ✅ RHI 抽象 + Vulkan 实现已创建 |
+| Swapchain | ❌ 空壳，待实现 |
+| RenderSystem::Tick() | ❌ 空壳，待实现帧循环 |
+| RHICommandList 转发方法 | ❌ SetContext/Execute/Draw* 等均注释中待实现 |
 
 ---
 
@@ -417,14 +461,15 @@ Include 根路径：`src/` + `extern/`
 ### 整体路线
 
 ```
-★ RHI 重构（按 ToyRenderer 模式）
-  ├─ Phase A：RHIStructs.h + 扩展 RHIDefinitions.h — 定义所有平台无关 enum/struct/Info
-  ├─ Phase B：扩展 RHIResource.h — 定义所有 RHI 类型的抽象接口
-  ├─ Phase C：扩展 RHI + VulkanRHI — 工厂方法 + 全局 VK 状态
-  ├─ Phase D：RHICommandContext + RHICommandList — 命令录制
-  └─ Phase E：VulkanRHIResource + VulkanRHICommandContext — Vulkan 侧实现
+★ RHI 层 bypass 模式打通第一个三角形
+  ├─ 补 VK 资源析构（CommandPool/CommandContext/Semaphore/Fence）
+  ├─ VulkanRHICommandContext BeginCommand/EndCommand 实现
+  ├─ RHIFence::Wait() 实现
+  ├─ RHICommandList 转发方法（SetContext + Begin/End 转发到 Context）
+  ├─ Swapchain 实现
+  └─ RenderSystem::Tick() 帧循环（Acquire → Record → Submit → Present）
 
-RHI 完成 → RenderResource → Asset → GltfImporter → Pipeline → Descriptor → Forward Pass
+RHI bypass 打通 → RenderResource → Asset → GltfImporter → Pipeline → Descriptor → Forward Pass
 ```
 
 ### Phase A：RHIStructs.h + 扩展 RHIDefinitions.h
@@ -433,92 +478,23 @@ RHI 完成 → RenderResource → Asset → GltfImporter → Pipeline → Descri
 - 修复 `RHIResource.h` 命名空间 `SHZK` → `shzk`
 - 修复 `GetType()` 中 `resourceType` → `m_resourceType`
 
-**内容**：
-- 扩展 `RHIResourceType` 枚举（Buffer, Texture, TextureView, Sampler, Shader, ..., Fence, Semaphore）
-- `RHIFormat` 枚举（`FORMAT_R8G8B8A8_SRGB` 等）
-- `RHIResourceState` 枚举（对标 VkImageLayout）
-- `MemoryUsage` 枚举（`MEMORY_USAGE_GPU_ONLY` / `MEMORY_USAGE_CPU_TO_GPU` / `MEMORY_USAGE_GPU_TO_CPU` / `MEMORY_USAGE_CPU_ONLY`）
-- `ResourceType` bitmask（`RESOURCE_TYPE_TEXTURE`, `RESOURCE_TYPE_VERTEX_BUFFER` 等）
-- `ShaderFrequency` bitmask
-- `RasterizerStateInfo`, `DepthStencilStateInfo`, `BlendStateInfo`（带 `operator==`）
-- `Extent2D/3D`, `Offset2D/3D`（已有 `Extent2D`，扩展）
-- `TextureSubresourceRange/Layers`
-- 所有 `*Info` 结构体（`RHIBufferInfo`, `RHITextureInfo`, `RHIShaderInfo`, `RHIGraphicsPipelineInfo` 等）
-
 ### Phase B：扩展 RHIResource.h
 
-**内容**：
-- 在 `RHIResource` 基类添加 `m_lastUseTick`、`RawHandle()`、`Destroy()`
-- 添加所有具体 RHI 类型的抽象声明：
-  - `RHIQueue` — `WaitIdle()` 虚方法，持有 `RHIQueueInfo m_info`
-  - `RHISurface` — 继承 `RHIResource`，持有 `m_extent`，`GetExtent()`
-  - `RHISwapchain` — 继承 `RHIResource`，`GetCurrentFrameIndex()`, `GetTexture()`, `GetNewFrame()`, `Present()`
-  - `RHICommandPool` — 持有 contexts 队列，`CreateCommandList()`
-  - `RHIBuffer` — `Map() / UnMap()`，持有 `RHIBufferInfo m_info`
-  - `RHITexture` / `RHITextureView` / `RHISampler` / `RHIShader`
-  - `RHIRootSignature` / `RHIDescriptorSet`
-  - `RHIRenderPass` / `RHIGraphicsPipeline` / `RHIComputePipeline`
-  - `RHIFence` / `RHISemaphore`
-- 定义 `*Ref` 类型别名（`using RHIBufferRef = std::shared_ptr<RHIBuffer>;`）
+- 添加所有具体 RHI 类型的抽象声明
+- 定义 `*Ref` 类型别名
 
 ### Phase C：扩展 RHI + VulkanRHI
 
-**内容**：
-- `RHI` 添加纯虚工厂方法（所有 `Create*`）
-- `RHI` 添加 `RegisterResource()` 和 `m_resourceMap` 用于 GC
-- `RHI` 添加虚 `Tick()` 用于资源回收
-- `RHI::Init()` 中 switch 创建 `VulkanRHI`
-- `VulkanRHI` 实现所有 `Create*` → `new VulkanRHI*`
-- `VulkanRHI` 内部保留现有全局 VK 状态（`m_instance`, `m_device`, `m_allocator` 等）
-- 当前的 `CreateInstance/CreatePhysicalDevice/CreateLogicalDevice/CreateMemoryAllocator` 保留在 `VulkanRHI` 构造中
+- 添加更多 `Create*` 工厂方法（Buffer, Texture, Shader, Pipeline 等）
 
-### Phase D：RHICommandContext + RHICommandList
+### Phase D：RHICommandList 转发方法
 
-**设计决策（2026-07-25）**：
+- bypass 模式下所有方法转发到 Context
+- deferred 模式留待后期实现
 
-**RHICommandContext**（≈ UE IRHICommandContext）：
-- 抽象类，继承 `RHIResource`，纯虚接口
-- Vulkan 实现 `VulkanRHICommandContext`：RAII 构造（模式 3），构造时从 `RHICommandPool` 分配 `VkCommandBuffer`
-- 不需要独立的 `RHICommandContextImmediate` 类型——目前只有单线程录制，统一用同一个 Context 接口。后续需要 ImGui/资产上传等一次性操作时再扩展
+### Phase E：VulkanRHIResource + VulkanRHICommandContext 完整实现
 
-**RHICommandList**（胶水层）：
-- 全局单例 `g_cmdList`（模式 4），非虚类，`= default` 构造
-- 不持有 `RHICommandPool`，不参与 Context 池化
-- `RHICommandContext` 通过 `SetContext()` 运行时注入，CommandList 不拥有 Context 所有权
-- `bypass` 通过 `SetBypass()` 在初始化阶段一次性配置
-- 先只实现 **bypass 模式**（直接转发到 Context），deferred 模式留待多线程录制需求时再做
-- API 表面与 RHICommandContext 一致（Begin/End/Submit + Draw/DrawIndexed + 状态绑定等）
-
-**RHICommandPool**：
-- 仅作为 `VkCommandPool` 的薄封装——给 `CreateCommandContext()` 提供 VkCommandBuffer 的分配来源
-- **不做 Context 池化**——目前 FRAMES_IN_FLIGHT 个 Context 预分配后永久复用，不需要 idleContexts 队列和 ReturnToPool
-
-**对比 UE5**：
-
-| | UE5 | SHZK |
-|---|---|---|
-| CommandList | 全局单例 `GRHICommandList` | 全局单例 `g_cmdList` |
-| Context 注入 | `ActivatePipelines()` 时懒获取 | `SetContext()` 一次性注入 |
-| bypass 控制 | `LatchBypass()` 全局 latch | `SetBypass()` 初始化阶段配置 |
-| 多线程 | 并行 Translate（TaskGraph） | 暂无（单线程录制） |
-| 每帧清理 | MemStack 整块回收 | bypass 模式无需清理 |
-
-**VulkanRHICommandContext**：
-- 构造时从 Pool 分配 `VkCommandBuffer`（`vkAllocateCommandBuffers`）
-- 持有 VkCommandBuffer，不持有 VkCommandPool（Pool 由外部管理）
-- `Begin()` → `vkResetCommandBuffer` + `vkBeginCommandBuffer`
-- `End()` → `vkEndCommandBuffer`
-- `Submit()` → `vkQueueSubmit`（接收可选的 wait/signal semaphore + fence）
-- Pipeline 状态缓存（记录当前绑定的 pipeline，避免冗余绑定）
-- RenderPass 内状态追踪（确保 Draw 调用在 BeginRenderPass 和 EndRenderPass 之间）
-
-### Phase E：VulkanRHIResource + VulkanRHICommandContext
-
-**内容**：
-- 所有具体 RHI 类型的 Vulkan 实现（`VulkanRHIBuffer`, `VulkanRHITexture`, ...）
-- `VulkanRHIBuffer`：持有 `VkBuffer` + `VmaAllocation`，用 `RHIBufferInfo` 推导 usage/memory flags
-- `VulkanRHITexture`：持有 `VkImage` + `VmaAllocation` + 默认 `VkImageView`
-- `VulkanRHIShader`：持有 `VkShaderModule` + 反射信息
+- 所有具体 RHI 类型的 Vulkan 实现
 - `VulkanUtils.h` 中扩展 RHI→VK 枚举转换函数
 
 ---
@@ -558,7 +534,8 @@ public:
 ```cpp
 class VulkanRHICommandContext : public RHICommandContext {
 public:
-    VulkanRHICommandContext(RHICommandPoolRef pool, ...);  // 所有工作在构造里完成
+    VulkanRHICommandContext(VkCommandBuffer cmdBuffer, VkDevice device, VkCommandPool pool);
+    // 所有工作在构造里完成，析构归还 VkCommandBuffer
 };
 ```
 
@@ -567,14 +544,15 @@ public:
 ### 模式 4：全局变量 + trivial 构造
 
 ```cpp
-// .h
-extern RHICommandList g_cmdList;
-
-// .cpp
-RHICommandList g_cmdList;  // = default，进程级单例
+class RHICommandList {
+    static std::shared_ptr<RHICommandList> g_RhiCmdList;
+public:
+    RHICommandList() = default;
+    static std::shared_ptr<RHICommandList> Get() { return g_RhiCmdList; }
+};
 ```
 
-**什么时候用**：需要全局访问，无构造依赖。运行时通过 setter 注入配置（`SetContext()`、`SetBypass()`）。
+**什么时候用**：需要全局访问，无构造依赖。运行时通过 setter 注入配置（`SetContext()`、`Init()`）。
 
 ### 决策树
 
@@ -596,9 +574,9 @@ RHICommandList g_cmdList;  // = default，进程级单例
 | `VulkanRHI` | 模式 3 | RAII，构造参数足够，内部创建所有 VK 对象 |
 | `RenderSystem` | 模式 2 | 依赖 `RHI::Get()` 已可用 |
 | `Engine` | 模式 4 | 顶层入口，`main` 调 `Init()` 控制启动顺序 |
-| `RHICommandContext` | 模式 1/3 | 抽象接口（模式 1）；`VulkanRHICommandContext` RAII（模式 3） |
+| `RHICommandContext` | 模式 1 | 抽象接口，`VulkanRHICommandContext` RAII（模式 3） |
 | `RHICommandList` | 模式 4 | 全局单例，`= default` 构造，运行时注入 Context |
-| `RHICommandPool` | 模式 3 | RAII，封装 `VkCommandPool`，构造参数足够 |
+| `RHICommandPool` | 模式 3 | RAII，封装 `VkCommandPool`，构造参数即全部依赖 |
 
 ---
 
@@ -623,14 +601,17 @@ VkPipelineStageFlags VulkanUtils::ToVkPipelineStage(RHIResourceState state);
 
 - VMA 不暴露给 RHI 接口——`VulkanRHI` 持有 `m_allocator`（`VmaAllocator`）
 - 各 `VulkanRHI*` 资源通过 `VulkanRHI` 间接使用 VMA
-- `vkGetInstanceProcAddr` / `vkGetDeviceProcAddr` 由 volk 提供，在 `CreateMemoryAllocator()` 中传给 VMA
 
 ### volk
 
 - `extern/volk/volk.h` + `extern/volk/volk.c` 已添加到项目中
 - `VulkanRHI.cpp` 中 `#define VOLK_IMPLEMENTATION` → `#include <volk/volk.h>` 内联编译
-- `volk.c` 必须保留（被 `volk.h` 通过 `#include "volk.c"` 相对路径引用）
+- 其他 `vulkan/` .cpp 文件必须在第一行 `#include <volk/volk.h>`（因为 `VK_NO_PROTOTYPES`）
 - `VK_NO_PROTOTYPES` 全局设置（`src/CMakeLists.txt`）
+
+### Windows API 宏污染
+
+`<windows.h>`（SDL3 间接引入）会把 `CreateSemaphore` 宏替换为 `CreateSemaphoreA`。在 `RHI.h` 中已添加 `#ifdef CreateSemaphore / #undef CreateSemaphore` 修复。
 
 ### Barrier 转换时机
 
@@ -657,6 +638,20 @@ SubmitAndPresent 中 → EndRendering() 后 → TextureBarrier(COLOR_ATTACHMENT_
 - RHI-native 类型完备（RHIFormat, RHIResourceState, MemoryUsage 等）
 - RenderResource 层对 RHI 做渲染向封装，RenderSystem 使用 RDG 管理 Pass
 
+### UE5 源码参考
+
+位于 `C:\Users\earn\UE5\UnrealEngine-release\Engine\Source\Runtime\`
+
+| 文件 | 用途 |
+|---|---|
+| `RHI/Public/RHIContext.h` | `IRHIComputeContext`, `IRHICommandContext` 接口定义 |
+| `RHI/Public/DynamicRHI.h` | `FDynamicRHI` 抽象工厂 |
+| `RHI/Public/RHICommandList.h` | `FRHICommandListBase` → `FRHIComputeCommandList` → `FRHICommandList` → `FRHICommandListImmediate` 继承树 |
+| `RHI/Public/RHICommandListCommandExecutes.inl` | Command `Execute()` 宏展开 → `CmdList.GetContext().RHI*` |
+| `RHI/Private/RHICommandList.cpp` | `ActivatePipelines()`, `Execute()`, context 分配 |
+| `VulkanRHI/Private/VulkanCommands.cpp` | Vulkan `RHIGetCommandContext()` |
+| `D3D12RHI/Private/D3D12Device.cpp` | D3D12 `ObtainContext()`/`ReleaseContext()` 对象池 |
+
 | | Piccolo | Spartan Engine | Filament | ToyRenderer |
 |---|---|---|---|---|
 | RHI 风格 | 虚接口 | 具体类，编译期选后端 | 虚接口 backend | **FDynamicRHI + IRHICommandContext（UE 风格）** |
@@ -668,7 +663,6 @@ SubmitAndPresent 中 → EndRendering() 后 → TextureBarrier(COLOR_ATTACHMENT_
 
 ## 用户偏好
 
-- **不要直接修改代码**——提供代码示例或口头指导，让用户自己改
 - **每次回答前阅读并分析用户当前的实现作为前提给出答案**——不要凭记忆，不要假设用户改了或没改什么。必须 Read 相关文件后再回答
 - **以工业界成熟引擎的做法为准**——RHI 层优先参考 ToyRenderer（UE 风格，单后端但有完整抽象），RenderResource/RenderSystem 同样参考 ToyRenderer。也要参考 UE5 实际源码（`C:\Users\earn\UE5\`），理解 UE 的实践并判断哪些适合 SHZK 的规模
 - **类初始化按决策树选择模式**——有子类用 Static Factory Init（模式 1），依赖外部系统用 Two-Phase Init（模式 2），无依赖用 RAII 构造（模式 3），全局单例无依赖用 trivial 构造 + 运行时 setter 注入（模式 4）。详见上文"类初始化模式"
@@ -677,3 +671,4 @@ SubmitAndPresent 中 → EndRendering() 后 → TextureBarrier(COLOR_ATTACHMENT_
 - 所有 RHI 类型使用 `std::shared_ptr` 管理生命周期
 - `*Info` 结构体用于构造参数传递，不搞多参数构造函数
 - 成员变量 `m_` 前缀，静态单例无前缀（`RHI::rhi`），全局单例 `g_` 前缀（`g_cmdList`）
+- 每个 .cpp 文件的 `vulkan/` 子目录下，`#include <volk/volk.h>` 必须在第一行

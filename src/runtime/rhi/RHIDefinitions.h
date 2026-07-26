@@ -4,6 +4,11 @@
 
 namespace shzk
 {
+#define MAX_QUEUE_CNT 2
+#define FRAMES_IN_FLIGHT 2
+
+	class RHIQueue;
+
 	enum class RHIBackendType : uint8_t
 	{
 		Vulkan,
@@ -24,7 +29,7 @@ namespace shzk
 		Max
 	};
 
-#define MAX_QUEUE_CNT 2
+
 	typedef struct RHIQueueInfo
 	{
 		RHIQueueType type;
@@ -38,7 +43,7 @@ namespace shzk
 
 	struct RHICommandPoolInfo
 	{
-
+		std::shared_ptr<RHIQueue> queue;
 	};
 
 // RHI resource definitions

@@ -13,10 +13,17 @@ add_library(
     
     # rhi
     "runtime/rhi/RHI.cpp"
+    "runtime/rhi/RHICommandList.cpp"
     "runtime/rhi/RHIResource.cpp"
 
     # vulkan rhi
     "runtime/rhi/vulkan/VulkanRHI.cpp"
+    "runtime/rhi/vulkan/VulkanRHICommandContext.cpp"
+    "runtime/rhi/vulkan/VulkanRHICommandPool.cpp"
+    "runtime/rhi/vulkan/VulkanRHIFence.cpp"
+    "runtime/rhi/vulkan/VulkanRHISemaphore.cpp"
+    "runtime/rhi/vulkan/VulkanRHISurface.cpp"
+    "runtime/rhi/vulkan/VulkanRHISwapchain.cpp"
 
     # others in runtime
     "runtime/WindowSystem.cpp"
@@ -25,7 +32,7 @@ add_library(
 
 target_compile_definitions(shzk_runtime PUBLIC VK_NO_PROTOTYPES)
 if(WIN32)
-    target_compile_definitions(shzk_runtime PUBLIC VK_NO_PROTOTYPES NOMINMAX)
+    target_compile_definitions(shzk_runtime PUBLIC NOMINMAX)
 endif()
 
 target_include_directories(

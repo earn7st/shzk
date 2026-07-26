@@ -1,6 +1,11 @@
 #include "VulkanRHI.h"
 #include "VulkanUtil.h"
-
+#include "VulkanRHISurface.h"
+#include "VulkanRHIQueue.h"
+#include "VulkanRHICommandContext.h"
+#include "VulkanRHICommandPool.h"
+#include "VulkanRHISemaphore.h"
+#include "VulkanRHIFence.h"
 #define  VOLK_IMPLEMENTATION
 #include <volk/volk.h>
 #include <VkBootstrap.h>
@@ -23,8 +28,9 @@ namespace shzk
 		CreateLogicalDevice();
 		CreateQueues();
 		CreateMemoryAllocator();
-		CreateDescriptorPool();
-		CreateImmediateCommand();
+		
+		//CreateDescriptorPool();
+		//CreateImmediateCommand();
 	}
 
 	std::shared_ptr<RHIQueue> VulkanRHI::GetQueue(const RHIQueueInfo& info)
@@ -36,8 +42,31 @@ namespace shzk
 	{
 		std::shared_ptr<RHISurface> surface = std::make_shared<VulkanRHISurface>(window, *this);
 		assert(surface);
-		SHZK_LOG_INFO("Vulkan surface created.");
+		SHZK_LOG_INFO("Vulkan surface created");
 		return surface;
+	}
+
+	std::shared_ptr<RHICommandPool> VulkanRHI::CreateCommandPool(const RHICommandPoolInfo& info)
+	{
+		std::shared_ptr<RHICommandPool> cmdPool = std::make_shared<VulkanRHICommandPool>(info, *this);
+		assert(cmdPool);
+		SHZK_LOG_INFO("Vulkan command pool of queue type {} created", static_cast<int>(info.queue->GetType()));
+		return cmdPool;
+	}
+	std::shared_ptr<RHISemaphore> VulkanRHI::CreateSemaphore()
+	{
+		std::shared_ptr<RHISemaphore> semaphore = std::make_shared<VulkanRHISemaphore>(*this);
+		assert(semaphore);
+		SHZK_LOG_INFO("Vulkan semaphore created");
+		return semaphore;
+	}
+
+	std::shared_ptr<RHIFence> VulkanRHI::CreateFence()
+	{
+		std::shared_ptr<RHIFence> fence = std::make_shared<VulkanRHIFence>(*this);
+		assert(fence);
+		SHZK_LOG_INFO("Vulkan fence created");
+		return fence;
 	}
 
 	void VulkanRHI::CreateInstance()
@@ -243,24 +272,5 @@ namespace shzk
 	{
 
 	}
-
-// RHIQueue
-
-
-// RHISurface
-	VulkanRHISurface::VulkanRHISurface(SDL_Window* window, VulkanRHI& rhi)
-		: RHISurface()
-	{
-		assert(window);
-		if (!SDL_Vulkan_CreateSurface(window, rhi.GetInstance(), nullptr, &m_handle))
-		{
-			SHZK_LOG_ERROR("Failed to create surface.");
-		}
-
-		// RHISurface
-		int w, h;
-		SDL_GetWindowSize(window, &w, &h);
-		m_extent.width = static_cast<uint32_t>(w);
-		m_extent.height = static_cast<uint32_t>(h);
-	}
+	
 }

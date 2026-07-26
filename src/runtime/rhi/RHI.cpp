@@ -11,21 +11,17 @@ namespace shzk
 		switch (rhiInfo.type)
 		{
 		case RHIBackendType::Vulkan:
-			SHZK_LOG_INFO("RHIBackendType: Vulkan");
+			SHZK_LOG_INFO("RHI backend type: Vulkan");
 			rhi = std::make_shared<VulkanRHI>(rhiInfo);
 			break;
 		case RHIBackendType::Max:
-			SHZK_LOG_WARN("RHIBackendType: Max(not defined), Vulkan by default.");
+			SHZK_LOG_WARN("RHI backend type: Max(not defined), Vulkan by default.");
 			break;
 		default:
-			SHZK_LOG_ERROR("RHIBackendType Invalid.");
+			SHZK_LOG_ERROR("RHI backend type Invalid.");
 			return nullptr;
 		}
 		return rhi;
 	}
 
-	void RHI::Shutdown()
-	{
-
-	}
 }
