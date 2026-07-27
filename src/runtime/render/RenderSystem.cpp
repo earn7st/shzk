@@ -5,6 +5,7 @@
 #include "runtime/rhi/RHIDefinitions.h"
 #include "runtime/rhi/RHI.h"
 #include "runtime/rhi/RHICommandList.h"
+#include "runtime/rhi/RHICommandListImmediate.h"
 #include <cassert>
 
 namespace shzk
@@ -19,20 +20,40 @@ namespace shzk
 		
 		m_rhiSurface = m_rhi->CreateSurface(Engine::GetWindowSystem()->GetWindow());
 		assert(m_rhiSurface);
-		m_rhiGraphicsQueue = m_rhi->GetQueue({ .type = RHIQueueType::Graphics, .index = 0 });
+
+		RHIQueueInfo graphicsQueueInfo{};
+		graphicsQueueInfo.type	= RHIQueueType::Graphics;
+		graphicsQueueInfo.index = 0;
+		m_rhiGraphicsQueue = m_rhi->GetQueue(graphicsQueueInfo);
 		assert(m_rhiGraphicsQueue);
-		// m_rhiComputeQueue = m_rhi->GetQueue({ .type = RHIQueueType::Compute, .index = 0 });
+		// RHIQueueInfo computeQueueInfo{};
+		// computeQueueInfo.type = RHIQueueType::Compute;
+		// computeQueueInfo.index = 0;
+		// m_rhiComputeQueue = m_rhi->GetQueue(computeQueueinfo);
 		// assert(m_rhiComputeQueue);
-	
-		m_rhiCmdPool = m_rhi->CreateCommandPool({ .queue = m_rhiGraphicsQueue });
+
+		RHISwapchainInfo swapchainInfo{};
+		swapchainInfo.surface		= m_rhiSurface;
+		swapchainInfo.presentQueue	= m_rhiGraphicsQueue;
+		swapchainInfo.imageCount	= FRAMES_IN_FLIGHT;
+		swapchainInfo.extent		= m_rhiSurface->GetExetent();
+		swapchainInfo.format		= COLOR_FORMAT;
+		m_rhiSwapchain = m_rhi->CreateSwapchain(swapchainInfo);
+
+		RHICommandPoolInfo cmdPoolInfo{};
+		cmdPoolInfo.queue = m_rhiGraphicsQueue;
+		m_rhiCmdPool = m_rhi->CreateCommandPool(cmdPoolInfo);
 		assert(m_rhiCmdPool);
 
-		RHICommandList::Init(true);	// bypass = true
+		RHICommandList::Init(true);				// bypass = true
 		m_rhiCmdList = RHICommandList::Get();	// command list is global, g_rhiCmdLIst;
 		assert(m_rhiCmdList);
 
-		InitPerFrameRHIResources();
+		m_rhiCmdListImmediate = RHICommandListImmediate::Get();
+		m_rhiCmdListImmediate->SetCommandContext(RHI::Get()->GetCommandContextImmediate().get());
+		assert(m_rhiCmdListImmediate);
 
+		InitPerFrameRHIResources();
 	}
 
 	void RenderSystem::Shutdown()

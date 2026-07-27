@@ -10,9 +10,7 @@ namespace shzk
 	{
 	public:
 		VulkanRHIQueue(const RHIQueueInfo& info, VkQueue queue, uint32_t queueFamilyIndex)
-			: RHIQueue(info), m_handle(queue), m_queueFamilyIndex(queueFamilyIndex)
-		{
-		}
+			: RHIQueue(info), m_handle(queue), m_queueFamilyIndex(queueFamilyIndex) {}
 
 		// Getters
 		inline VkQueue GetHandle() const { return m_handle; }

@@ -20,7 +20,6 @@ namespace shzk
 			SHZK_LOG_WARN("RHI command context is empty, cannot Begin()");
 			return;
 		}
-
 	}
 
 	void RHICommandList::End()

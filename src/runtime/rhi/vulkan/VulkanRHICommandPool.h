@@ -11,7 +11,11 @@ namespace shzk
 	class VulkanRHICommandPool : public RHICommandPool
 	{
 	public:
+		VulkanRHICommandPool() = delete;
 		VulkanRHICommandPool(const RHICommandPoolInfo& info, VulkanRHI& rhi);
+		~VulkanRHICommandPool() = default;
+
+		virtual void Destroy() override final;
 
 		virtual std::shared_ptr<RHICommandContext> CreateCommandContext() override final;
 

@@ -14,12 +14,14 @@ add_library(
     # rhi
     "runtime/rhi/RHI.cpp"
     "runtime/rhi/RHICommandList.cpp"
+    "runtime/rhi/RHICommandListImmediate.cpp"
     "runtime/rhi/RHIResource.cpp"
 
     # vulkan rhi
     "runtime/rhi/vulkan/VulkanRHI.cpp"
-    "runtime/rhi/vulkan/VulkanRHICommandContext.cpp"
     "runtime/rhi/vulkan/VulkanRHICommandPool.cpp"
+    "runtime/rhi/vulkan/VulkanRHICommandContext.cpp"
+    "runtime/rhi/vulkan/VulkanRHICommandContextImmediate.cpp"
     "runtime/rhi/vulkan/VulkanRHIFence.cpp"
     "runtime/rhi/vulkan/VulkanRHISemaphore.cpp"
     "runtime/rhi/vulkan/VulkanRHISurface.cpp"

@@ -14,6 +14,12 @@ namespace shzk
 		VK_CHECK(vkCreateFence(rhi.GetDevice(), &fenceCreateInfo, nullptr, &m_handle));
 	}
 
+	void VulkanRHIFence::Destroy()
+	{
+		vkDestroyFence(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
+		SHZK_LOG_INFO("VulkanRHIFence destroyed");
+	}
+
 	void VulkanRHIFence::Wait()
 	{
 		// TODO

@@ -2,8 +2,10 @@
 #include "VulkanUtil.h"
 #include "VulkanRHISurface.h"
 #include "VulkanRHIQueue.h"
-#include "VulkanRHICommandContext.h"
+#include "VulkanRHISwapchain.h"
 #include "VulkanRHICommandPool.h"
+#include "VulkanRHICommandContext.h"
+#include "VulkanRHICommandContextImmediate.h"
 #include "VulkanRHISemaphore.h"
 #include "VulkanRHIFence.h"
 #define  VOLK_IMPLEMENTATION
@@ -28,9 +30,13 @@ namespace shzk
 		CreateLogicalDevice();
 		CreateQueues();
 		CreateMemoryAllocator();
-		
+		CreateImmediateCommand();
 		//CreateDescriptorPool();
-		//CreateImmediateCommand();
+	}
+
+	void VulkanRHI::Shutdown()
+	{
+		// TODO
 	}
 
 	std::shared_ptr<RHIQueue> VulkanRHI::GetQueue(const RHIQueueInfo& info)
@@ -44,6 +50,14 @@ namespace shzk
 		assert(surface);
 		SHZK_LOG_INFO("Vulkan surface created");
 		return surface;
+	}
+
+	std::shared_ptr<RHISwapchain> VulkanRHI::CreateSwapchain(const RHISwapchainInfo& info)
+	{
+		std::shared_ptr<RHISwapchain> swapchain = std::make_shared<VulkanRHISwapchain>(info, *this);
+		assert(swapchain);
+		SHZK_LOG_INFO("Vulkan swapchain created");
+		return swapchain;
 	}
 
 	std::shared_ptr<RHICommandPool> VulkanRHI::CreateCommandPool(const RHICommandPoolInfo& info)
@@ -263,14 +277,13 @@ namespace shzk
 		}
 	}
 
+	void VulkanRHI::CreateImmediateCommand()
+	{
+		m_cmdContextImmediate = std::make_shared<VulkanRHICommandContextImmediate>(*this);
+	}
+
 	void VulkanRHI::CreateDescriptorPool()
 	{
 
 	}
-
-	void VulkanRHI::CreateImmediateCommand()
-	{
-
-	}
-	
 }

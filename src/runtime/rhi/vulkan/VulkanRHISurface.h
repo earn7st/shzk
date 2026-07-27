@@ -14,6 +14,8 @@ namespace shzk
 		VulkanRHISurface() = delete;
 		VulkanRHISurface(SDL_Window* window, VulkanRHI& rhi);
 
+		virtual void Destroy() override final;
+
 		inline VkSurfaceKHR GetHandle() const { return m_handle; }
 
 	private:

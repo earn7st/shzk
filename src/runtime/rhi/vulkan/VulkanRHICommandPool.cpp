@@ -16,6 +16,13 @@ namespace shzk
 		cmdPoolCreateInfo.queueFamilyIndex = info.queue->GetQueueFamilyIndex();
 		VK_CHECK(vkCreateCommandPool(rhi.GetDevice(), &cmdPoolCreateInfo, nullptr, &m_handle));
 	}
+
+	void VulkanRHICommandPool::Destroy()
+	{
+		vkDestroyCommandPool(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
+		SHZK_LOG_INFO("VulkanRHICommandPool destroyed");
+	}
+
 	std::shared_ptr<RHICommandContext> VulkanRHICommandPool::CreateCommandContext()
 	{
 		VkCommandBuffer cmdBuffer;
@@ -28,9 +35,9 @@ namespace shzk
 		// Command Pool 为了方便创建 Command Context 保存了 VulkanRHI: m_rhi
 		VK_CHECK(vkAllocateCommandBuffers(m_rhi.GetDevice(), &allocInfo, &cmdBuffer));
 
-		std::shared_ptr<RHICommandContext> cmdContext = std::make_shared<VulkanRHICommandContext>(cmdBuffer);
+		std::shared_ptr<RHICommandContext> cmdContext = std::make_shared<VulkanRHICommandContext>(cmdBuffer, *this);
 		assert(cmdContext);
-		SHZK_LOG_INFO("RHI command context created");
+		SHZK_LOG_INFO("RHICommandContext created");
 		return cmdContext;
 	}
 }

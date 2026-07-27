@@ -7,11 +7,16 @@
 
 namespace shzk
 {
+	static const RHIFormat HDR_COLOR_FORMAT = FORMAT_R16G16B16A16_SFLOAT;
+	static const RHIFormat COLOR_FORMAT = FORMAT_R8G8B8A8_UNORM;
+	static const RHIFormat DEPTH_FORMAT = FORMAT_D32_SFLOAT;
+
 	class RHI;
 	class RHISurface;
 	class RHISwapchain;
 	class RHIQueue;
 	class RHICommandList;
+	class RHICommandListImmediate;
 	class RHICommandPool;
 	class RHICommandContext;
 	class RHISemaphore;
@@ -37,10 +42,12 @@ namespace shzk
 		std::shared_ptr<RHIQueue> m_rhiGraphicsQueue;
 		//std::shared_ptr<RHIQueue> m_rhiComputeQueue;
 
-		std::shared_ptr<RHICommandPool> m_rhiCmdPool;
-		std::shared_ptr<RHICommandList> m_rhiCmdList;
-		//std::shared_ptr<RHISwapchain> m_rhiSwapchain;
+		std::shared_ptr<RHISwapchain> m_rhiSwapchain;
 
+		std::shared_ptr<RHICommandList> m_rhiCmdList;
+		std::shared_ptr<RHICommandListImmediate> m_rhiCmdListImmediate;
+		
+		std::shared_ptr<RHICommandPool> m_rhiCmdPool;
 		struct PerFrameRHIResource
 		{
 			std::shared_ptr<RHICommandContext> cmdContext;

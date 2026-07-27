@@ -11,7 +11,11 @@ namespace shzk
 	class VulkanRHIFence : public RHIFence
 	{
 	public:
+		VulkanRHIFence() = delete;
 		VulkanRHIFence(VulkanRHI& rhi);
+		~VulkanRHIFence() = default;
+		
+		virtual void Destroy() override final;
 
 		virtual void Wait() override final;
 

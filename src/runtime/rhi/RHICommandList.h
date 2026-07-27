@@ -5,6 +5,7 @@
 namespace shzk
 {
 	class RHICommandContext;
+
 	class RHICommandList
 	{
 	private:

@@ -14,6 +14,7 @@ namespace shzk
 	class RHICommandPool;
 	class RHISemaphore;
 	class RHIFence;
+	class RHICommandContextImmediate;
 
 	class RHI
 	{
@@ -24,23 +25,32 @@ namespace shzk
 		static std::shared_ptr<RHI> Init(const RHIInfo& rhiInfo);
 		static std::shared_ptr<RHI> Get() { return rhi; }
 
+		virtual void Shutdown() = 0;
+
 		virtual std::shared_ptr<RHIQueue> GetQueue(const RHIQueueInfo& info) = 0;
 		virtual std::shared_ptr<RHISurface> CreateSurface(SDL_Window* window) = 0;
+		virtual std::shared_ptr<RHISwapchain> CreateSwapchain(const RHISwapchainInfo& info) = 0;
 		virtual std::shared_ptr<RHICommandPool> CreateCommandPool(const RHICommandPoolInfo& info) = 0;
 		virtual std::shared_ptr<RHISemaphore> CreateSemaphore() = 0;
 		virtual std::shared_ptr<RHIFence> CreateFence() = 0;
-		//virtual std::shared_ptr<RHISwapchain> CreateSwapchain() = 0;
+
+		std::shared_ptr<RHICommandContextImmediate> GetCommandContextImmediate() const { return m_cmdContextImmediate; }
 
 	protected:
 		RHI() = delete;
 		RHI(const RHIInfo& rhiInfo) : m_rhiInfo(rhiInfo) {}
+		~RHI() = default;
 
+	protected:
 		RHIInfo m_rhiInfo;
+
+		std::shared_ptr<RHICommandContextImmediate> m_cmdContextImmediate;
 	};
 
 	class RHIQueue
 	{
 	public:
+		RHIQueue() = delete;
 		RHIQueue(const RHIQueueInfo& info) : m_info(info) {}
 		~RHIQueue() = default;
 
@@ -55,6 +65,10 @@ namespace shzk
 	{
 	public:
 		RHISurface() = default;
+		~RHISurface() = default;
+
+		virtual void Destroy() = 0;
+
 		inline Extent2D GetExetent() const { return m_extent; }
 
 	protected:
@@ -67,7 +81,13 @@ namespace shzk
 		RHISwapchain() = delete;
 		RHISwapchain(const RHISwapchainInfo& info) : m_info(info) {}
 
-	private:
+		virtual void Destroy() = 0;
+		virtual uint32_t GetCurrentFrameIndex() = 0;
+		virtual void Present(std::shared_ptr<RHISemaphore> waitSemaphore) = 0;
+		//virtual RHITextureRef GetTexture(uint32_t index) = 0;
+		//virtual RHITextureRef GetNewFrame(std::shared_ptr<RHIFence> fence, std::shared_ptr<RHISemaphore> signalSemaphore) = 0;
+
+	protected:
 		RHISwapchainInfo m_info;
 	};
 
@@ -75,13 +95,18 @@ namespace shzk
 	{
 	public:
 		RHISemaphore() = default;
+		~RHISemaphore() = default;
+
+		virtual void Destroy() = 0;
 	};
 
 	class RHIFence
 	{
 	public:
 		RHIFence() = default;
+		~RHIFence() = default;
 
+		virtual void Destroy() = 0;
 		virtual void Wait() = 0;
 	};
 
@@ -91,6 +116,9 @@ namespace shzk
 	public:
 		RHICommandPool(const RHICommandPoolInfo& info)
 			: m_info(info) {}
+		~RHICommandPool() = default;
+
+		virtual void Destroy() = 0;
 
 		virtual std::shared_ptr<RHICommandContext> CreateCommandContext() = 0;
 
@@ -103,6 +131,8 @@ namespace shzk
 	public:
 		RHICommandContext() = default;
 		~RHICommandContext() = default;
+
+		virtual void Destroy() = 0;
 		
 		virtual void BeginCommand() = 0;
 		virtual void EndCommand() = 0;
@@ -192,8 +222,9 @@ namespace shzk
 	{
 	public:
 		RHICommandContextImmediate() = default;
+		~RHICommandContextImmediate() = default;
 
-	private:
+		virtual void Destroy() = 0;
 
 		/*
 		virtual void Flush() = 0;

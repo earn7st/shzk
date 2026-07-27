@@ -9,13 +9,13 @@ namespace shzk
 	public:
 		RHIResource() = delete;
 		RHIResource(RHIResourceType resourceType) : m_resourceType(resourceType) {}
-		virtual ~RHIResource() {}
+		~RHIResource() = default;
+
+		virtual void Destroy() = 0;	// public?
 
 		inline RHIResourceType GetType() { return m_resourceType; }
 
 	private:
 		RHIResourceType m_resourceType;
-
-		virtual void Destroy();
 	};
 }

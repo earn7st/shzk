@@ -10,6 +10,7 @@
 #include <VkBootstrap.h>
 #include <vma/vk_mem_alloc.h>
 
+// windows header contradiction
 #ifdef CreateSemaphore
 #undef CreateSemaphore
 #endif
@@ -21,19 +22,23 @@ namespace shzk
 	public:
 		VulkanRHI() = delete;
 		VulkanRHI(const RHIInfo& rhiInfo);
-		// TODO: deconstructor
+		~VulkanRHI() = default;
 
+		virtual void Shutdown() override final;
+		
 	// virtual functions	
 		virtual std::shared_ptr<RHIQueue> GetQueue(const RHIQueueInfo& info) override final;
 		virtual std::shared_ptr<RHISurface> CreateSurface(SDL_Window* window) override final;
+		virtual std::shared_ptr<RHISwapchain> CreateSwapchain(const RHISwapchainInfo& info) override final;
 		virtual std::shared_ptr<RHICommandPool> CreateCommandPool(const RHICommandPoolInfo& info) override final;
 		virtual std::shared_ptr<RHISemaphore> CreateSemaphore() override final;
 		virtual std::shared_ptr<RHIFence> CreateFence() override final;
-		//virtual std::shared_ptr<RHISwapchain> CreateSwapchain() override final;
 
 		inline VkInstance GetInstance() const { return m_instance; }
+		inline VkPhysicalDevice GetPhysicalDevice() const { return m_physicalDevice; }
 		inline VkDevice GetDevice() const { return m_device; }
 		inline VmaAllocator GetAllocator() const { return m_allocator; }
+		
 
 	private:
 		void CreateInstance();
@@ -42,8 +47,8 @@ namespace shzk
 		void CreateLogicalDevice();
 		void CreateMemoryAllocator();
 		void CreateQueues();
-		void CreateDescriptorPool();
 		void CreateImmediateCommand();
+		void CreateDescriptorPool();
 
 	private:
 		vkb::Instance m_vkbInstance;
