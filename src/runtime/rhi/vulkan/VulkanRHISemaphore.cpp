@@ -16,6 +16,6 @@ namespace shzk
 	void VulkanRHISemaphore::Destroy()
 	{
 		vkDestroySemaphore(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
-		SHZK_LOG_INFO("VulkanRHISemaphore destroyed");
+		//SHZK_LOG_INFO("VulkanRHISemaphore destroyed");
 	}
 }

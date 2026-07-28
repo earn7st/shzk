@@ -16,6 +16,8 @@ namespace shzk
 		inline VkQueue GetHandle() const { return m_handle; }
 		inline uint32_t GetQueueFamilyIndex() const { return m_queueFamilyIndex; }
 
+		virtual void WaitIdle() override final;
+
 	private:
 		VkQueue m_handle;
 		uint32_t m_queueFamilyIndex;

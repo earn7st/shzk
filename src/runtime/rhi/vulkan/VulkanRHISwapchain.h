@@ -37,6 +37,7 @@ namespace shzk
 		VkFormat m_imageFormat;
 		VkExtent2D m_imageExtent;
 
+		// Capabilities
 		VkSurfaceCapabilitiesKHR m_capabilities;
 		std::vector<VkSurfaceFormatKHR> m_availableFormats;
 		std::vector<VkPresentModeKHR> m_availablePresentModes;

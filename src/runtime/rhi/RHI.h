@@ -2,6 +2,7 @@
 
 #include "RHIDefinitions.h"
 
+#include <iostream>
 #include <memory>
 
 class SDL_Window;
@@ -19,13 +20,13 @@ namespace shzk
 	class RHI
 	{
 	private:
-		static std::shared_ptr<RHI> rhi;
+		static std::shared_ptr<RHI> g_rhi;
 
 	public:
 		static std::shared_ptr<RHI> Init(const RHIInfo& rhiInfo);
-		static std::shared_ptr<RHI> Get() { return rhi; }
+		static std::shared_ptr<RHI>& Get() { return g_rhi; }
 
-		virtual void Shutdown() = 0;
+		virtual void Destroy() = 0;
 
 		virtual std::shared_ptr<RHIQueue> GetQueue(const RHIQueueInfo& info) = 0;
 		virtual std::shared_ptr<RHISurface> CreateSurface(SDL_Window* window) = 0;
@@ -56,6 +57,8 @@ namespace shzk
 
 		inline RHIQueueType GetType() const { return m_info.type; }
 		inline uint32_t GetQueueFamilyIndex() const { return m_info.index; }
+
+		virtual void WaitIdle() = 0;
 
 	protected:
 		RHIQueueInfo m_info;
@@ -111,7 +114,7 @@ namespace shzk
 	};
 
 	class RHICommandContext;
-	class RHICommandPool
+	class RHICommandPool : public std::enable_shared_from_this<RHICommandPool>
 	{
 	public:
 		RHICommandPool(const RHICommandPoolInfo& info)
@@ -134,16 +137,16 @@ namespace shzk
 
 		virtual void Destroy() = 0;
 		
-		virtual void BeginCommand() = 0;
-		virtual void EndCommand() = 0;
+		virtual void RHIBeginCommand() = 0;
+		virtual void RHIEndCommand() = 0;
 
 		/*
-		virtual void Execute(RHIFenceRef waitFence, RHISemaphoreRef waitSemaphore, RHISemaphoreRef signalSemaphore) = 0;     // Êµ¼ÊÌá½»£¬Èç¹ûÑÓ³ÙÂ¼ÖÆÒ²¸ÃÔÚ¶ÔÓ¦Ïß³Ìµ÷ÓÃ¸Ãº¯ÊýÍê³ÉÂ¼ÖÆÌá½»
+		virtual void Execute(RHIFenceRef waitFence, RHISemaphoreRef waitSemaphore, RHISemaphoreRef signalSemaphore) = 0;     // Êµï¿½ï¿½ï¿½á½»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó³ï¿½Â¼ï¿½ï¿½Ò²ï¿½ï¿½ï¿½Ú¶ï¿½Ó¦ï¿½ß³Ìµï¿½ï¿½Ã¸Ãºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½á½»
 
-		// UE RHI³¹µ××öÁË×ÊÔ´×´Ì¬£¨ÈçVkImageLayout£©µÈµÄÆÁ±Î·â×°£¬´ú¼ÛÊÇ¼«ÆäÍ´¿àµÄRHIÊµÏÖ
-		// ºÍBeginTransitions£¬FVulkanLayoutManagerµÈÓÐ¹Ø
-		// ²Î¿¼Sakura Engine»¹ÊÇ×ö±©Â¶°É£¬ÓëUEºÍ½â
-		// resource stateµÄÆÁ±ÎÓ¦¸ÃÔÚRDGµÈ²ã¼¶´¦Àí£¬¶ø²»ÊÇRHI
+		// UE RHIï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ô´×´Ì¬ï¿½ï¿½ï¿½ï¿½VkImageLayoutï¿½ï¿½ï¿½Èµï¿½ï¿½ï¿½ï¿½Î·ï¿½×°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç¼ï¿½ï¿½ï¿½Í´ï¿½ï¿½ï¿½RHIÊµï¿½ï¿½
+		// ï¿½ï¿½BeginTransitionsï¿½ï¿½FVulkanLayoutManagerï¿½ï¿½ï¿½Ð¹ï¿½
+		// ï¿½Î¿ï¿½Sakura Engineï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Â¶ï¿½É£ï¿½ï¿½ï¿½UEï¿½Í½ï¿½
+		// resource stateï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½RDGï¿½È²ã¼¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½RHI
 
 		virtual void TextureBarrier(const RHITextureBarrier& barrier) = 0;
 
@@ -163,7 +166,7 @@ namespace shzk
 
 		virtual void PopEvent() = 0;
 
-		virtual void BeginRenderPass(RHIRenderPassRef renderPass) = 0;   //Ò²¿ÉÒÔÔËÐÐÊ±FindOrCreateÏàÓ¦µÄrenderpassºÍframebufferµÈ£¬ºÜ¶à¶«Î÷¿ÉÒÔ×öÖÐÐÄ»¯µÄ²éÕÒ±íÍ³Ò»¹ÜÀí×´Ì¬
+		virtual void BeginRenderPass(RHIRenderPassRef renderPass) = 0;   //Ò²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±FindOrCreateï¿½ï¿½Ó¦ï¿½ï¿½renderpassï¿½ï¿½framebufferï¿½È£ï¿½ï¿½Ü¶à¶«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½Ä²ï¿½ï¿½Ò±ï¿½Í³Ò»ï¿½ï¿½ï¿½ï¿½×´Ì¬
 
 		virtual void EndRenderPass() = 0;
 

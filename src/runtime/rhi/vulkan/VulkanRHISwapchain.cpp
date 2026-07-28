@@ -47,21 +47,12 @@ namespace shzk
             assert(false);
         }
 
-        uint32_t imageCount = std::max(info.imageCount, m_capabilities.minImageCount);
-        if (m_capabilities.maxImageCount > 0 && imageCount > m_capabilities.maxImageCount)
-        {
-            imageCount = m_capabilities.maxImageCount;
-        }
-        if (info.imageCount != imageCount)
-        {
-            m_info.imageCount = m_capabilities.maxImageCount;
-            SHZK_LOG_WARN("Swapchain image count is greater than capability maximum!");
-        }
+        uint32_t requestImageCount = std::clamp(info.imageCount, m_capabilities.minImageCount, m_capabilities.maxImageCount);
 
         VkSwapchainCreateInfoKHR createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         createInfo.surface = surface;
-        createInfo.minImageCount = imageCount;
+        createInfo.minImageCount = requestImageCount;
         createInfo.imageFormat = surfaceFormat.format;
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
         createInfo.imageExtent = extent;
@@ -73,8 +64,8 @@ namespace shzk
             VK_IMAGE_USAGE_STORAGE_BIT;
 
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;    // 图像同一时间只能被单个队列族访问
-        createInfo.queueFamilyIndexCount = 0; // Optional
-        createInfo.pQueueFamilyIndices = nullptr; // Optional
+        createInfo.queueFamilyIndexCount = 0;                       // Optional
+        createInfo.pQueueFamilyIndices = nullptr;                   // Optional
 
         createInfo.preTransform = m_capabilities.currentTransform;                  // 变换操作，例如旋转反转，用默认
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;              // 透明度混合
@@ -84,9 +75,9 @@ namespace shzk
 
         VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_handle));
 
-        vkGetSwapchainImagesKHR(device, m_handle, &imageCount, nullptr);
-        m_images.resize(imageCount);
-        vkGetSwapchainImagesKHR(device, m_handle, &imageCount, m_images.data());
+        vkGetSwapchainImagesKHR(device, m_handle, &m_info.imageCount, nullptr);
+        m_images.resize(m_info.imageCount);
+        vkGetSwapchainImagesKHR(device, m_handle, &m_info.imageCount, m_images.data());
 
         m_imageFormat = surfaceFormat.format;
         m_imageExtent = extent;

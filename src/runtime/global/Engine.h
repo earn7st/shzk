@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <string>
 
@@ -36,6 +37,6 @@ namespace shzk
 	private:
 		std::shared_ptr<WindowSystem> m_windowSystem;
 		std::shared_ptr<RenderSystem> m_renderSystem;
-		std::shared_ptr<RHI> m_rhi;
+		std::shared_ptr<RHI> m_rhi;		// a copy of the global rhi shared_ptr
 	};
 }

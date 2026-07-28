@@ -1,4 +1,5 @@
 #include "WindowSystem.h"
+#include "runtime/log/Log.h"
 
 #include <SDL3/SDL.h>
 

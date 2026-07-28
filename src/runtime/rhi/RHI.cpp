@@ -4,7 +4,7 @@
 
 namespace shzk
 {
-	std::shared_ptr<RHI> RHI::rhi = nullptr;
+	std::shared_ptr<RHI> RHI::g_rhi = nullptr;
 
 	std::shared_ptr<RHI> RHI::Init(const RHIInfo& rhiInfo)
 	{
@@ -12,16 +12,16 @@ namespace shzk
 		{
 		case RHIBackendType::Vulkan:
 			SHZK_LOG_INFO("RHI backend type: Vulkan");
-			rhi = std::make_shared<VulkanRHI>(rhiInfo);
+			g_rhi = std::make_shared<VulkanRHI>(rhiInfo);
 			break;
 		case RHIBackendType::Max:
 			SHZK_LOG_WARN("RHI backend type: Max(not defined), Vulkan by default.");
 			break;
 		default:
 			SHZK_LOG_ERROR("RHI backend type Invalid.");
-			return nullptr;
+			break;
 		}
-		return rhi;
+		return g_rhi;
 	}
 
 }

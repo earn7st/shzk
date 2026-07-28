@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <memory>
 
 namespace shzk
@@ -13,13 +14,15 @@ namespace shzk
 
 	public:
 		RHICommandList() = default;
-		~RHICommandList() = default;
+        ~RHICommandList() = default;
 
 		static void Init(bool bypass = true);
-		static std::shared_ptr<RHICommandList> Get() { return g_RhiCmdList; }
+		static std::shared_ptr<RHICommandList>& Get() { return g_RhiCmdList; }
 
-        void Begin();
-        void End();
+        inline RHICommandContext& GetContext() { return *m_cmdContext; }
+
+        void BeginCommand();
+        void EndCommand();
 
         /*
         void Execute(std::shared_ptr<RHIFence> waitFence,

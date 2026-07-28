@@ -26,6 +26,7 @@ add_library(
     "runtime/rhi/vulkan/VulkanRHISemaphore.cpp"
     "runtime/rhi/vulkan/VulkanRHISurface.cpp"
     "runtime/rhi/vulkan/VulkanRHISwapchain.cpp"
+    "runtime/rhi/vulkan/VulkanRHIQueue.cpp"
 
     # others in runtime
     "runtime/WindowSystem.cpp"

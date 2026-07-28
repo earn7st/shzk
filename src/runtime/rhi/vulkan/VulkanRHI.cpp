@@ -34,9 +34,54 @@ namespace shzk
 		//CreateDescriptorPool();
 	}
 
-	void VulkanRHI::Shutdown()
+	void VulkanRHI::Destroy()
 	{
-		// TODO
+		SHZK_LOG_INFO("Vulkan RHI destroy begin");
+
+		for (auto& queueList : m_queues)
+		{
+			for (auto& queue : queueList)
+			{
+				queue->WaitIdle();
+			}
+		}
+
+		// Reverse order of construction
+		// Destroy immediate context first (uses device/VMA internally)
+		if (m_cmdContextImmediate)
+		{
+			m_cmdContextImmediate->Destroy();
+		}
+
+		// VMA allocator
+		if (m_allocator)
+		{
+			vmaDestroyAllocator(m_allocator);
+			m_allocator = VK_NULL_HANDLE;
+		}
+
+		// Logical device
+		if (m_device)
+		{
+			vkDestroyDevice(m_device, nullptr);
+			m_device = VK_NULL_HANDLE;
+		}
+
+		// Debug messenger (before instance)
+		if (m_debugMessenger)
+		{
+			vkDestroyDebugUtilsMessengerEXT(m_instance, m_debugMessenger, nullptr);
+			m_debugMessenger = VK_NULL_HANDLE;
+		}
+
+		// Instance (last)
+		if (m_instance)
+		{
+			vkDestroyInstance(m_instance, nullptr);
+			m_instance = VK_NULL_HANDLE;
+		}
+
+		SHZK_LOG_INFO("Vulkan RHI destroy complete");
 	}
 
 	std::shared_ptr<RHIQueue> VulkanRHI::GetQueue(const RHIQueueInfo& info)
@@ -160,7 +205,6 @@ namespace shzk
 		for (auto& idx : m_queueIndices) idx = -1;
 		for (auto& c : m_queueCounts) c = 0;
 
-		// Graphics: 第一个带 GRAPHICS_BIT 的
 		for (uint32_t i = 0; i < count; i++) {
 			if (m_queueFamilyProperties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 				m_queueIndices[(int)RHIQueueType::Graphics] = i;
@@ -168,7 +212,6 @@ namespace shzk
 			}
 		}
 
-		// Compute: 优先 Compute 专用 family（无 GRAPHICS 的 COMPUTE family）
 		for (uint32_t i = 0; i < count; i++) {
 			auto f = m_queueFamilyProperties[i].queueFlags;
 			if ((f & VK_QUEUE_COMPUTE_BIT) && !(f & VK_QUEUE_GRAPHICS_BIT)) {
@@ -176,11 +219,10 @@ namespace shzk
 				break;
 			}
 		}
-		// 若无专用 Compute，那么和 Graphics 共享
+
 		if (m_queueIndices[(int)RHIQueueType::Compute] < 0)
 			m_queueIndices[(int)RHIQueueType::Compute] = m_queueIndices[(int)RHIQueueType::Graphics];
 
-		// Transfer: 优先纯 DMA family（无 GRAPHICS 且无 COMPUTE）
 		for (uint32_t i = 0; i < count; i++) {
 			auto f = m_queueFamilyProperties[i].queueFlags;
 			if ((f & VK_QUEUE_TRANSFER_BIT) && !(f & VK_QUEUE_GRAPHICS_BIT) && !(f & VK_QUEUE_COMPUTE_BIT)) {
@@ -188,7 +230,7 @@ namespace shzk
 				break;
 			}
 		}
-		// 若无专用 Transfer，那么和 Graphics 共享
+
 		if (m_queueIndices[(int)RHIQueueType::Transfer] < 0)
 			m_queueIndices[(int)RHIQueueType::Transfer] = m_queueIndices[(int)RHIQueueType::Graphics];
 	}
@@ -234,7 +276,6 @@ namespace shzk
 
 	void VulkanRHI::CreateMemoryAllocator()
 	{
-		// 只用传 Instance 和 Device 的函数入口地址，其他的函数都已经被 volk 处理好
 		VmaVulkanFunctions vulkanFunctions{};
 		vulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
 		vulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;

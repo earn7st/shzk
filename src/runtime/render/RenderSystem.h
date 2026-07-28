@@ -37,15 +37,13 @@ namespace shzk
 		void InitPerFrameRHIResources();
 
 	private:
-		std::shared_ptr<RHI> m_rhi;
 		std::shared_ptr<RHISurface> m_rhiSurface;
+		std::shared_ptr<RHISwapchain> m_rhiSwapchain;
 		std::shared_ptr<RHIQueue> m_rhiGraphicsQueue;
 		//std::shared_ptr<RHIQueue> m_rhiComputeQueue;
 
-		std::shared_ptr<RHISwapchain> m_rhiSwapchain;
-
-		std::shared_ptr<RHICommandList> m_rhiCmdList;
-		std::shared_ptr<RHICommandListImmediate> m_rhiCmdListImmediate;
+		// std::shared_ptr<RHICommandList> m_rhiCmdList;
+		// std::shared_ptr<RHICommandListImmediate> m_rhiCmdListImmediate;
 		
 		std::shared_ptr<RHICommandPool> m_rhiCmdPool;
 		struct PerFrameRHIResource
@@ -56,5 +54,6 @@ namespace shzk
 			std::shared_ptr<RHIFence> fence;
 		};
 		std::array<PerFrameRHIResource, FRAMES_IN_FLIGHT> m_perFrameResources;
+		uint32_t m_currentFrameIndex = 0;
 	};
 }

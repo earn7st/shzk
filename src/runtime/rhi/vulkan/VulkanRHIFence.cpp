@@ -17,12 +17,13 @@ namespace shzk
 	void VulkanRHIFence::Destroy()
 	{
 		vkDestroyFence(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
-		SHZK_LOG_INFO("VulkanRHIFence destroyed");
+		//SHZK_LOG_INFO("VulkanRHIFence destroyed");
 	}
 
 	void VulkanRHIFence::Wait()
 	{
-		// TODO
+		vkWaitForFences(VULKAN_RHI()->GetDevice(), 1, &m_handle, VK_TRUE, UINT64_MAX);    //TODO 设置超时时间
+		vkResetFences(VULKAN_RHI()->GetDevice(), 1, &m_handle);
 	}
 
 }

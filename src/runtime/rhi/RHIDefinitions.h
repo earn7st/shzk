@@ -139,7 +139,6 @@ namespace shzk
 	} RHICommandPoolInfo;
 
 // RHI resource definitions: infos and related types
-
 	enum class RHIResourceType : uint8_t
 	{
 		Buffer,

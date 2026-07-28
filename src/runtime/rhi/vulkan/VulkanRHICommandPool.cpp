@@ -20,7 +20,7 @@ namespace shzk
 	void VulkanRHICommandPool::Destroy()
 	{
 		vkDestroyCommandPool(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
-		SHZK_LOG_INFO("VulkanRHICommandPool destroyed");
+		//SHZK_LOG_INFO("VulkanRHICommandPool destroyed");
 	}
 
 	std::shared_ptr<RHICommandContext> VulkanRHICommandPool::CreateCommandContext()
@@ -33,9 +33,10 @@ namespace shzk
 		allocInfo.commandBufferCount = 1;
 
 		// Command Pool 为了方便创建 Command Context 保存了 VulkanRHI: m_rhi
+		// 不然的话每次 CreateCommandContext 还需要 RHI cast 到 vulkanRHI
 		VK_CHECK(vkAllocateCommandBuffers(m_rhi.GetDevice(), &allocInfo, &cmdBuffer));
 
-		std::shared_ptr<RHICommandContext> cmdContext = std::make_shared<VulkanRHICommandContext>(cmdBuffer, *this);
+		std::shared_ptr<RHICommandContext> cmdContext = std::make_shared<VulkanRHICommandContext>(cmdBuffer, shared_from_this());
 		assert(cmdContext);
 		SHZK_LOG_INFO("RHICommandContext created");
 		return cmdContext;

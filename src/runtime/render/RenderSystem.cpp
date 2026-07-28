@@ -13,18 +13,14 @@ namespace shzk
 // --- public functions ---
 	void RenderSystem::Init()
 	{
-		// global rhi should be already initialized
-		// in Engine::Init()
-		m_rhi = RHI::Get();
-		assert(m_rhi);
 		
-		m_rhiSurface = m_rhi->CreateSurface(Engine::GetWindowSystem()->GetWindow());
+		m_rhiSurface = RHI::Get()->CreateSurface(Engine::GetWindowSystem()->GetWindow());
 		assert(m_rhiSurface);
 
 		RHIQueueInfo graphicsQueueInfo{};
 		graphicsQueueInfo.type	= RHIQueueType::Graphics;
 		graphicsQueueInfo.index = 0;
-		m_rhiGraphicsQueue = m_rhi->GetQueue(graphicsQueueInfo);
+		m_rhiGraphicsQueue = RHI::Get()->GetQueue(graphicsQueueInfo);
 		assert(m_rhiGraphicsQueue);
 		// RHIQueueInfo computeQueueInfo{};
 		// computeQueueInfo.type = RHIQueueType::Compute;
@@ -38,32 +34,43 @@ namespace shzk
 		swapchainInfo.imageCount	= FRAMES_IN_FLIGHT;
 		swapchainInfo.extent		= m_rhiSurface->GetExetent();
 		swapchainInfo.format		= COLOR_FORMAT;
-		m_rhiSwapchain = m_rhi->CreateSwapchain(swapchainInfo);
+		m_rhiSwapchain = RHI::Get()->CreateSwapchain(swapchainInfo);
 
 		RHICommandPoolInfo cmdPoolInfo{};
 		cmdPoolInfo.queue = m_rhiGraphicsQueue;
-		m_rhiCmdPool = m_rhi->CreateCommandPool(cmdPoolInfo);
+		m_rhiCmdPool = RHI::Get()->CreateCommandPool(cmdPoolInfo);
 		assert(m_rhiCmdPool);
 
 		RHICommandList::Init(true);				// bypass = true
-		m_rhiCmdList = RHICommandList::Get();	// command list is global, g_rhiCmdLIst;
-		assert(m_rhiCmdList);
-
-		m_rhiCmdListImmediate = RHICommandListImmediate::Get();
-		m_rhiCmdListImmediate->SetCommandContext(RHI::Get()->GetCommandContextImmediate().get());
-		assert(m_rhiCmdListImmediate);
+		RHICommandListImmediate::Get()->SetCommandContext(RHI::Get()->GetCommandContextImmediate().get());
 
 		InitPerFrameRHIResources();
 	}
 
 	void RenderSystem::Shutdown()
 	{
+		for (auto& resource : m_perFrameResources)
+		{
+			resource.fence->Destroy();
+			resource.startSemaphore->Destroy();
+			resource.endSemaphore->Destroy();
+			resource.cmdContext->Destroy();
+		}
 
+		m_rhiCmdPool->Destroy();
+		m_rhiSwapchain->Destroy();
+		m_rhiSurface->Destroy();
 	}
 
 	void RenderSystem::Tick()
 	{
+		PerFrameRHIResource& resource = m_perFrameResources[m_currentFrameIndex];
+		//resource.fence->Wait();
 
+		//RHICommandList::Get()->BeginCommand();
+
+
+		//RHICommandList::Get()->EndCommand();
 	}
 
 // --- private functions ---
@@ -72,9 +79,9 @@ namespace shzk
 		for (int i = 0; i < FRAMES_IN_FLIGHT; ++i)
 		{
 			m_perFrameResources[i].cmdContext		= m_rhiCmdPool->CreateCommandContext();
-			m_perFrameResources[i].startSemaphore	= m_rhi->CreateSemaphore();
-			m_perFrameResources[i].endSemaphore		= m_rhi->CreateSemaphore();
-			m_perFrameResources[i].fence			= m_rhi->CreateFence();
+			m_perFrameResources[i].startSemaphore	= RHI::Get()->CreateSemaphore();
+			m_perFrameResources[i].endSemaphore		= RHI::Get()->CreateSemaphore();
+			m_perFrameResources[i].fence			= RHI::Get()->CreateFence();
 		}
 	}
 }

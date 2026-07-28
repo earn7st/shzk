@@ -27,7 +27,8 @@ namespace shzk
 
 	void VulkanRHISurface::Destroy()
 	{
-		vkDestroySurfaceKHR(VULKAN_RHI()->GetInstance(), m_handle, nullptr);
-		SHZK_LOG_INFO("VulkanRHISurface destroyed");
+		//vkDestroySurfaceKHR(VULKAN_RHI()->GetInstance(), m_handle, nullptr);
+		SDL_Vulkan_DestroySurface(VULKAN_RHI()->GetInstance(), m_handle, nullptr);
+		//SHZK_LOG_INFO("VulkanRHISurface destroyed");
 	}
 }

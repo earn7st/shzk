@@ -19,6 +19,6 @@ namespace shzk
 	
 	void Editor::Shutdown()
 	{
-
+		Engine::Shutdown();
 	}
 }

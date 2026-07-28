@@ -24,7 +24,7 @@ namespace shzk
 		VulkanRHI(const RHIInfo& rhiInfo);
 		~VulkanRHI() = default;
 
-		virtual void Shutdown() override final;
+		virtual void Destroy() override final;
 		
 	// virtual functions	
 		virtual std::shared_ptr<RHIQueue> GetQueue(const RHIQueueInfo& info) override final;

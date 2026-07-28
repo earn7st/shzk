@@ -1,8 +1,11 @@
 #include "RHICommandList.h"
 
 #include "runtime/log/Log.h"
+#include "runtime/rhi/RHI.h"
 
 #include <memory>
+
+#include <cassert>
 
 namespace shzk
 {
@@ -13,23 +16,22 @@ namespace shzk
 		g_RhiCmdList->m_bypass = bypass;
 	}
 
-	void RHICommandList::Begin()
+	void RHICommandList::BeginCommand()
 	{
-		if (!m_cmdContext)
+		if (m_bypass)
 		{
-			SHZK_LOG_WARN("RHI command context is empty, cannot Begin()");
-			return;
+			assert(m_cmdContext);
+			m_cmdContext->RHIBeginCommand();
 		}
 	}
 
-	void RHICommandList::End()
+	void RHICommandList::EndCommand()
 	{
-		if (!m_cmdContext)
+		if (m_bypass)
 		{
-			SHZK_LOG_WARN("RHI command context is empty, cannot End()");
-			return;
+			assert(m_cmdContext);
+			m_cmdContext->RHIEndCommand();
 		}
-
 	}
 
 	// void Submit(std::shared_ptr<RHISemaphore> wait,
