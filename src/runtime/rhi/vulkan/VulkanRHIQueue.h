@@ -13,7 +13,7 @@ namespace shzk
 			: RHIQueue(info), m_handle(queue), m_queueFamilyIndex(queueFamilyIndex) {}
 
 		// Getters
-		inline VkQueue GetHandle() const { return m_handle; }
+		inline const VkQueue GetHandle()& { return m_handle; }
 		inline uint32_t GetQueueFamilyIndex() const { return m_queueFamilyIndex; }
 
 		virtual void WaitIdle() override final;

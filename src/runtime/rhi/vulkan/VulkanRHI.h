@@ -34,10 +34,10 @@ namespace shzk
 		virtual std::shared_ptr<RHISemaphore> CreateSemaphore() override final;
 		virtual std::shared_ptr<RHIFence> CreateFence() override final;
 
-		inline VkInstance GetInstance() const { return m_instance; }
-		inline VkPhysicalDevice GetPhysicalDevice() const { return m_physicalDevice; }
-		inline VkDevice GetDevice() const { return m_device; }
-		inline VmaAllocator GetAllocator() const { return m_allocator; }
+		inline const VkInstance& GetInstance() { return m_instance; }
+		inline const VkPhysicalDevice& GetPhysicalDevice() { return m_physicalDevice; }
+		inline const VkDevice& GetDevice() { return m_device; }
+		inline const VmaAllocator& GetAllocator() { return m_allocator; }
 		
 
 	private:

@@ -2,6 +2,10 @@
 #include "VulkanRHI.h"
 #include "VulkanRHISurface.h"
 #include "VulkanUtil.h"
+#include "VulkanRHIResource.h"
+#include "VulkanRHIFence.h"
+#include "VulkanRHISemaphore.h"
+#include "VulkanRHIQueue.h"
 #include "runtime/log/Log.h"
 
 #include <memory>
@@ -82,40 +86,73 @@ namespace shzk
         m_imageFormat = surfaceFormat.format;
         m_imageExtent = extent;
 
-        /* 
-        // TODO
-        for (uint32_t i = 0; i < imageCount; i++)
+        
+        for (uint32_t i = 0; i < m_info.imageCount; i++)
         {
             RHITextureInfo info = {
                 .format = targetFormat,
                 .extent = { extent.width, extent.height, 1},
                 .arrayLayers = 1,
                 .mipLevels = 1,
-                .memoryUsage = MEMORY_USAGE_GPU_ONLY,
+                .memoryUsage = MemoryUsage::GPU_Only,
                 .type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_RENDER_TARGET,
                 .creationFlag = TEXTURE_CREATION_NONE
             };
 
-            RHITextureRef texture = std::make_shared<VulkanRHITexture>(info, backend, images[i]);
-            textures.push_back(texture);
+            std::shared_ptr<RHITexture> texture = std::make_shared<VulkanRHITexture>(info, rhi, m_images[i]);
+            m_textures.push_back(texture);
 
             // 留着RESOURCE_STATE_UNDEFINED之后处理其实也可以，可加可不加
-            backend.GetImmediateCommand()->TextureBarrier(
-                { texture, RESOURCE_STATE_UNDEFINED, RESOURCE_STATE_PRESENT, {TEXTURE_ASPECT_COLOR, 0, 1, 0, 1} });
-            backend.GetImmediateCommand()->Flush();
+            // backend.GetImmediateCommand()->TextureBarrier(
+            //    { texture, RESOURCE_STATE_UNDEFINED, RESOURCE_STATE_PRESENT, {TEXTURE_ASPECT_COLOR, 0, 1, 0, 1} });
+            // backend.GetImmediateCommand()->Flush();
         }
-        */
 	}
-
-    void VulkanRHISwapchain::Present(std::shared_ptr<RHISemaphore> waitSemaphore)
-    {
-    }
 
     void VulkanRHISwapchain::Destroy()
     {
         vkDestroySwapchainKHR(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
         SHZK_LOG_INFO("VulkanRHISwapchain destroyed");
     }
+
+    std::shared_ptr<RHITexture> VulkanRHISwapchain::GetTexture(uint32_t index)
+    {
+        return m_textures[index];
+    }
+
+    std::shared_ptr<RHITexture> VulkanRHISwapchain::AcquireNextTexture(std::shared_ptr<RHIFence> fence, std::shared_ptr<RHISemaphore> signalSemaphore)
+    {
+        VkFence signalFence = VK_NULL_HANDLE;
+        VkSemaphore semaphore = VK_NULL_HANDLE;
+
+        if (fence != nullptr) signalFence = CastTo<VulkanRHIFence>(fence)->GetHandle();
+        if (signalSemaphore != nullptr) semaphore = CastTo<VulkanRHISemaphore>(signalSemaphore)->GetHandle();
+
+        VK_CHECK(vkAcquireNextImageKHR(
+            VULKAN_RHI()->GetDevice(),
+            m_handle, UINT64_MAX, semaphore, signalFence, &m_currentIndex));
+
+        return m_textures[m_currentIndex];
+    }
+
+    void VulkanRHISwapchain::Present(std::shared_ptr<RHISemaphore> waitSemaphore)
+    {
+        VkSemaphore semaphore = VK_NULL_HANDLE;
+        if (waitSemaphore != nullptr) semaphore = CastTo<VulkanRHISemaphore>(waitSemaphore)->GetHandle();
+
+        VkPresentInfoKHR presentInfo{};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = &m_handle;
+        presentInfo.pImageIndices = &m_currentIndex;
+        presentInfo.pResults = nullptr;
+        presentInfo.waitSemaphoreCount = semaphore == VK_NULL_HANDLE ? 0 : 1;
+        presentInfo.pWaitSemaphores = &semaphore;
+
+        VK_CHECK(vkQueuePresentKHR(CastTo<VulkanRHIQueue>(m_info.presentQueue)->GetHandle(), &presentInfo));
+    }
+
+
 
     VkSurfaceFormatKHR VulkanRHISwapchain::ChooseSwapchainSurfaceFormat(VkFormat targetFormat)
     {

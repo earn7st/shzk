@@ -8,20 +8,21 @@
 namespace shzk
 {
 	class VulkanRHI;
+	class RHITexture;
 
 	class VulkanRHISwapchain : public RHISwapchain
 	{
 	public:
 		VulkanRHISwapchain(const RHISwapchainInfo& info, VulkanRHI& rhi);
 
-		virtual uint32_t GetCurrentFrameIndex() override final { return currentIndex; }
-		// virtual RHITextureRef GetTexture(uint32_t index) override final { return textures[index]; }
-		// virtual RHITextureRef GetNewFrame(RHIFenceRef fence, RHISemaphoreRef signalSemaphore) override final;
+		virtual void Destroy() override final;
+		
+		inline virtual uint32_t GetCurrentFrameIndex() override final { return m_currentIndex; }
+		virtual std::shared_ptr<RHITexture> GetTexture(uint32_t index) override final;
+		virtual std::shared_ptr<RHITexture> AcquireNextTexture(std::shared_ptr<RHIFence> fence, std::shared_ptr<RHISemaphore> signalSemaphore) override final;
 		virtual void Present(std::shared_ptr<RHISemaphore> waitSemaphore) override final;
 
-		const VkSwapchainKHR& GetHandle() { return m_handle; }
-
-		virtual void Destroy() override final;
+		inline const VkSwapchainKHR& GetHandle() { return m_handle; }
 
 	private:
 		VkSurfaceFormatKHR ChooseSwapchainSurfaceFormat(VkFormat targetFormat);
@@ -42,7 +43,7 @@ namespace shzk
 		std::vector<VkSurfaceFormatKHR> m_availableFormats;
 		std::vector<VkPresentModeKHR> m_availablePresentModes;
 
-		//std::vector<std::shared_ptr<RHITexture>> textures;
-		uint32_t currentIndex;
+		std::vector<std::shared_ptr<RHITexture>> m_textures;
+		uint32_t m_currentIndex;
 	};
 }

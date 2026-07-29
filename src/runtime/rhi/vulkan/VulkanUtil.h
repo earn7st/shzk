@@ -4,6 +4,8 @@
 #include <cassert>
 #include <memory>
 #include <string>
+
+#include <vma/vk_mem_alloc.h>
     
 #define VK_CHECK(expr)\
     do {\
@@ -200,5 +202,44 @@ namespace shzk
 
             return format;
         }
+
+        static VmaMemoryUsage MemoryUsageToVma(MemoryUsage memoryUsage)
+        {
+            VmaMemoryUsage usage;
+            switch (memoryUsage) {
+            case MemoryUsage::Unknown:      usage = VMA_MEMORY_USAGE_UNKNOWN;       break;
+            case MemoryUsage::GPU_Only:     usage = VMA_MEMORY_USAGE_GPU_ONLY;      break;
+            case MemoryUsage::CPU_Only:     usage = VMA_MEMORY_USAGE_CPU_ONLY;      break;
+            case MemoryUsage::CPU_To_GPU:   usage = VMA_MEMORY_USAGE_CPU_TO_GPU;    break;
+            case MemoryUsage::GPU_To_CPU:   usage = VMA_MEMORY_USAGE_GPU_TO_CPU;    break;
+            default:                        usage = VMA_MEMORY_USAGE_UNKNOWN;       break;
+            }
+
+            return usage;
+        }
+
+        static VkBufferUsageFlags ResourceTypeToBufferUsage(ResourceType type)
+        {
+            VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+            if (type & RESOURCE_TYPE_UNIFORM_BUFFER)        usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+            if (type & RESOURCE_TYPE_RW_BUFFER)             usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            if (type & RESOURCE_TYPE_BUFFER)                usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+            if (type & RESOURCE_TYPE_INDEX_BUFFER)          usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+            if (type & RESOURCE_TYPE_VERTEX_BUFFER)         usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+            if (type & RESOURCE_TYPE_INDIRECT_BUFFER)       usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+            if (type & RESOURCE_TYPE_RAY_TRACING)           usage |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+
+            return usage;
+        }
+
+        static VkImageUsageFlags ResourceTypeToImageUsage(ResourceType type)
+        {
+            VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+            if (type & RESOURCE_TYPE_TEXTURE)               usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+            if (type & RESOURCE_TYPE_RW_TEXTURE)            usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+
+            return usage;
+        }
+
     }
 }

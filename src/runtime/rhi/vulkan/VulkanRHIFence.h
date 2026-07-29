@@ -19,6 +19,8 @@ namespace shzk
 
 		virtual void Wait() override final;
 
+		inline const VkFence& GetHandle() { return m_handle; }
+
 	private:
 		VkFence m_handle;
 	};

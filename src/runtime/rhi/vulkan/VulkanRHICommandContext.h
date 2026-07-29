@@ -18,11 +18,15 @@ namespace shzk
 
 		virtual void Destroy() override final;
 
-		inline VkCommandBuffer GetHandle() const { return m_cmdBuffer; }
+		inline VkCommandBuffer& GetHandle() { return m_cmdBuffer; }
 
 	// RHI Commands
 		virtual void RHIBeginCommand() override final;
 		virtual void RHIEndCommand() override final;
+		virtual void RHISubmit(
+			std::shared_ptr<RHIFence> waitFence,
+			std::shared_ptr<RHISemaphore> waitSemaphore,
+			std::shared_ptr<RHISemaphore> signalSemaphore) override final;
 
 	private:
 		std::shared_ptr<RHICommandPool> m_cmdPool = nullptr;

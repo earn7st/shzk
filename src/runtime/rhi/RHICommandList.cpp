@@ -34,6 +34,18 @@ namespace shzk
 		}
 	}
 
+	void RHICommandList::Submit(
+		std::shared_ptr<RHIFence> fence,
+		std::shared_ptr<RHISemaphore> waitSemaphore,
+		std::shared_ptr<RHISemaphore> signalSemaphore)
+	{
+		if (m_bypass)
+		{
+			assert(m_cmdContext);
+			m_cmdContext->RHISubmit(fence, waitSemaphore, signalSemaphore);
+		}
+	}
+
 	// void Submit(std::shared_ptr<RHISemaphore> wait,
 	//	std::shared_ptr<RHISemaphore> signal,
 	//	std::shared_ptr<RHIFence> fence) = 0;

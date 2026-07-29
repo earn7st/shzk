@@ -7,6 +7,11 @@
 
 class SDL_Window;
 
+// windows header contradiction
+#ifdef CreateSemaphore
+#undef CreateSemaphore
+#endif
+
 namespace shzk
 {
 	class RHIQueue;
@@ -16,6 +21,7 @@ namespace shzk
 	class RHISemaphore;
 	class RHIFence;
 	class RHICommandContextImmediate;
+	class RHITexture;
 
 	class RHI
 	{
@@ -83,12 +89,14 @@ namespace shzk
 	public:
 		RHISwapchain() = delete;
 		RHISwapchain(const RHISwapchainInfo& info) : m_info(info) {}
+		~RHISwapchain() = default;
 
 		virtual void Destroy() = 0;
+
 		virtual uint32_t GetCurrentFrameIndex() = 0;
+		virtual std::shared_ptr<RHITexture> GetTexture(uint32_t index) = 0;
+		virtual std::shared_ptr<RHITexture> AcquireNextTexture(std::shared_ptr<RHIFence> fence, std::shared_ptr<RHISemaphore> signalSemaphore) = 0;
 		virtual void Present(std::shared_ptr<RHISemaphore> waitSemaphore) = 0;
-		//virtual RHITextureRef GetTexture(uint32_t index) = 0;
-		//virtual RHITextureRef GetNewFrame(std::shared_ptr<RHIFence> fence, std::shared_ptr<RHISemaphore> signalSemaphore) = 0;
 
 	protected:
 		RHISwapchainInfo m_info;
@@ -125,6 +133,8 @@ namespace shzk
 
 		virtual std::shared_ptr<RHICommandContext> CreateCommandContext() = 0;
 
+		inline std::shared_ptr<RHIQueue> GetQueue() { return m_info.queue; }
+
 	private:
 		RHICommandPoolInfo m_info;
 	};
@@ -139,14 +149,13 @@ namespace shzk
 		
 		virtual void RHIBeginCommand() = 0;
 		virtual void RHIEndCommand() = 0;
+		virtual void RHISubmit(
+			std::shared_ptr<RHIFence> fence,
+			std::shared_ptr<RHISemaphore> waitSemaphore,
+			std::shared_ptr<RHISemaphore> signalSemaphore) = 0;
 
 		/*
 		virtual void Execute(RHIFenceRef waitFence, RHISemaphoreRef waitSemaphore, RHISemaphoreRef signalSemaphore) = 0;     // ʵ���ύ������ӳ�¼��Ҳ���ڶ�Ӧ�̵߳��øú������¼���ύ
-
-		// UE RHI����������Դ״̬����VkImageLayout���ȵ����η�װ�������Ǽ���ʹ���RHIʵ��
-		// ��BeginTransitions��FVulkanLayoutManager���й�
-		// �ο�Sakura Engine��������¶�ɣ���UE�ͽ�
-		// resource state������Ӧ����RDG�Ȳ㼶������������RHI
 
 		virtual void TextureBarrier(const RHITextureBarrier& barrier) = 0;
 

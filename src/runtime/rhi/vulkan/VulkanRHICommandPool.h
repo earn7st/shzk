@@ -19,7 +19,7 @@ namespace shzk
 
 		virtual std::shared_ptr<RHICommandContext> CreateCommandContext() override final;
 
-		inline VkCommandPool GetHandle() const { return m_handle; }
+		inline VkCommandPool& GetHandle() { return m_handle; }
 
 	private:
 		VkCommandPool m_handle;

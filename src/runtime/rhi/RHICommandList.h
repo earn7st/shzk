@@ -6,6 +6,8 @@
 namespace shzk
 {
 	class RHICommandContext;
+    class RHIFence;
+    class RHISemaphore;
 
 	class RHICommandList
 	{
@@ -19,10 +21,18 @@ namespace shzk
 		static void Init(bool bypass = true);
 		static std::shared_ptr<RHICommandList>& Get() { return g_RhiCmdList; }
 
+        inline void SetContext(RHICommandContext* context) { m_cmdContext = context; }
         inline RHICommandContext& GetContext() { return *m_cmdContext; }
 
         void BeginCommand();
         void EndCommand();
+        void Submit(
+            std::shared_ptr<RHIFence> fence,
+            std::shared_ptr<RHISemaphore> waitSemaphore,
+            std::shared_ptr<RHISemaphore> signalSemaphore);
+        // void BeginRenderPass();
+        // void EndRenderPass();
+
 
         /*
         void Execute(std::shared_ptr<RHIFence> waitFence,

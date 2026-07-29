@@ -65,12 +65,16 @@ namespace shzk
 	void RenderSystem::Tick()
 	{
 		PerFrameRHIResource& resource = m_perFrameResources[m_currentFrameIndex];
-		//resource.fence->Wait();
+		resource.fence->Wait();
+		std::shared_ptr<RHITexture> currentSwapchainTexture = m_rhiSwapchain->AcquireNextTexture(nullptr, resource.startSemaphore);
+		RHICommandList::Get()->SetContext(resource.cmdContext.get());
+		RHICommandList::Get()->BeginCommand();
 
-		//RHICommandList::Get()->BeginCommand();
+		// TODO: TextureBarrier, then Present
 
-
-		//RHICommandList::Get()->EndCommand();
+		RHICommandList::Get()->EndCommand();
+		RHICommandList::Get()->Submit(resource.fence, resource.startSemaphore, resource.endSemaphore);
+		m_rhiSwapchain->Present(resource.endSemaphore);
 	}
 
 // --- private functions ---

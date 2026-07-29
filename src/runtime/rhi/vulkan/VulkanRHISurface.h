@@ -16,7 +16,7 @@ namespace shzk
 
 		virtual void Destroy() override final;
 
-		inline VkSurfaceKHR GetHandle() const { return m_handle; }
+		inline const VkSurfaceKHR& GetHandle() { return m_handle; }
 
 	private:
 		VkSurfaceKHR m_handle;

@@ -16,6 +16,8 @@ namespace shzk
 	
 		virtual void Destroy() override final;
 
+		inline const VkSemaphore& GetHandle() { return m_handle; }
+
 	private:
 		VkSemaphore m_handle;
 	};
