@@ -11,9 +11,10 @@ namespace shzk
 		: RHITexture(info), m_handle(image)
 	{
 		TextureAspectFlags aspects =    
-            RHIUtil::IsDepthStencilFormat(info.format) ? TEXTURE_ASPECT_DEPTH_STENCIL :
-            RHIUtil::IsDepthFormat(info.format) ? TEXTURE_ASPECT_DEPTH :
-            RHIUtil::IsStencilFormat(info.format) ? TEXTURE_ASPECT_STENCIL : TEXTURE_ASPECT_COLOR;
+            RHIUtil::IsDepthStencilFormat(info.format)  ?   TEXTURE_ASPECT_DEPTH_STENCIL :
+            RHIUtil::IsDepthFormat(info.format)         ?   TEXTURE_ASPECT_DEPTH :
+            RHIUtil::IsStencilFormat(info.format)       ?   TEXTURE_ASPECT_STENCIL : 
+                                                            TEXTURE_ASPECT_COLOR;
         m_defaultRange = {aspects, 0, info.mipLevels, 0, info.arrayLayers};
         m_defaultLayers = {aspects, 0, 0, info.arrayLayers};
 
@@ -26,8 +27,14 @@ namespace shzk
         VkFormat format = VulkanUtil::RHIFormatToVkFormat(info.format);
 
         VkImageUsageFlags usage = VulkanUtil::ResourceTypeToImageUsage(info.type);
-        if (RHIUtil::IsDepthFormat(info.format) || RHIUtil::IsStencilFormat(info.format))   usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-        else if (info.type & RESOURCE_TYPE_RENDER_TARGET)                                   usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        if (RHIUtil::IsDepthFormat(info.format) || RHIUtil::IsStencilFormat(info.format))
+        {
+            usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
+        else if (info.type & RESOURCE_TYPE_RENDER_TARGET)
+        {   
+            usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
 
         VkImageType type =  
             info.extent.depth > 1   ?   VK_IMAGE_TYPE_3D :
@@ -49,7 +56,10 @@ namespace shzk
         imageInfo.extent.depth = info.extent.depth;
         imageInfo.mipLevels = info.mipLevels;
         imageInfo.arrayLayers = info.arrayLayers;   
-        if(info.type & RESOURCE_TYPE_TEXTURE_CUBE) imageInfo.arrayLayers = std::max(imageInfo.arrayLayers, (uint32_t)6);
+        if (info.type & RESOURCE_TYPE_TEXTURE_CUBE)
+        {
+            imageInfo.arrayLayers = std::max(imageInfo.arrayLayers, (uint32_t)6);
+        }
         imageInfo.format = format;
         imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         imageInfo.usage = usage;

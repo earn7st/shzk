@@ -46,6 +46,24 @@ namespace shzk
 		}
 	}
 
+	void RHICommandList::TextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba)
+	{
+		if (m_bypass)
+		{
+			assert(m_cmdContext);
+			m_cmdContext->RHITextureClearColor(texture, rgba);
+		}
+	}
+
+	void RHICommandList::TextureBarrier(const RHITextureBarrier& barrier)
+	{
+		if (m_bypass)
+		{
+			assert(m_cmdContext);
+			m_cmdContext->RHITextureBarrierCommand(barrier);
+		}
+	}
+
 	// void Submit(std::shared_ptr<RHISemaphore> wait,
 	//	std::shared_ptr<RHISemaphore> signal,
 	//	std::shared_ptr<RHIFence> fence) = 0;

@@ -25,7 +25,7 @@ namespace shzk
 	private:
 		VkImage m_handle;
 
-		VmaAllocation m_alloc;
-		VmaAllocationInfo m_allocInfo;
+		VmaAllocation m_alloc = nullptr;
+		VmaAllocationInfo m_allocInfo{};
 	};
 }

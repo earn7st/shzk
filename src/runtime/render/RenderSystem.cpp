@@ -70,11 +70,20 @@ namespace shzk
 		RHICommandList::Get()->SetContext(resource.cmdContext.get());
 		RHICommandList::Get()->BeginCommand();
 
-		// TODO: TextureBarrier, then Present
+		// Barrier 1: Present£¨Undefined£© ¡ú TransferDst£¨vkCmdClearColorImage ÒªÇó£©
+		RHICommandList::Get()->TextureBarrier({ currentSwapchainTexture, RHIResourceState::Undefined, RHIResourceState::TransferDst });
+
+		// Clear Color
+		RHICommandList::Get()->TextureClearColor(currentSwapchainTexture, { 0.1f, 0.2f, 0.4f, 1.0f });
+
+		// Barrier 2: TransferDst ¡ú Present
+		RHICommandList::Get()->TextureBarrier({ currentSwapchainTexture, RHIResourceState::TransferDst, RHIResourceState::Present });
 
 		RHICommandList::Get()->EndCommand();
 		RHICommandList::Get()->Submit(resource.fence, resource.startSemaphore, resource.endSemaphore);
 		m_rhiSwapchain->Present(resource.endSemaphore);
+
+		m_currentFrameIndex = (m_currentFrameIndex + 1) % FRAMES_IN_FLIGHT;
 	}
 
 // --- private functions ---

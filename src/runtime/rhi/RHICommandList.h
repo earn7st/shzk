@@ -1,7 +1,10 @@
 #pragma once
 
+#include "RHIDefinitions.h"
+
 #include <iostream>
 #include <memory>
+#include <glm/glm.hpp>
 
 namespace shzk
 {
@@ -30,6 +33,8 @@ namespace shzk
             std::shared_ptr<RHIFence> fence,
             std::shared_ptr<RHISemaphore> waitSemaphore,
             std::shared_ptr<RHISemaphore> signalSemaphore);
+        void TextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba);
+        void TextureBarrier(const RHITextureBarrier& barrier);
         // void BeginRenderPass();
         // void EndRenderPass();
 

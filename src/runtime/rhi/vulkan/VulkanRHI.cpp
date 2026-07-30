@@ -4,10 +4,12 @@
 #include "VulkanRHIQueue.h"
 #include "VulkanRHISwapchain.h"
 #include "VulkanRHICommandPool.h"
-#include "VulkanRHICommandContext.h"
-#include "VulkanRHICommandContextImmediate.h"
 #include "VulkanRHISemaphore.h"
 #include "VulkanRHIFence.h"
+#include "VulkanRHIResource.h"
+#include "runtime/rhi/RHIDefinitions.h"
+#include "runtime/rhi/RHIResource.h"
+
 #define  VOLK_IMPLEMENTATION
 #include <volk/volk.h>
 #include <VkBootstrap.h>
@@ -326,5 +328,127 @@ namespace shzk
 	void VulkanRHI::CreateDescriptorPool()
 	{
 
+	}
+
+// Command Context
+	
+	void VulkanRHICommandContext::Destroy()
+	{
+		vkFreeCommandBuffers(VULKAN_RHI()->GetDevice(), CastTo<VulkanRHICommandPool>(m_cmdPool)->GetHandle(), 1, &m_cmdBuffer);
+		//SHZK_LOG_INFO("VulkanRHICommandContext destroyed");
+	}
+
+	void VulkanRHICommandContext::RHIBeginCommand()
+	{
+		vkResetCommandBuffer(m_cmdBuffer, 0);
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		VK_CHECK(vkBeginCommandBuffer(m_cmdBuffer, &beginInfo));
+	}
+
+	void VulkanRHICommandContext::RHIEndCommand()
+	{
+		VK_CHECK(vkEndCommandBuffer(m_cmdBuffer));
+	}
+
+	void VulkanRHICommandContext::RHISubmit(std::shared_ptr<RHIFence> fence, std::shared_ptr<RHISemaphore> waitSemaphore, std::shared_ptr<RHISemaphore> signalSemaphore)
+	{
+		VkPipelineStageFlags stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT;
+		VkFence signalFence = VK_NULL_HANDLE;
+
+		VkSubmitInfo submitInfo = {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &m_cmdBuffer;
+
+		if (fence != nullptr)
+		{
+			signalFence = CastTo<VulkanRHIFence>(fence)->GetHandle();
+		}
+		if (waitSemaphore != nullptr)
+		{
+			submitInfo.waitSemaphoreCount = 1;
+			submitInfo.pWaitSemaphores = &(CastTo<VulkanRHISemaphore>(waitSemaphore)->GetHandle());
+			submitInfo.pWaitDstStageMask = &stage;
+		}
+		if (signalSemaphore != nullptr)
+		{
+			submitInfo.signalSemaphoreCount = 1;
+			submitInfo.pSignalSemaphores = &(CastTo<VulkanRHISemaphore>(signalSemaphore)->GetHandle());
+		}
+
+		VK_CHECK((vkQueueSubmit(CastTo<VulkanRHIQueue>(m_cmdPool->GetQueue())->GetHandle(), 1, &submitInfo, signalFence)));
+	}
+
+	void VulkanRHICommandContext::RHITextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba)
+	{
+		VkClearColorValue clear = { rgba.x, rgba.y, rgba.z, rgba.a };
+		VkImageSubresourceRange range = VulkanUtil::SubresourceToVk(
+			texture->GetDefaultSubresourceRange());
+
+		vkCmdClearColorImage(m_cmdBuffer,
+			CastTo<VulkanRHITexture>(texture)->GetHandle(),
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			&clear, 1, &range);
+	}
+
+	void VulkanRHICommandContext::RHITextureBarrierCommand(const RHITextureBarrier& barrier)
+	{
+		RHITextureBarrierImpl(m_cmdBuffer, barrier);
+	}
+
+// Immediate Command Context
+
+	VulkanRHICommandContextImmediate::VulkanRHICommandContextImmediate(VulkanRHI& rhi)
+	{
+		m_fence = rhi.CreateFence();
+		m_queue = rhi.GetQueue({ .type = RHIQueueType::Graphics, .index = 0 });
+		m_cmdPool = rhi.CreateCommandPool({ .queue = m_queue });
+		m_device = rhi.GetDevice();		// save device handle here
+		// because immediate commands can be called frequently, better not be casting global RHI every frame
+
+// VkCommandBuffer is instant created when use
+	}
+	void VulkanRHICommandContextImmediate::Destroy()
+	{
+		m_fence->Destroy();
+		m_cmdPool->Destroy();
+	}
+
+	void RHITextureBarrierImpl(VkCommandBuffer& cmdBuffer, const RHITextureBarrier& barrier)
+	{
+		RHIResourceState srcState = barrier.srcState;
+		RHIResourceState dstState = barrier.dstState;
+
+		TextureSubresourceRange range = barrier.subresource;
+		if (range.aspect == TEXTURE_ASPECT_NONE) range = barrier.texture->GetDefaultSubresourceRange();
+
+		VkAccessFlags srcAccessMask = VulkanUtil::ResourceStateToAccessFlags(barrier.srcState);
+		VkAccessFlags dstAccessMask = VulkanUtil::ResourceStateToAccessFlags(barrier.dstState);
+		VkPipelineStageFlags srcStage = VulkanUtil::AccessFlagsToPipelineStageFlags(srcAccessMask);
+		VkPipelineStageFlags dstStage = VulkanUtil::AccessFlagsToPipelineStageFlags(dstAccessMask);
+
+		// srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;   // 可以保证绝对不会出错
+		// dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;   // 目前验证层VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT还是会有一些报错，太难调了
+
+		VkImageMemoryBarrier memoryBarrier = {};
+		memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		memoryBarrier.oldLayout = VulkanUtil::ResourceStateToImageLayout(barrier.srcState);
+		memoryBarrier.newLayout = VulkanUtil::ResourceStateToImageLayout(barrier.dstState);
+		memoryBarrier.image = CastTo<VulkanRHITexture>(barrier.texture)->GetHandle();
+		memoryBarrier.subresourceRange = VulkanUtil::SubresourceToVk(range);
+		memoryBarrier.srcAccessMask = srcAccessMask;
+		memoryBarrier.dstAccessMask = dstAccessMask;
+
+		vkCmdPipelineBarrier(
+			cmdBuffer,
+			srcStage, dstStage, 0,
+			0, nullptr,
+			0, nullptr,
+			1, &memoryBarrier);
 	}
 }

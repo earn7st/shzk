@@ -67,9 +67,9 @@ namespace shzk
             VK_IMAGE_USAGE_SAMPLED_BIT |
             VK_IMAGE_USAGE_STORAGE_BIT;
 
-        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;    // 图像同一时间只能被单个队列族访问
-        createInfo.queueFamilyIndexCount = 0;                       // Optional
-        createInfo.pQueueFamilyIndices = nullptr;                   // Optional
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0;
+        createInfo.pQueueFamilyIndices = nullptr;
 
         createInfo.preTransform = m_capabilities.currentTransform;                  // 变换操作，例如旋转反转，用默认
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;              // 透明度混合
@@ -85,7 +85,6 @@ namespace shzk
 
         m_imageFormat = surfaceFormat.format;
         m_imageExtent = extent;
-
         
         for (uint32_t i = 0; i < m_info.imageCount; i++)
         {
@@ -94,7 +93,7 @@ namespace shzk
                 .extent = { extent.width, extent.height, 1},
                 .arrayLayers = 1,
                 .mipLevels = 1,
-                .memoryUsage = MemoryUsage::GPU_Only,
+                .memoryUsage = MemoryUsage::GPUOnly,
                 .type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_RENDER_TARGET,
                 .creationFlag = TEXTURE_CREATION_NONE
             };
@@ -102,10 +101,7 @@ namespace shzk
             std::shared_ptr<RHITexture> texture = std::make_shared<VulkanRHITexture>(info, rhi, m_images[i]);
             m_textures.push_back(texture);
 
-            // 留着RESOURCE_STATE_UNDEFINED之后处理其实也可以，可加可不加
-            // backend.GetImmediateCommand()->TextureBarrier(
-            //    { texture, RESOURCE_STATE_UNDEFINED, RESOURCE_STATE_PRESENT, {TEXTURE_ASPECT_COLOR, 0, 1, 0, 1} });
-            // backend.GetImmediateCommand()->Flush();
+            // Optional: ResourceState Undefined -> Present
         }
 	}
 

@@ -9,8 +9,10 @@ namespace shzk
 
 	class RHIQueue;
 	class RHISurface;
+	class RHIBuffer;
+	class RHITexture;
 
-// enums
+// enum classes
 	enum class RHIResourceType : uint32_t
 	{
 		Buffer,
@@ -19,6 +21,51 @@ namespace shzk
 		Max
 	};
 
+	enum class RHIBackendType : uint32_t
+	{
+		Vulkan,
+		Max = 0x7FFFFFFF
+	};
+
+	enum class RHIQueueType : uint32_t
+	{
+		Graphics,
+		Compute,
+		Transfer,
+		Max
+	};
+
+	enum class RHIResourceState : uint32_t
+	{
+		Undefined,
+		Common,
+		Present,
+		ColorAttachment,
+		TransferSrc,
+		TransferDst,
+		VertexBuffer,
+		IndexBuffer,
+		DepthStencilAttachment,	// not impl
+		UnorderedAccess,		// not impl
+		ShaderResource,			// not impl
+		IndirectArgument,		// not impl
+		AccelerationStructure,	// not impl
+
+		Max,
+	};
+
+	enum class MemoryUsage : uint32_t
+	{
+		Unknown = 0,
+		GPUOnly = 1,		// 仅GPU使用，在VRAM显存上分配，不可绑定
+		CPUOnly = 2,		// HOST_VISIBLE &&  HOST_COHERENT 及时同步，不需要flush到GPU，GPU可访问但是很慢
+		CPUToGPU = 3,		// HOST_VISIBLE CPU端uncached，用于CPU端频繁进行数据写入，GPU端对数据进行读取
+		GPUToCPU = 4,		// HOST_VISIBLE CPU端cached，用于被GPU写入且被CPU读取
+
+		Max = 0x7FFFFFFF,
+	};
+
+// enums
 	enum RHIFormat : uint32_t
 	{
 		FORMAT_UKNOWN = 0,
@@ -94,31 +141,6 @@ namespace shzk
 		FORMAT_E5B9G9R9_UFLOAT,
 
 		FORMAT_MAX_ENUM, 	//
-	};
-
-	enum class RHIBackendType : uint32_t
-	{
-		Vulkan,
-		Max = 0x7FFFFFFF
-	};
-
-	enum class RHIQueueType : uint32_t
-	{
-		Graphics,
-		Compute,
-		Transfer,
-		Max
-	};
-
-	enum class MemoryUsage : uint32_t
-	{
-		Unknown = 0,
-		GPU_Only = 1,		// 仅GPU使用，在VRAM显存上分配，不可绑定
-		CPU_Only = 2,		// HOST_VISIBLE &&  HOST_COHERENT 及时同步，不需要flush到GPU，GPU可访问但是很慢
-		CPU_To_GPU = 3,		// HOST_VISIBLE CPU端uncached，用于CPU端频繁进行数据写入，GPU端对数据进行读取
-		GPU_To_CPU = 4,		// HOST_VISIBLE CPU端cached，用于被GPU写入且被CPU读取
-
-		Max = 0x7FFFFFFF,
 	};
 
 	enum ResourceTypeBits : uint32_t
@@ -246,8 +268,6 @@ namespace shzk
 
 	} TextureSubresourceLayers;
 
-
-// RHI infos
 	typedef struct RHIInfo
 	{
 		RHIBackendType type = RHIBackendType::Vulkan;
@@ -282,7 +302,7 @@ namespace shzk
 		uint32_t arrayLayers = 1;
 		uint32_t mipLevels = 1;
 
-		MemoryUsage memoryUsage = MemoryUsage::GPU_Only;
+		MemoryUsage memoryUsage = MemoryUsage::GPUOnly;
 		ResourceType type		= RESOURCE_TYPE_TEXTURE;
 
 		TextureCreationFlags creationFlag = TEXTURE_CREATION_NONE;
@@ -301,7 +321,31 @@ namespace shzk
 		}*/
 	} RHITextureInfo;
 
+	
+	typedef struct RHIBufferBarrier
+	{
+		std::shared_ptr<RHIBuffer> buffer;
+		RHIResourceState srcState;
+		RHIResourceState dstState;
+
+		uint32_t offset = 0;
+		uint32_t size = 0;
+
+	} RHIBufferBarrier;
+	
+
+	typedef struct RHITextureBarrier
+	{
+		std::shared_ptr<RHITexture> texture;
+		RHIResourceState srcState;
+		RHIResourceState dstState;
+
+		TextureSubresourceRange subresource = {};	// default of RHITexture
+
+	} RHITextureBarrier;
+
 // Cast
+// TODO: Type Traits
 	template<typename Concrete, typename Abstract>
 	inline Concrete* CastTo(Abstract* ptr)
 	{

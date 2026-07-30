@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <memory>
+#include <glm/glm.hpp>
 
 class SDL_Window;
 
@@ -153,7 +154,8 @@ namespace shzk
 			std::shared_ptr<RHIFence> fence,
 			std::shared_ptr<RHISemaphore> waitSemaphore,
 			std::shared_ptr<RHISemaphore> signalSemaphore) = 0;
-
+		virtual void RHITextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba) = 0;
+		virtual void RHITextureBarrierCommand(const RHITextureBarrier& barrier) = 0;
 		/*
 		virtual void Execute(RHIFenceRef waitFence, RHISemaphoreRef waitSemaphore, RHISemaphoreRef signalSemaphore) = 0;     // ʵ���ύ������ӳ�¼��Ҳ���ڶ�Ӧ�̵߳��øú������¼���ύ
 

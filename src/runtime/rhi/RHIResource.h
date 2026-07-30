@@ -20,6 +20,16 @@ namespace shzk
 		RHIResourceType m_resourceType;
 	};
 
+	class RHIBuffer : public RHIResource
+	{
+	public:
+		RHIBuffer() = delete;
+		~RHIBuffer() = default;
+
+	protected:
+
+	};
+
 	class RHITexture : public RHIResource
 	{
 	public:
@@ -27,6 +37,9 @@ namespace shzk
 		RHITexture(const RHITextureInfo& info)
 			: RHIResource(RHIResourceType::Texture), m_info(info) {}
 		~RHITexture() = default;
+
+		const TextureSubresourceRange& GetDefaultSubresourceRange() const { return m_defaultRange; }
+		const TextureSubresourceLayers& GetDefaultSubresourceLayers() const { return m_defaultLayers; }
 
 	protected:
 		RHITextureInfo m_info;

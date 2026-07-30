@@ -208,14 +208,23 @@ namespace shzk
             VmaMemoryUsage usage;
             switch (memoryUsage) {
             case MemoryUsage::Unknown:      usage = VMA_MEMORY_USAGE_UNKNOWN;       break;
-            case MemoryUsage::GPU_Only:     usage = VMA_MEMORY_USAGE_GPU_ONLY;      break;
-            case MemoryUsage::CPU_Only:     usage = VMA_MEMORY_USAGE_CPU_ONLY;      break;
-            case MemoryUsage::CPU_To_GPU:   usage = VMA_MEMORY_USAGE_CPU_TO_GPU;    break;
-            case MemoryUsage::GPU_To_CPU:   usage = VMA_MEMORY_USAGE_GPU_TO_CPU;    break;
+            case MemoryUsage::GPUOnly:      usage = VMA_MEMORY_USAGE_GPU_ONLY;      break;
+            case MemoryUsage::CPUOnly:      usage = VMA_MEMORY_USAGE_CPU_ONLY;      break;
+            case MemoryUsage::CPUToGPU:     usage = VMA_MEMORY_USAGE_CPU_TO_GPU;    break;
+            case MemoryUsage::GPUToCPU:     usage = VMA_MEMORY_USAGE_GPU_TO_CPU;    break;
             default:                        usage = VMA_MEMORY_USAGE_UNKNOWN;       break;
             }
 
             return usage;
+        }
+
+        static VkImageAspectFlags TextureAspectToVk(TextureAspectFlags flags)
+        {
+            VkImageAspectFlags aspectFlags = 0;
+            if (flags & TEXTURE_ASPECT_COLOR)                aspectFlags |= VK_IMAGE_ASPECT_COLOR_BIT;
+            if (flags & TEXTURE_ASPECT_DEPTH)                aspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
+            if (flags & TEXTURE_ASPECT_STENCIL)              aspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
+            return aspectFlags;
         }
 
         static VkBufferUsageFlags ResourceTypeToBufferUsage(ResourceType type)
@@ -241,5 +250,114 @@ namespace shzk
             return usage;
         }
 
+        static VkAccessFlags ResourceStateToAccessFlags(RHIResourceState state)
+        {
+            VkAccessFlags accessFlags = VK_ACCESS_NONE;
+            switch (state) {
+            case RHIResourceState::Undefined:                   accessFlags = VK_ACCESS_NONE;                                           break;
+            case RHIResourceState::Common:                      accessFlags = VK_ACCESS_NONE;                                           break;  
+            case RHIResourceState::TransferSrc:                 accessFlags = VK_ACCESS_TRANSFER_READ_BIT;                              break;
+            case RHIResourceState::TransferDst:                 accessFlags = VK_ACCESS_TRANSFER_WRITE_BIT;                             break;
+            case RHIResourceState::VertexBuffer:                accessFlags = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;                      break;
+            case RHIResourceState::IndexBuffer:                 accessFlags = VK_ACCESS_INDEX_READ_BIT;                                 break;
+            case RHIResourceState::ColorAttachment:             accessFlags = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;                     break;
+            case RHIResourceState::DepthStencilAttachment:      accessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;             break;
+            case RHIResourceState::UnorderedAccess:             accessFlags = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;   break;
+            case RHIResourceState::ShaderResource:              accessFlags = VK_ACCESS_SHADER_READ_BIT;                                break;
+            case RHIResourceState::IndirectArgument:            accessFlags = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;                      break;
+            case RHIResourceState::Present:                     accessFlags = VK_ACCESS_NONE;                                           break;
+            // case RHIResourceState::AccelerationStructure:         accessFlags = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;   break;
+            default:                                            SHZK_LOG_ERROR("ResourceState Unsupported!");
+            }
+            return accessFlags;
+        }
+
+        static VkImageLayout ResourceStateToImageLayout(RHIResourceState state)
+        {
+            // 各个资源状态决定了布局，作为src和dst是一致的
+            VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            switch (state) {
+            case RHIResourceState::Undefined:                      layout = VK_IMAGE_LAYOUT_UNDEFINED;                         break;
+            case RHIResourceState::Common:                         layout = VK_IMAGE_LAYOUT_GENERAL;                           break;
+            case RHIResourceState::TransferSrc:                   layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;              break;
+            case RHIResourceState::TransferDst:                   layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;              break;
+            case RHIResourceState::ColorAttachment:               layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;          break;
+            case RHIResourceState::DepthStencilAttachment:       layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;  break;
+            case RHIResourceState::UnorderedAccess:               layout = VK_IMAGE_LAYOUT_GENERAL;                           break;
+            case RHIResourceState::ShaderResource:                layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;          break;
+            case RHIResourceState::Present:                        layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;                   break;
+            default:                                            SHZK_LOG_ERROR("ResourceState Unsupported!");
+            }
+            return layout;
+        }
+
+        static VkPipelineStageFlags AccessFlagsToPipelineStageFlags(VkAccessFlags accessFlags)
+        {
+            VkPipelineStageFlags flags = 0;
+
+            if (accessFlags & VK_ACCESS_INDIRECT_COMMAND_READ_BIT)      flags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;                    // 0x00000002
+
+            if (accessFlags & (VK_ACCESS_INDEX_READ_BIT |
+                VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT))                   flags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;                     // 0x00000004
+
+            if (accessFlags & (VK_ACCESS_UNIFORM_READ_BIT |
+                VK_ACCESS_SHADER_READ_BIT |
+                VK_ACCESS_SHADER_WRITE_BIT))                            flags |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |                   // 0x00000008
+                VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |     // 0x00000010
+                VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |  // 0x00000020
+                VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |                 // 0x00000040
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |                 // 0x00000080
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |                  // 0x00000800
+                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;           // 0x00200000
+
+            if (accessFlags & VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)      flags |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;                  // 0x00000080
+
+            if (accessFlags & (VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT))          flags |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |            // 0x00000100
+                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;              // 0x00000200
+
+            if (accessFlags & (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT))                  flags |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;          // 0x00000400 
+
+            if (accessFlags & (VK_ACCESS_TRANSFER_READ_BIT |
+                VK_ACCESS_TRANSFER_WRITE_BIT))                          flags |= VK_PIPELINE_STAGE_TRANSFER_BIT;                         // 0x00001000
+
+            if (accessFlags & (VK_ACCESS_HOST_READ_BIT |
+                VK_ACCESS_HOST_WRITE_BIT))                              flags |= VK_PIPELINE_STAGE_HOST_BIT;                             // 0x00004000
+
+
+            if (flags == 0) flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            return flags;
+        }
+
+        static VkExtent2D ExtentToVk(const Extent2D& extent)
+        {
+            return VkExtent2D(extent.width, extent.height);
+        }
+
+        static VkExtent3D ExtentToVk(const Extent3D& extent)
+        {
+            return VkExtent3D(extent.width, extent.height, extent.depth);
+        }
+
+        static VkImageSubresourceRange SubresourceToVk(const TextureSubresourceRange& subresource)
+        {
+
+            return VkImageSubresourceRange(
+                TextureAspectToVk(subresource.aspect),
+                subresource.baseMipLevel,
+                subresource.levelCount,
+                subresource.baseArrayLayer,
+                subresource.layerCount);
+        }
+
+        static VkImageSubresourceLayers SubresourceToVk(const TextureSubresourceLayers& subresource)
+        {
+            return VkImageSubresourceLayers(
+                TextureAspectToVk(subresource.aspect),
+                subresource.mipLevel,
+                subresource.baseArrayLayer,
+                subresource.layerCount);
+        }
     }
 }
