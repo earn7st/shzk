@@ -5,8 +5,44 @@
 #include "runtime/rhi/RHIDefinitions.h"
 #include "runtime/rhi/RHIUtil.h"
 
+#include <volk/volk.h>
+
 namespace shzk
 {
+    VulkanRHIBuffer::VulkanRHIBuffer(const RHIBufferInfo& info, VulkanRHI& rhi)
+        : RHIBuffer(info)
+    {
+        VkBufferUsageFlags usage = VulkanUtil::ResourceTypeToVkBufferUsage(info.type);
+        if (info.memoryUsage == MemoryUsage::GPUOnly || info.memoryUsage == MemoryUsage::GPUToCPU)
+        {
+            usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        }
+
+        VkBufferCreateInfo bufferInfo{};
+        bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferInfo.size = info.size;
+        bufferInfo.usage = usage;
+        bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        bufferInfo.queueFamilyIndexCount = 0,
+            bufferInfo.pQueueFamilyIndices = NULL;
+
+        VmaAllocationCreateInfo allocationCreateInfo = {};
+        allocationCreateInfo.usage = VulkanUtil::MemoryUsageToVma(info.memoryUsage);
+        if (info.creationFlag & BUFFER_CREATION_PERSISTENT_MAP)
+        {
+            allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+            mapped = true;
+        }
+
+        m_allocInfo = {};
+        VK_CHECK(vmaCreateBuffer(rhi.GetAllocator(), &bufferInfo, &allocationCreateInfo, &m_handle, &m_alloc, &m_allocInfo));
+    }
+
+    void VulkanRHIBuffer::Destroy()
+    {
+        vmaDestroyBuffer(VULKAN_RHI()->GetAllocator(), m_handle, m_alloc);
+    }
+
 	VulkanRHITexture::VulkanRHITexture(const RHITextureInfo& info, VulkanRHI& rhi, VkImage image)	
 		: RHITexture(info), m_handle(image)
 	{
@@ -26,7 +62,7 @@ namespace shzk
 
         VkFormat format = VulkanUtil::RHIFormatToVkFormat(info.format);
 
-        VkImageUsageFlags usage = VulkanUtil::ResourceTypeToImageUsage(info.type);
+        VkImageUsageFlags usage = VulkanUtil::ResourceTypeToVkImageUsage(info.type);
         if (RHIUtil::IsDepthFormat(info.format) || RHIUtil::IsStencilFormat(info.format))
         {
             usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
@@ -45,8 +81,7 @@ namespace shzk
 
         VkImageCreateFlags flag = 0;
         if(info.type & RESOURCE_TYPE_TEXTURE_CUBE)      flag |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
-        if(type == VK_IMAGE_TYPE_3D)                    flag |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR;
-
+        if(type      & VK_IMAGE_TYPE_3D)                flag |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT_KHR;
 
         VkImageCreateInfo imageInfo = {};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -74,8 +109,91 @@ namespace shzk
         m_allocInfo = {};
         VK_CHECK(vmaCreateImage(rhi.GetAllocator(), &imageInfo, &allocationCreateInfo, &m_handle, &m_alloc, &m_allocInfo));
 	}
+
     void VulkanRHITexture::Destroy()
     {
         vmaDestroyImage(VULKAN_RHI()->GetAllocator(), m_handle, m_alloc);
     }
+
+    VulkanRHITextureView::VulkanRHITextureView(const RHITextureViewInfo& info, VulkanRHI& rhi, VkImage)
+        : RHITextureView(info)
+    {
+        if (info.subresourceRange.aspect == TEXTURE_ASPECT_NONE)
+        {
+            this->m_info.subresourceRange = info.texture->GetDefaultSubresourceRange();
+        }
+
+        VkImageViewCreateInfo viewInfo = {};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = CastTo<VulkanRHITexture>(info.texture)->GetHandle();
+        viewInfo.viewType = VulkanUtil::TextureViewTypeToVk(info.viewType);
+        viewInfo.format = VulkanUtil::RHIFormatToVkFormat(info.format);
+        viewInfo.subresourceRange.aspectMask = VulkanUtil::TextureAspectFlagsToVk(info.subresourceRange.aspect);
+        viewInfo.subresourceRange.baseMipLevel = info.subresourceRange.baseMipLevel;
+        viewInfo.subresourceRange.levelCount = info.subresourceRange.levelCount;
+        viewInfo.subresourceRange.baseArrayLayer = info.subresourceRange.baseArrayLayer;
+        viewInfo.subresourceRange.layerCount = info.subresourceRange.layerCount;
+		
+		VK_CHECK(vkCreateImageView(rhi.GetDevice(), &viewInfo, nullptr, &m_handle));
+    }
+
+    void VulkanRHITextureView::Destroy()
+    {
+		vkDestroyImageView(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
+    }
+
+    VulkanRHIDescriptorSet::VulkanRHIDescriptorSet(VulkanRHI& rhi, VkDescriptorSetLayout layout)
+		: RHIDescriptorSet()
+    {
+		VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.pSetLayouts = &layout;
+        // TODO
+        vkAllocateDescriptorSets(rhi.GetDevice(), &allocInfo, &m_handle);
+    }
+
+    void VulkanRHIDescriptorSet::Destroy()
+    {
+		vkFreeDescriptorSets(VULKAN_RHI()->GetDevice(), VULKAN_RHI()->GetDescriptorPool(), 1, &m_handle);
+    }
+
+    VulkanRHIGraphicsPipeline::VulkanRHIGraphicsPipeline(const RHIGraphicsPipelineInfo& info, VulkanRHI& rhi)
+        : RHIGraphicsPipeline(info)
+    {
+		VkGraphicsPipelineCreateInfo pipelineInfo{};
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        
+        /*
+        *
+    typedef struct VkGraphicsPipelineCreateInfo {
+    VkStructureType                                  sType;
+    const void*                                      pNext;
+    VkPipelineCreateFlags                            flags;
+    uint32_t                                         stageCount;
+    const VkPipelineShaderStageCreateInfo*           pStages;
+    const VkPipelineVertexInputStateCreateInfo*      pVertexInputState;
+    const VkPipelineInputAssemblyStateCreateInfo*    pInputAssemblyState;
+    const VkPipelineTessellationStateCreateInfo*     pTessellationState;
+    const VkPipelineViewportStateCreateInfo*         pViewportState;
+    const VkPipelineRasterizationStateCreateInfo*    pRasterizationState;
+    const VkPipelineMultisampleStateCreateInfo*      pMultisampleState;
+    const VkPipelineDepthStencilStateCreateInfo*     pDepthStencilState;
+    const VkPipelineColorBlendStateCreateInfo*       pColorBlendState;
+    const VkPipelineDynamicStateCreateInfo*          pDynamicState;
+    VkPipelineLayout                                 layout;
+    VkRenderPass                                     renderPass;
+    uint32_t                                         subpass;
+    VkPipeline                                       basePipelineHandle;
+    int32_t                                          basePipelineIndex;
+} VkGraphicsPipelineCreateInfo;
+        */
+    }
+
+    void VulkanRHIGraphicsPipeline::Destroy()
+    {
+        vkDestroyPipeline(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
+        vkDestroyPipelineLayout(VULKAN_RHI()->GetDevice(), m_layout, nullptr);
+	}
+
+    
+
 }

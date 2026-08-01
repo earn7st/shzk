@@ -33,7 +33,7 @@ namespace shzk
 		CreateQueues();
 		CreateMemoryAllocator();
 		CreateImmediateCommand();
-		//CreateDescriptorPool();
+		CreateDescriptorPool();
 	}
 
 	void VulkanRHI::Destroy()
@@ -47,9 +47,15 @@ namespace shzk
 				queue->WaitIdle();
 			}
 		}
-
+		
 		// Reverse order of construction
-		// Destroy immediate context first (uses device/VMA internally)
+		// Descriptor pool
+		if (m_descriptorPool)
+		{
+			vkDestroyDescriptorPool(m_device, m_descriptorPool, nullptr);
+		}
+
+		// Command context immediate
 		if (m_cmdContextImmediate)
 		{
 			m_cmdContextImmediate->Destroy();
@@ -76,7 +82,7 @@ namespace shzk
 			m_debugMessenger = VK_NULL_HANDLE;
 		}
 
-		// Instance (last)
+		// Instance
 		if (m_instance)
 		{
 			vkDestroyInstance(m_instance, nullptr);
@@ -128,6 +134,25 @@ namespace shzk
 		assert(fence);
 		SHZK_LOG_INFO("Vulkan fence created");
 		return fence;
+	}
+
+	std::shared_ptr<RHIBuffer> VulkanRHI::CreateBuffer(const RHIBufferInfo& info)
+	{
+		std::shared_ptr<RHIBuffer> buffer = std::make_shared<VulkanRHIBuffer>(info, *this);
+		assert(buffer);
+		return buffer;
+	}
+
+	std::shared_ptr<RHITexture> VulkanRHI::CreateTexture(const RHITextureInfo& info)
+	{
+		std::shared_ptr<RHITexture> texture = std::make_shared<VulkanRHITexture>(info, *this, nullptr);
+		assert(texture);
+		return texture;
+	}
+
+	std::shared_ptr<RHIGraphicsPipeline> VulkanRHI::CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info)
+	{
+		std::shared_ptr<RHIGraphicsPipeline> pipeline = std::make_shared<VulkanRHIGraphicsPipeline>(info, *this);
 	}
 
 	void VulkanRHI::CreateInstance()
@@ -327,7 +352,27 @@ namespace shzk
 
 	void VulkanRHI::CreateDescriptorPool()
 	{
+		std::vector<VkDescriptorPoolSize> descriptorPoolSizes = {
+		{ VK_DESCRIPTOR_TYPE_SAMPLER, 4096 },
+		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 4096 },
+		{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4096 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 4096 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 4096 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 4096 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 4096 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4096 },
+		{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 4096 },
+		{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 4096 },
+		};
 
+		VkDescriptorPoolCreateInfo poolInfo = {};
+		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		poolInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
+		poolInfo.pPoolSizes = descriptorPoolSizes.data();
+		poolInfo.maxSets = 8192;
+		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;   //Enable Bind then Update, Bindless
+
+		VK_CHECK(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool));
 	}
 
 // Command Context
@@ -410,7 +455,8 @@ namespace shzk
 		// because immediate commands can be called frequently, better not be casting global RHI every frame
 
 // VkCommandBuffer is instant created when use
-	}
+	} 
+
 	void VulkanRHICommandContextImmediate::Destroy()
 	{
 		m_fence->Destroy();
@@ -425,20 +471,17 @@ namespace shzk
 		TextureSubresourceRange range = barrier.subresource;
 		if (range.aspect == TEXTURE_ASPECT_NONE) range = barrier.texture->GetDefaultSubresourceRange();
 
-		VkAccessFlags srcAccessMask = VulkanUtil::ResourceStateToAccessFlags(barrier.srcState);
-		VkAccessFlags dstAccessMask = VulkanUtil::ResourceStateToAccessFlags(barrier.dstState);
-		VkPipelineStageFlags srcStage = VulkanUtil::AccessFlagsToPipelineStageFlags(srcAccessMask);
-		VkPipelineStageFlags dstStage = VulkanUtil::AccessFlagsToPipelineStageFlags(dstAccessMask);
-
-		// srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;   // 可以保证绝对不会出错
-		// dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;   // 目前验证层VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT还是会有一些报错，太难调了
+		VkAccessFlags srcAccessMask = VulkanUtil::ResourceStateToVkAccessFlags(barrier.srcState);
+		VkAccessFlags dstAccessMask = VulkanUtil::ResourceStateToVkAccessFlags(barrier.dstState);
+		VkPipelineStageFlags srcStage = VulkanUtil::VkAccessFlagsToVkPipelineStageFlags(srcAccessMask);
+		VkPipelineStageFlags dstStage = VulkanUtil::VkAccessFlagsToVkPipelineStageFlags(dstAccessMask);
 
 		VkImageMemoryBarrier memoryBarrier = {};
 		memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		memoryBarrier.oldLayout = VulkanUtil::ResourceStateToImageLayout(barrier.srcState);
-		memoryBarrier.newLayout = VulkanUtil::ResourceStateToImageLayout(barrier.dstState);
+		memoryBarrier.oldLayout = VulkanUtil::ResourceStateToVkImageLayout(barrier.srcState);
+		memoryBarrier.newLayout = VulkanUtil::ResourceStateToVkImageLayout(barrier.dstState);
 		memoryBarrier.image = CastTo<VulkanRHITexture>(barrier.texture)->GetHandle();
 		memoryBarrier.subresourceRange = VulkanUtil::SubresourceToVk(range);
 		memoryBarrier.srcAccessMask = srcAccessMask;

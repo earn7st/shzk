@@ -21,6 +21,7 @@ namespace shzk
 	class RHICommandContext;
 	class RHISemaphore;
 	class RHIFence;
+	class RHIGraphicsPipeline;
 
 	class RenderSystem
 	{
@@ -42,9 +43,6 @@ namespace shzk
 		std::shared_ptr<RHIQueue> m_rhiGraphicsQueue;
 		//std::shared_ptr<RHIQueue> m_rhiComputeQueue;
 
-		// std::shared_ptr<RHICommandList> m_rhiCmdList;
-		// std::shared_ptr<RHICommandListImmediate> m_rhiCmdListImmediate;
-		
 		std::shared_ptr<RHICommandPool> m_rhiCmdPool;
 		struct PerFrameRHIResource
 		{

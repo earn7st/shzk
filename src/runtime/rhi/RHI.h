@@ -23,6 +23,7 @@ namespace shzk
 	class RHIFence;
 	class RHICommandContextImmediate;
 	class RHITexture;
+	class RHIGraphicsPipeline;
 
 	class RHI
 	{
@@ -35,12 +36,18 @@ namespace shzk
 
 		virtual void Destroy() = 0;
 
+		// Fundamentals
 		virtual std::shared_ptr<RHIQueue> GetQueue(const RHIQueueInfo& info) = 0;
 		virtual std::shared_ptr<RHISurface> CreateSurface(SDL_Window* window) = 0;
 		virtual std::shared_ptr<RHISwapchain> CreateSwapchain(const RHISwapchainInfo& info) = 0;
 		virtual std::shared_ptr<RHICommandPool> CreateCommandPool(const RHICommandPoolInfo& info) = 0;
 		virtual std::shared_ptr<RHISemaphore> CreateSemaphore() = 0;
 		virtual std::shared_ptr<RHIFence> CreateFence() = 0;
+
+		// Resources
+		virtual std::shared_ptr<RHIBuffer> CreateBuffer(const RHIBufferInfo& info) = 0;
+		virtual std::shared_ptr<RHITexture> CreateTexture(const RHITextureInfo& info) = 0;
+		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) = 0;
 
 		std::shared_ptr<RHICommandContextImmediate> GetCommandContextImmediate() const { return m_cmdContextImmediate; }
 

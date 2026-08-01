@@ -227,7 +227,7 @@ namespace shzk
             return aspectFlags;
         }
 
-        static VkBufferUsageFlags ResourceTypeToBufferUsage(ResourceType type)
+        static VkBufferUsageFlags ResourceTypeToVkBufferUsage(ResourceType type)
         {
             VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
             if (type & RESOURCE_TYPE_UNIFORM_BUFFER)        usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
@@ -236,12 +236,12 @@ namespace shzk
             if (type & RESOURCE_TYPE_INDEX_BUFFER)          usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
             if (type & RESOURCE_TYPE_VERTEX_BUFFER)         usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
             if (type & RESOURCE_TYPE_INDIRECT_BUFFER)       usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-            if (type & RESOURCE_TYPE_RAY_TRACING)           usage |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+            // if (type & RESOURCE_TYPE_RAY_TRACING)           usage |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 
             return usage;
         }
 
-        static VkImageUsageFlags ResourceTypeToImageUsage(ResourceType type)
+        static VkImageUsageFlags ResourceTypeToVkImageUsage(ResourceType type)
         {
             VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
             if (type & RESOURCE_TYPE_TEXTURE)               usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
@@ -250,7 +250,7 @@ namespace shzk
             return usage;
         }
 
-        static VkAccessFlags ResourceStateToAccessFlags(RHIResourceState state)
+        static VkAccessFlags ResourceStateToVkAccessFlags(RHIResourceState state)
         {
             VkAccessFlags accessFlags = VK_ACCESS_NONE;
             switch (state) {
@@ -264,7 +264,7 @@ namespace shzk
             case RHIResourceState::DepthStencilAttachment:      accessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;             break;
             case RHIResourceState::UnorderedAccess:             accessFlags = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;   break;
             case RHIResourceState::ShaderResource:              accessFlags = VK_ACCESS_SHADER_READ_BIT;                                break;
-            case RHIResourceState::IndirectArgument:            accessFlags = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;                      break;
+            // case RHIResourceState::IndirectArgument:            accessFlags = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;                      break;
             case RHIResourceState::Present:                     accessFlags = VK_ACCESS_NONE;                                           break;
             // case RHIResourceState::AccelerationStructure:         accessFlags = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;   break;
             default:                                            SHZK_LOG_ERROR("ResourceState Unsupported!");
@@ -272,58 +272,57 @@ namespace shzk
             return accessFlags;
         }
 
-        static VkImageLayout ResourceStateToImageLayout(RHIResourceState state)
+        static VkImageLayout ResourceStateToVkImageLayout(RHIResourceState state)
         {
-            // 各个资源状态决定了布局，作为src和dst是一致的
             VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
             switch (state) {
-            case RHIResourceState::Undefined:                      layout = VK_IMAGE_LAYOUT_UNDEFINED;                         break;
-            case RHIResourceState::Common:                         layout = VK_IMAGE_LAYOUT_GENERAL;                           break;
-            case RHIResourceState::TransferSrc:                   layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;              break;
-            case RHIResourceState::TransferDst:                   layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;              break;
-            case RHIResourceState::ColorAttachment:               layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;          break;
-            case RHIResourceState::DepthStencilAttachment:       layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;  break;
-            case RHIResourceState::UnorderedAccess:               layout = VK_IMAGE_LAYOUT_GENERAL;                           break;
-            case RHIResourceState::ShaderResource:                layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;          break;
-            case RHIResourceState::Present:                        layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;                   break;
+            case RHIResourceState::Undefined:                       layout = VK_IMAGE_LAYOUT_UNDEFINED;                         break;
+            case RHIResourceState::Common:                          layout = VK_IMAGE_LAYOUT_GENERAL;                           break;
+            case RHIResourceState::TransferSrc:                     layout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;              break;
+            case RHIResourceState::TransferDst:                     layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;              break;
+            case RHIResourceState::ColorAttachment:                 layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;          break;
+            case RHIResourceState::DepthStencilAttachment:          layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;  break;
+            case RHIResourceState::UnorderedAccess:                 layout = VK_IMAGE_LAYOUT_GENERAL;                           break;
+            case RHIResourceState::ShaderResource:                  layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;          break;
+            case RHIResourceState::Present:                         layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;                   break;
             default:                                            SHZK_LOG_ERROR("ResourceState Unsupported!");
             }
             return layout;
         }
 
-        static VkPipelineStageFlags AccessFlagsToPipelineStageFlags(VkAccessFlags accessFlags)
+        static VkPipelineStageFlags VkAccessFlagsToVkPipelineStageFlags(VkAccessFlags accessFlags)
         {
             VkPipelineStageFlags flags = 0;
 
-            if (accessFlags & VK_ACCESS_INDIRECT_COMMAND_READ_BIT)      flags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;                    // 0x00000002
+            if (accessFlags & VK_ACCESS_INDIRECT_COMMAND_READ_BIT)      flags |=    VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 
             if (accessFlags & (VK_ACCESS_INDEX_READ_BIT |
-                VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT))                   flags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;                     // 0x00000004
+                VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT))                   flags |=    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
 
             if (accessFlags & (VK_ACCESS_UNIFORM_READ_BIT |
                 VK_ACCESS_SHADER_READ_BIT |
-                VK_ACCESS_SHADER_WRITE_BIT))                            flags |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |                   // 0x00000008
-                VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |     // 0x00000010
-                VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |  // 0x00000020
-                VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |                 // 0x00000040
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |                 // 0x00000080
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |                  // 0x00000800
-                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;           // 0x00200000
+                VK_ACCESS_SHADER_WRITE_BIT))                            flags |=    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                                                                    VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+                                                                                    VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
+                                                                                    VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
+                                                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                                                                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                                                                                    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
 
-            if (accessFlags & VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)      flags |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;                  // 0x00000080
+            if (accessFlags & VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)      flags |=    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
             if (accessFlags & (VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT))          flags |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |            // 0x00000100
-                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;              // 0x00000200
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT))          flags |=    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                                                                                    VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 
             if (accessFlags & (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT))                  flags |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;          // 0x00000400 
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT))                  flags |=    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
             if (accessFlags & (VK_ACCESS_TRANSFER_READ_BIT |
-                VK_ACCESS_TRANSFER_WRITE_BIT))                          flags |= VK_PIPELINE_STAGE_TRANSFER_BIT;                         // 0x00001000
+                VK_ACCESS_TRANSFER_WRITE_BIT))                          flags |=    VK_PIPELINE_STAGE_TRANSFER_BIT;
 
             if (accessFlags & (VK_ACCESS_HOST_READ_BIT |
-                VK_ACCESS_HOST_WRITE_BIT))                              flags |= VK_PIPELINE_STAGE_HOST_BIT;                             // 0x00004000
+                VK_ACCESS_HOST_WRITE_BIT))                              flags |=    VK_PIPELINE_STAGE_HOST_BIT;
 
 
             if (flags == 0) flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -358,6 +357,31 @@ namespace shzk
                 subresource.mipLevel,
                 subresource.baseArrayLayer,
                 subresource.layerCount);
+        }
+
+        static VkImageViewType TextureViewTypeToVk(const TextureViewType& type)
+        {
+			VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+            switch (type)
+            {
+            case TextureViewType::View1D:           viewType = VK_IMAGE_VIEW_TYPE_1D; break;
+            case TextureViewType::View2D:           viewType = VK_IMAGE_VIEW_TYPE_2D; break;
+            case TextureViewType::View3D:           viewType = VK_IMAGE_VIEW_TYPE_3D; break;
+            case TextureViewType::ViewCube:         viewType = VK_IMAGE_VIEW_TYPE_CUBE; break;
+            case TextureViewType::View1DArray:      viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY; break;
+            case TextureViewType::View2DArray:      viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY; break;
+            case TextureViewType::ViewCubeArray:    viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY; break;
+			default:                                SHZK_LOG_ERROR("TextureViewType Unsupported!");
+            }
+            return viewType;
+        }
+        static VkImageAspectFlags TextureAspectFlagsToVk(const TextureAspectFlags& aspectFlags)
+        {
+            VkImageAspectFlags vkAspectFlags = 0;
+            if (aspectFlags & TEXTURE_ASPECT_COLOR)      vkAspectFlags |= VK_IMAGE_ASPECT_COLOR_BIT;
+            if (aspectFlags & TEXTURE_ASPECT_DEPTH)      vkAspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
+            if (aspectFlags & TEXTURE_ASPECT_STENCIL)    vkAspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
+			return vkAspectFlags;
         }
     }
 }

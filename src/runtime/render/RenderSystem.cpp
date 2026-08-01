@@ -45,10 +45,13 @@ namespace shzk
 		RHICommandListImmediate::Get()->SetCommandContext(RHI::Get()->GetCommandContextImmediate().get());
 
 		InitPerFrameRHIResources();
+
+		TestInit();
 	}
 
 	void RenderSystem::Shutdown()
-	{
+	{	
+		m_rhiGraphicsQueue->WaitIdle();
 		for (auto& resource : m_perFrameResources)
 		{
 			resource.fence->Destroy();
@@ -64,23 +67,20 @@ namespace shzk
 
 	void RenderSystem::Tick()
 	{
+		auto& cmd = RHICommandList::Get();
 		PerFrameRHIResource& resource = m_perFrameResources[m_currentFrameIndex];
 		resource.fence->Wait();
 		std::shared_ptr<RHITexture> currentSwapchainTexture = m_rhiSwapchain->AcquireNextTexture(nullptr, resource.startSemaphore);
-		RHICommandList::Get()->SetContext(resource.cmdContext.get());
-		RHICommandList::Get()->BeginCommand();
+		
+		cmd->SetContext(resource.cmdContext.get());
+		cmd->BeginCommand();
 
-		// Barrier 1: Present£¨Undefined£© ¡ú TransferDst£¨vkCmdClearColorImage ÒªÇó£©
-		RHICommandList::Get()->TextureBarrier({ currentSwapchainTexture, RHIResourceState::Undefined, RHIResourceState::TransferDst });
+		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::Undefined, RHIResourceState::TransferDst });	//TransferDst: Clear Color Required
+		cmd->TextureClearColor(currentSwapchainTexture, { 0.1f, 0.2f, 0.4f, 1.0f });
+		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::TransferDst, RHIResourceState::Present });
 
-		// Clear Color
-		RHICommandList::Get()->TextureClearColor(currentSwapchainTexture, { 0.1f, 0.2f, 0.4f, 1.0f });
-
-		// Barrier 2: TransferDst ¡ú Present
-		RHICommandList::Get()->TextureBarrier({ currentSwapchainTexture, RHIResourceState::TransferDst, RHIResourceState::Present });
-
-		RHICommandList::Get()->EndCommand();
-		RHICommandList::Get()->Submit(resource.fence, resource.startSemaphore, resource.endSemaphore);
+		cmd->EndCommand();
+		cmd->Submit(resource.fence, resource.startSemaphore, resource.endSemaphore);
 		m_rhiSwapchain->Present(resource.endSemaphore);
 
 		m_currentFrameIndex = (m_currentFrameIndex + 1) % FRAMES_IN_FLIGHT;

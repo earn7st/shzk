@@ -11,7 +11,7 @@ namespace shzk
 		RHIResource(RHIResourceType resourceType) : m_resourceType(resourceType) {}
 		~RHIResource() = default;
 
-		inline RHIResourceType GetType() { return m_resourceType; }
+		inline RHIResourceType GetType() const { return m_resourceType; }
 
 	protected:
 		virtual void Destroy() = 0;
@@ -24,10 +24,14 @@ namespace shzk
 	{
 	public:
 		RHIBuffer() = delete;
+		RHIBuffer(const RHIBufferInfo& info)
+			: RHIResource(RHIResourceType::Buffer), m_info(info) {}
 		~RHIBuffer() = default;
 
-	protected:
+		inline const RHIBufferInfo& GetInfo() const { return m_info; }
 
+	protected:
+		RHIBufferInfo m_info;
 	};
 
 	class RHITexture : public RHIResource
@@ -41,10 +45,90 @@ namespace shzk
 		const TextureSubresourceRange& GetDefaultSubresourceRange() const { return m_defaultRange; }
 		const TextureSubresourceLayers& GetDefaultSubresourceLayers() const { return m_defaultLayers; }
 
+		inline const RHITextureInfo& GetInfo() const { return m_info; }
+
 	protected:
 		RHITextureInfo m_info;
 
 		TextureSubresourceRange m_defaultRange;
 		TextureSubresourceLayers m_defaultLayers;
+	};
+
+	class RHITextureView : public RHIResource
+	{
+	public:
+		RHITextureView() = delete;
+		RHITextureView(const RHITextureViewInfo& info)
+			: RHIResource(RHIResourceType::TextureView), m_info(info) {}
+
+		inline const RHITextureViewInfo& GetInfo() const { return m_info; }
+	
+	protected:
+		RHITextureViewInfo m_info;
+	};
+
+	class RHISampler : public RHIResource
+	{
+	public:
+		RHISampler() = delete;
+		RHISampler(const RHISamplerInfo& info)
+			: RHIResource(RHIResourceType::Sampler), m_info(info) {}
+		
+		inline const RHISamplerInfo& GetInfo() const { return m_info; }
+
+	protected:
+		RHISamplerInfo m_info;
+	};
+
+	class RHIShader : public RHIResource
+	{
+	public:
+		RHIShader() = delete;
+		RHIShader(const RHIShaderInfo& info)
+			: RHIResource(RHIResourceType::Shader), m_info(info)  {}
+
+		inline const RHIShaderInfo& GetInfo() const { return m_info; }
+
+	protected:
+		RHIShaderInfo m_info;
+	};
+
+	// DescriptorSet and RootSignature
+	class RHIDescriptorSet : public RHIResource
+	{
+	public:
+		RHIDescriptorSet() : RHIResource(RHIResourceType::DescriptorSet) {}
+
+	protected:
+		virtual void Destroy() = 0;
+	};
+
+	class RHIRootSignature : public RHIResource
+	{
+	public:
+		RHIRootSignature() = delete;
+		RHIRootSignature(const RHIRootSignatureInfo& info)
+			: RHIResource(RHIResourceType::RootSignature), m_info(info) {}
+
+		virtual std::shared_ptr<RHIDescriptorSet> CreateDescriptorSet() = 0;
+
+		inline const RHIRootSignatureInfo& GetInfo() const { return m_info; }
+
+	private:
+		RHIRootSignatureInfo m_info;
+	};
+
+	// Pipeline
+	class RHIGraphicsPipeline : public RHIResource
+	{
+	public:
+		RHIGraphicsPipeline() = delete;
+		RHIGraphicsPipeline(const RHIGraphicsPipelineInfo& info)
+			: RHIResource(RHIResourceType::GraphicsPipeline), m_info(info) {}
+
+		inline const RHIGraphicsPipelineInfo& GetInfo() const { return m_info; }
+
+	protected:
+		RHIGraphicsPipelineInfo m_info;
 	};
 }

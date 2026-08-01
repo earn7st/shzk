@@ -26,7 +26,7 @@ namespace shzk
 
 		virtual void Destroy() override final;
 		
-	// virtual functions	
+		// Fundamentals
 		virtual std::shared_ptr<RHIQueue> GetQueue(const RHIQueueInfo& info) override final;
 		virtual std::shared_ptr<RHISurface> CreateSurface(SDL_Window* window) override final;
 		virtual std::shared_ptr<RHISwapchain> CreateSwapchain(const RHISwapchainInfo& info) override final;
@@ -34,10 +34,16 @@ namespace shzk
 		virtual std::shared_ptr<RHISemaphore> CreateSemaphore() override final;
 		virtual std::shared_ptr<RHIFence> CreateFence() override final;
 
+		// Resources
+		virtual std::shared_ptr<RHIBuffer> CreateBuffer(const RHIBufferInfo& info) override final;
+		virtual std::shared_ptr<RHITexture> CreateTexture(const RHITextureInfo& info) override final;
+		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) override final;
+
 		inline const VkInstance& GetInstance() { return m_instance; }
 		inline const VkPhysicalDevice& GetPhysicalDevice() { return m_physicalDevice; }
 		inline const VkDevice& GetDevice() { return m_device; }
 		inline const VmaAllocator& GetAllocator() { return m_allocator; }
+		inline const VkDescriptorPool& GetDescriptorPool() { return m_descriptorPool; }
 		
 
 	private:
@@ -71,6 +77,8 @@ namespace shzk
 		std::array<int32_t, (size_t)RHIQueueType::Max> m_queueIndices;	// Family indices for a specific queue type
 		std::array<int32_t, (size_t)RHIQueueType::Max> m_queueCounts;	// How many queues we have for a specific queue type
 		std::array<std::array<std::shared_ptr<RHIQueue>, MAX_QUEUE_CNT>, (size_t)RHIQueueType::Max> m_queues;	// Containing RHIQueue type
+
+		VkDescriptorPool m_descriptorPool;
 	};
 
 	class VulkanRHICommandContext : public RHICommandContext
