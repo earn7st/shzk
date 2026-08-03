@@ -153,6 +153,7 @@ namespace shzk
 	std::shared_ptr<RHIGraphicsPipeline> VulkanRHI::CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info)
 	{
 		std::shared_ptr<RHIGraphicsPipeline> pipeline = std::make_shared<VulkanRHIGraphicsPipeline>(info, *this);
+		return pipeline;
 	}
 
 	void VulkanRHI::CreateInstance()

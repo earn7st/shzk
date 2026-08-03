@@ -1,6 +1,8 @@
 #include "Engine.h"
 #include "runtime/log/Log.h"
 #include "runtime/WindowSystem.h"
+
+#include "runtime/framework/Scene.h"
 #include "runtime/render/RenderSystem.h"
 #include "runtime/rhi/RHI.h"
 #include "runtime/rhi/RHICommandList.h"

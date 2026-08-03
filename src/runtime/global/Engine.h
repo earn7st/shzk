@@ -9,6 +9,7 @@ namespace shzk
 	class WindowSystem;
 	class RenderSystem;
 	class RHI;
+	class Scene;
 
 	struct EngineInitInfo
 	{
@@ -34,9 +35,13 @@ namespace shzk
 		static std::shared_ptr<WindowSystem>& GetWindowSystem() { return g_engine->m_windowSystem; }
 		static std::shared_ptr<RenderSystem>& GetRenderSystem() { return g_engine->m_renderSystem; }
 
+		void SetActiveScene(std::shared_ptr<Scene> scene) { m_activeScene = scene; }
+
 	private:
 		std::shared_ptr<WindowSystem> m_windowSystem;
 		std::shared_ptr<RenderSystem> m_renderSystem;
 		std::shared_ptr<RHI> m_rhi;		// a copy of the global rhi shared_ptr
+
+		std::shared_ptr<Scene> m_activeScene;	// TODO: World(SceneManager) -> Scenes, activeScene
 	};
 }

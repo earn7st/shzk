@@ -45,8 +45,6 @@ namespace shzk
 		RHICommandListImmediate::Get()->SetCommandContext(RHI::Get()->GetCommandContextImmediate().get());
 
 		InitPerFrameRHIResources();
-
-		TestInit();
 	}
 
 	void RenderSystem::Shutdown()

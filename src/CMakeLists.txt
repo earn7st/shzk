@@ -7,6 +7,11 @@ add_library(
 
     # global
     "runtime/global/Engine.cpp"
+
+    # framework
+    "runtime/framework/components/TransformComponent.cpp"
+    "runtime/framework/Node.cpp"
+    "runtime/framework/Scene.cpp"
     
     # render
     "runtime/render/RenderSystem.cpp"
