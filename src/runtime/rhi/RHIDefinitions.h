@@ -5,7 +5,12 @@
 
 namespace shzk
 {
-#define MAX_QUEUE_CNT 2
+#if WIN32
+	#define MAX_QUEUE_CNT 2
+#else
+	#define MAX_QUEUE_CNT 1
+#endif 
+
 #define FRAMES_IN_FLIGHT 2
 
 	class RHIQueue;

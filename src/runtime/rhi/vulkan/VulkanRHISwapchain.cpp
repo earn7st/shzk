@@ -8,6 +8,7 @@
 #include "VulkanRHIQueue.h"
 #include "runtime/log/Log.h"
 
+#include <iostream>
 #include <memory>
 #include <algorithm>
 #include <volk/volk.h>
@@ -34,6 +35,7 @@ namespace shzk
 
         VkSurfaceFormatKHR surfaceFormat = ChooseSwapchainSurfaceFormat(VulkanUtil::RHIFormatToVkFormat(info.format));
         RHIFormat targetFormat = VulkanUtil::VkFormatToRHIFormat(surfaceFormat.format);
+
         if (targetFormat != info.format)
         {
             m_info.format = targetFormat;
@@ -71,11 +73,11 @@ namespace shzk
         createInfo.queueFamilyIndexCount = 0;
         createInfo.pQueueFamilyIndices = nullptr;
 
-        createInfo.preTransform = m_capabilities.currentTransform;                  // ±ä»»²Ù×÷£¬ÀýÈçÐý×ª·´×ª£¬ÓÃÄ¬ÈÏ
-        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;              // Í¸Ã÷¶È»ìºÏ
-        createInfo.presentMode = presentMode;                                       // Ë¢ÐÂÄ£Ê½
-        createInfo.clipped = VK_TRUE;                                               // ²Ã¼ô£¨ÕÚµ²»òÔÙ¿ÉÊÓ·¶Î§ÍâµÈ£©
-        createInfo.oldSwapchain = VK_NULL_HANDLE;                                   // ½»»»Á´¸üÐÂÊ±Ê¹ÓÃ
+        createInfo.preTransform = m_capabilities.currentTransform;                  // ï¿½ä»»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½×ªï¿½ï¿½ï¿½ï¿½Ä¬ï¿½ï¿½
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;              // Í¸ï¿½ï¿½ï¿½È»ï¿½ï¿½
+        createInfo.presentMode = presentMode;                                       // Ë¢ï¿½ï¿½Ä£Ê½
+        createInfo.clipped = VK_TRUE;                                               // ï¿½Ã¼ï¿½ï¿½ï¿½ï¿½Úµï¿½ï¿½ï¿½ï¿½Ù¿ï¿½ï¿½Ó·ï¿½Î§ï¿½ï¿½È£ï¿½
+        createInfo.oldSwapchain = VK_NULL_HANDLE;                                   // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê±Ê¹ï¿½ï¿½
 
         VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_handle));
 
