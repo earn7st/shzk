@@ -2,7 +2,6 @@
 
 #include <glm/glm.hpp>
 
-
 namespace shzk
 {
 	typedef struct Transform

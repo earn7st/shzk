@@ -2,7 +2,7 @@
 
 namespace shzk
 {
-	class Mesh
+	class Material
 	{
 
 	};

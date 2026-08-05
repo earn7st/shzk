@@ -63,6 +63,7 @@ namespace shzk
             case FORMAT_R8G8_UNORM:           format = VK_FORMAT_R8G8_UNORM;              break;
             case FORMAT_R8G8B8_UNORM:         format = VK_FORMAT_R8G8B8_UNORM;            break;
             case FORMAT_R8G8B8A8_UNORM:       format = VK_FORMAT_R8G8B8A8_UNORM;          break;
+			case FORMAT_B8G8R8A8_UNORM:       format = VK_FORMAT_B8G8R8A8_UNORM;          break;
             case FORMAT_R16_UNORM:            format = VK_FORMAT_R16_UNORM;               break;
             case FORMAT_R16G16_UNORM:         format = VK_FORMAT_R16G16_UNORM;            break;
             case FORMAT_R16G16B16_UNORM:      format = VK_FORMAT_R16G16B16_UNORM;         break;
@@ -146,6 +147,7 @@ namespace shzk
             case VK_FORMAT_R8G8_UNORM:           format = FORMAT_R8G8_UNORM;              break;
             case VK_FORMAT_R8G8B8_UNORM:         format = FORMAT_R8G8B8_UNORM;            break;
             case VK_FORMAT_R8G8B8A8_UNORM:       format = FORMAT_R8G8B8A8_UNORM;          break;
+			case VK_FORMAT_B8G8R8A8_UNORM:       format = FORMAT_B8G8R8A8_UNORM;          break;
             case VK_FORMAT_R16_UNORM:            format = FORMAT_R16_UNORM;               break;
             case VK_FORMAT_R16G16_UNORM:         format = FORMAT_R16G16_UNORM;            break;
             case VK_FORMAT_R16G16B16_UNORM:      format = FORMAT_R16G16B16_UNORM;         break;
