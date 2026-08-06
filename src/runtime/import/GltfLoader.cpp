@@ -4,7 +4,6 @@
 #include "runtime/asset/Material.h"
 #include "runtime/core/Primitive.h"
 #include "runtime/log/Log.h"
-#include "runtime/rhi/RHI.h"
 
 #include <fastgltf/core.hpp>
 #include <fastgltf/tools.hpp>
