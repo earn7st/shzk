@@ -8,8 +8,16 @@ add_library(
     # global
     "runtime/global/Engine.cpp"
 
+    # import
+    "runtime/import/GltfLoader.cpp"
+
+    # asset
+    "runtime/asset/AssetManager.cpp"
+    "runtime/asset/Model.cpp"
+
     # framework
     "runtime/framework/components/TransformComponent.cpp"
+    "runtime/framework/components/MeshComponent.cpp"
     "runtime/framework/Node.cpp"
     "runtime/framework/Scene.cpp"
     

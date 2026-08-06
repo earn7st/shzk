@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime/core/Definitions.h"
+#include "runtime/asset/Asset.h"
 
 #include <vector>
 #include <memory>
@@ -23,15 +24,21 @@ namespace shzk
 		std::shared_ptr<Material> material;
 	};
 
-	class Model
+	class Model : public Asset
 	{
 	public:
-		Model() = default;
+		Model() : Asset(AssetType::Model) {};	// loader to fill
 		~Model() = default;
 
+		inline const std::string& GetName() const { return m_name; }
 		inline const std::vector<Submesh>& GetSubmeshes() const { return m_submeshes; }
 
+		void AddSubmesh(Submesh submesh) { m_submeshes.push_back(submesh); }
+
 	private:
+		std::string m_name;
+		std::string m_path;
+
 		std::vector<Submesh> m_submeshes;
 	};
 }

@@ -18,7 +18,7 @@ namespace shzk
 	void Node::AddComponent(std::shared_ptr<Component> component)
 	{
 		assert(component);
-		component->m_Node = shared_from_this();
+		component->m_owner = shared_from_this();
 		m_components.push_back(component);
 	}
 }
