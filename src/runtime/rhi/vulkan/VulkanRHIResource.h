@@ -19,6 +19,9 @@ namespace shzk
 
 		inline const VkBuffer& GetHandle() const { return m_handle; }
 
+		virtual void* Map() override;
+		virtual void UnMap() override;
+
 	protected:
 		virtual void Destroy() override final;
 
@@ -28,8 +31,8 @@ namespace shzk
 		VmaAllocation m_alloc;
 		VmaAllocationInfo m_allocInfo;
 
-		bool mapped = false;
-		void* ptr = nullptr;
+		bool m_mapped = false;
+		void* m_ptr = nullptr;
 	};
 
 	class VulkanRHITexture : public RHITexture

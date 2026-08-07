@@ -163,7 +163,7 @@ namespace shzk
 			std::shared_ptr<RHISemaphore> waitSemaphore,
 			std::shared_ptr<RHISemaphore> signalSemaphore) = 0;
 		virtual void RHITextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba) = 0;
-		virtual void RHITextureBarrierCommand(const RHITextureBarrier& barrier) = 0;
+		virtual void RHITextureBarrierCommand(const RHITextureBarrier& barrier) = 0;	// Add "Command" because conflict with struct "RHITextureBarrier"
 		/*
 		virtual void Execute(RHIFenceRef waitFence, RHISemaphoreRef waitSemaphore, RHISemaphoreRef signalSemaphore) = 0;     // ʵ���ύ������ӳ�¼��Ҳ���ڶ�Ӧ�̵߳��øú������¼���ύ
 
@@ -248,17 +248,14 @@ namespace shzk
 
 		virtual void Destroy() = 0;
 		
-		virtual void Flush() = 0;
-		virtual void TextureBarrier(const RHITextureBarrier& barrier) = 0;
-		virtual void BufferBarrier(const RHIBufferBarrier& barrier) = 0;
-		virtual void CopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset) = 0;
-		virtual void CopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) = 0;
-
-		virtual void CopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size) = 0;
-
-		virtual void CopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) = 0;
-
-		virtual void GenerateMips(std::shared_ptr<RHITexture> src) = 0;
+		virtual void RHISubmit() = 0;
+		virtual void RHITextureBarrierCommand(const RHITextureBarrier& barrier) = 0;
+		virtual void RHIBufferBarrierCommand(const RHIBufferBarrier& barrier) = 0;
+		virtual void RHICopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset) = 0;
+		virtual void RHICopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) = 0;
+		virtual void RHICopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size) = 0;
+		virtual void RHICopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) = 0;
+		virtual void RHIGenerateMips(std::shared_ptr<RHITexture> src) = 0;
 		
 	};
 }

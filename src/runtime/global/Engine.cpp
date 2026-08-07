@@ -5,8 +5,6 @@
 #include "runtime/framework/Scene.h"
 #include "runtime/render/RenderSystem.h"
 #include "runtime/rhi/RHI.h"
-#include "runtime/rhi/RHICommandList.h"
-#include "runtime/rhi/RHICommandListImmediate.h"
 
 namespace shzk
 {

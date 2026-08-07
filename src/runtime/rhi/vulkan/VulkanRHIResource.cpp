@@ -31,11 +31,32 @@ namespace shzk
         if (info.creationFlag & BUFFER_CREATION_PERSISTENT_MAP)
         {
             allocationCreateInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-            mapped = true;
+            m_mapped = true;
         }
 
         m_allocInfo = {};
         VK_CHECK(vmaCreateBuffer(rhi.GetAllocator(), &bufferInfo, &allocationCreateInfo, &m_handle, &m_alloc, &m_allocInfo));
+    }
+
+    void* VulkanRHIBuffer::Map()
+    {
+        if (m_info.creationFlag & BUFFER_CREATION_PERSISTENT_MAP) return m_allocInfo.pMappedData;
+        if (!m_mapped)
+        {
+            vmaMapMemory(VULKAN_RHI()->GetAllocator(), m_alloc, &m_ptr);
+            m_mapped = true;
+        }
+        return m_ptr;
+    }
+
+    void VulkanRHIBuffer::UnMap()
+    {
+        if (m_mapped && !(m_info.creationFlag & BUFFER_CREATION_PERSISTENT_MAP))
+        {
+            vmaUnmapMemory(VULKAN_RHI()->GetAllocator(), m_alloc);
+            m_ptr = nullptr;
+            m_mapped = false;
+        }
     }
 
     void VulkanRHIBuffer::Destroy()

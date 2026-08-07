@@ -6,6 +6,7 @@
 #include "runtime/rhi/RHI.h"
 #include "runtime/rhi/RHIUtil.h"
 #include "runtime/rhi/RHIDefinitions.h"
+#include "runtime/rhi/RHIResource.h"
 
 #include <stb_image.h>
 #include <filesystem>
@@ -30,7 +31,7 @@ namespace shzk
 	{
 		m_paths.push_back(std::filesystem::path(path).filename().string());
 	}
-
+	
 	void Texture::LoadFromFile()
 	{
 		if (m_type == TextureType::TypeCube && m_paths.size() != 6)
@@ -39,7 +40,7 @@ namespace shzk
 			return;
 		}
 		
-		for (size_t i = 0; i < m_paths.size(); ++i)
+		for (uint32_t i = 0; i < m_paths.size(); ++i)
 		{
 			std::string& path = m_paths[i];
 			int width, height, channels;
@@ -58,10 +59,36 @@ namespace shzk
 
 				m_rhiInitialized = true;
 			}
+
+			// upload
+			uint32_t bufferSize = width * height * sizeof(uint8_t) * channels;
+			RHIBufferInfo bufferInfo = {
+				.size = bufferSize,
+				.memoryUsage = MemoryUsage::CPUOnly,
+				.type = RESOURCE_TYPE_BUFFER,
+				.creationFlag = BUFFER_CREATION_PERSISTENT_MAP
+			};
+
+			std::shared_ptr<RHIBuffer> stagingBuffer = RHI::Get()->CreateBuffer(bufferInfo);
+			memcpy(stagingBuffer->Map(), pixels, bufferSize);
+
+			RHI::Get()->GetCommandContextImmediate()->RHITextureBarrierCommand(
+				{ m_texture,
+				RHIResourceState::TransferSrc, RHIResourceState::TransferDst,
+				{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, i, 1} });
+			RHI::Get()->GetCommandContextImmediate()->RHICopyBufferToTexture(stagingBuffer, 0, m_texture, {TEXTURE_ASPECT_COLOR, 0, i, 1});
+
+			stbi_image_free(pixels);
 		}
 
-		// upload, staging buffer, immediate
-		
+		RHI::Get()->GetCommandContextImmediate()->RHITextureBarrierCommand({m_texture,
+				RHIResourceState::TransferDst, RHIResourceState::TransferSrc,
+						{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, 0, m_arrayLayer} });
+		RHI::Get()->GetCommandContextImmediate()->RHIGenerateMips(m_texture);
+		RHI::Get()->GetCommandContextImmediate()->RHITextureBarrierCommand({ m_texture,
+			RHIResourceState::TransferSrc, RHIResourceState::TransferDst,
+					{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, 0, m_arrayLayer} });
+		RHI::Get()->GetCommandContextImmediate()->RHISubmit();
 	}
 
 	void shzk::Texture::InitRHI()

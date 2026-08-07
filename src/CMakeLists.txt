@@ -28,7 +28,7 @@ add_library(
     # rhi
     "runtime/rhi/RHI.cpp"
     "runtime/rhi/RHICommandList.cpp"
-    "runtime/rhi/RHICommandListImmediate.cpp"
+    
     "runtime/rhi/RHIResource.cpp"
 
     # vulkan rhi

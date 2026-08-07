@@ -447,7 +447,7 @@ namespace shzk
 			&clear, 1, &range);
 	}
 
-	void VulkanRHICommandContext::RHITextureBarrierCommand(const RHITextureBarrier& barrier)
+	void VulkanRHICommandContext::RHITextureBarrierCommand(const RHITextureBarrier& barrier)	
 	{
 		RHITextureBarrierImpl(m_cmdBuffer, barrier);
 	}
@@ -460,9 +460,10 @@ namespace shzk
 		m_queue = rhi.GetQueue({ .type = RHIQueueType::Graphics, .index = 0 });
 		m_cmdPool = rhi.CreateCommandPool({ .queue = m_queue });
 		m_device = rhi.GetDevice();		// save device handle here
-		// because immediate commands can be called frequently, better not be casting global RHI every frame
+										// because immediate commands can be called frequently, better not be casting global RHI every frame
 
-// VkCommandBuffer is instant created when use
+		BeginImmediateCommand();
+		// VkCommandBuffer is instantly created when use
 	} 
 
 	void VulkanRHICommandContextImmediate::Destroy()
@@ -471,6 +472,83 @@ namespace shzk
 		m_cmdPool->Destroy();
 	}
 
+	void VulkanRHICommandContextImmediate::RHISubmit()
+	{
+		EndImmediateCommand();
+		BeginImmediateCommand();
+	}
+
+	void VulkanRHICommandContextImmediate::RHITextureBarrierCommand(const RHITextureBarrier& barrier)
+	{
+	}
+
+	void VulkanRHICommandContextImmediate::RHIBufferBarrierCommand(const RHIBufferBarrier& barrier)
+	{
+	}
+
+	void VulkanRHICommandContextImmediate::RHICopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset)
+	{
+	}
+
+	void VulkanRHICommandContextImmediate::RHICopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource)
+	{
+	}
+
+	void VulkanRHICommandContextImmediate::RHICopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size)
+	{
+	}
+
+	void VulkanRHICommandContextImmediate::RHICopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource)
+	{
+	}
+
+	void VulkanRHICommandContextImmediate::RHIGenerateMips(std::shared_ptr<RHITexture> src)
+	{
+	}
+
+	void VulkanRHICommandContextImmediate::BeginImmediateCommand()
+	{
+		// reallocate VkCommandBuffer
+		VkCommandBufferAllocateInfo allocInfo = {};
+		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		allocInfo.commandPool = CastTo<VulkanRHICommandPool>(m_cmdPool)->GetHandle();
+		allocInfo.commandBufferCount = 1;
+
+		vkAllocateCommandBuffers(m_device, &allocInfo, &m_handle);
+
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		vkBeginCommandBuffer(m_handle, &beginInfo);
+	}
+
+	void VulkanRHICommandContextImmediate::EndImmediateCommand()
+	{
+		m_fence->Wait(); 
+		if (m_oldHandle != VK_NULL_HANDLE)
+		{
+			vkFreeCommandBuffers(VULKAN_RHI()->GetDevice(), CastTo<VulkanRHICommandPool>(m_cmdPool)->GetHandle(), 1, &m_oldHandle);
+		}
+		// free the old CommandBuffer when vkQueueSubmit finished
+
+		VK_CHECK(vkEndCommandBuffer(m_handle));
+
+		VkSubmitInfo submitInfo = {};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &m_handle;
+		submitInfo.waitSemaphoreCount = 0;
+		submitInfo.pWaitSemaphores = nullptr;
+		submitInfo.pWaitDstStageMask = nullptr;
+		submitInfo.signalSemaphoreCount = 0;
+		submitInfo.pSignalSemaphores = nullptr;
+
+		VK_CHECK(vkQueueSubmit(CastTo<VulkanRHIQueue>(m_queue)->GetHandle(), 1, &submitInfo, CastTo<VulkanRHIFence>(m_fence)->GetHandle()));
+		m_oldHandle = m_handle;
+	}
+
+	// shared implementations
 	void RHITextureBarrierImpl(VkCommandBuffer& cmdBuffer, const RHITextureBarrier& barrier)
 	{
 		RHIResourceState srcState = barrier.srcState;

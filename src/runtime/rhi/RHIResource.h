@@ -30,6 +30,9 @@ namespace shzk
 
 		inline const RHIBufferInfo& GetInfo() const { return m_info; }
 
+		virtual void* Map() = 0;
+		virtual void UnMap() = 0;
+
 	protected:
 		RHIBufferInfo m_info;
 	};

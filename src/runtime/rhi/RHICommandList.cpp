@@ -9,11 +9,11 @@
 
 namespace shzk
 {
-	std::shared_ptr<RHICommandList> RHICommandList::g_RhiCmdList = std::make_shared<RHICommandList>();
+	std::shared_ptr<RHICommandList> RHICommandList::g_rhiCmdList = std::make_shared<RHICommandList>();
 	
 	void RHICommandList::Init(bool bypass)
 	{
-		g_RhiCmdList->m_bypass = bypass;
+		g_rhiCmdList->m_bypass = bypass;
 	}
 
 	void RHICommandList::BeginCommand()

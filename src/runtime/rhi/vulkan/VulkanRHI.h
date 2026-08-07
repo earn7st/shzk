@@ -120,16 +120,19 @@ namespace shzk
 
 		virtual void Destroy() override final;
 
-		virtual void Flush() override final;
-		virtual void TextureBarrier(const RHITextureBarrier& barrier) override final;
-		virtual void BufferBarrier(const RHIBufferBarrier& barrier) override final;
-		virtual void CopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset) override final;
-		virtual void CopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) override final;
-		virtual void CopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size) override final;
-		virtual void CopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) override final;
-		virtual void GenerateMips(std::shared_ptr<RHITexture> src) override final;
+		virtual void RHISubmit() override final;
+		virtual void RHITextureBarrierCommand(const RHITextureBarrier& barrier) override final;
+		virtual void RHIBufferBarrierCommand(const RHIBufferBarrier& barrier) override final;
+		virtual void RHICopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset) override final;
+		virtual void RHICopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) override final;
+		virtual void RHICopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size) override final;
+		virtual void RHICopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) override final;
+		virtual void RHIGenerateMips(std::shared_ptr<RHITexture> src) override final;
 
 	private:
+		void BeginImmediateCommand();
+		void EndImmediateCommand();
+
 		std::shared_ptr<RHIFence> m_fence;
 		std::shared_ptr<RHIQueue> m_queue;
 		std::shared_ptr<RHICommandPool> m_cmdPool;

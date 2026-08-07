@@ -15,14 +15,14 @@ namespace shzk
 	class RHICommandList
 	{
 	private:
-		static std::shared_ptr<RHICommandList> g_RhiCmdList;
+		static std::shared_ptr<RHICommandList> g_rhiCmdList;
 
 	public:
 		RHICommandList() = default;
         ~RHICommandList() = default;
 
 		static void Init(bool bypass = true);
-		static std::shared_ptr<RHICommandList>& Get() { return g_RhiCmdList; }
+		static std::shared_ptr<RHICommandList>& Get() { return g_rhiCmdList; }
 
         inline void SetContext(RHICommandContext* context) { m_cmdContext = context; }
         inline RHICommandContext& GetContext() { return *m_cmdContext; }

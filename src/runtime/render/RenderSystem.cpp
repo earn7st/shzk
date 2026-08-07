@@ -5,7 +5,6 @@
 #include "runtime/rhi/RHIDefinitions.h"
 #include "runtime/rhi/RHI.h"
 #include "runtime/rhi/RHICommandList.h"
-#include "runtime/rhi/RHICommandListImmediate.h"
 #include <cassert>
 
 namespace shzk
@@ -42,7 +41,6 @@ namespace shzk
 		assert(m_rhiCmdPool);
 
 		RHICommandList::Init(true);				// bypass = true
-		RHICommandListImmediate::Get()->SetCommandContext(RHI::Get()->GetCommandContextImmediate().get());
 
 		InitPerFrameRHIResources();
 	}
