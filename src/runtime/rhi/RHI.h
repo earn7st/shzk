@@ -47,6 +47,7 @@ namespace shzk
 		// Resources
 		virtual std::shared_ptr<RHIBuffer> CreateBuffer(const RHIBufferInfo& info) = 0;
 		virtual std::shared_ptr<RHITexture> CreateTexture(const RHITextureInfo& info) = 0;
+		virtual std::shared_ptr<RHITextureView> CreateTextureView(const RHITextureViewInfo& info) = 0;
 		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) = 0;
 
 		std::shared_ptr<RHICommandContextImmediate> GetCommandContextImmediate() const { return m_cmdContextImmediate; }
@@ -246,23 +247,18 @@ namespace shzk
 		~RHICommandContextImmediate() = default;
 
 		virtual void Destroy() = 0;
-
-		/*
+		
 		virtual void Flush() = 0;
-
 		virtual void TextureBarrier(const RHITextureBarrier& barrier) = 0;
-
 		virtual void BufferBarrier(const RHIBufferBarrier& barrier) = 0;
+		virtual void CopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset) = 0;
+		virtual void CopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) = 0;
 
-		virtual void CopyTextureToBuffer(RHITextureRef src, TextureSubresourceLayers srcSubresource, RHIBufferRef dst, uint64_t dstOffset) = 0;
+		virtual void CopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size) = 0;
 
-		virtual void CopyBufferToTexture(RHIBufferRef src, uint64_t srcOffset, RHITextureRef dst, TextureSubresourceLayers dstSubresource) = 0;
+		virtual void CopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) = 0;
 
-		virtual void CopyBuffer(RHIBufferRef src, uint64_t srcOffset, RHIBufferRef dst, uint64_t dstOffset, uint64_t size) = 0;
-
-		virtual void CopyTexture(RHITextureRef src, TextureSubresourceLayers srcSubresource, RHITextureRef dst, TextureSubresourceLayers dstSubresource) = 0;
-
-		virtual void GenerateMips(RHITextureRef src) = 0;
-		*/
+		virtual void GenerateMips(std::shared_ptr<RHITexture> src) = 0;
+		
 	};
 }

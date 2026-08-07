@@ -14,7 +14,7 @@ namespace shzk
 		}
 
 		// TODO: load asset from path, probably not gonna be used for a while
-
+		return nullptr;
 	}
 
 }

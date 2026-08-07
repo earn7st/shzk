@@ -115,7 +115,7 @@ namespace shzk
         vmaDestroyImage(VULKAN_RHI()->GetAllocator(), m_handle, m_alloc);
     }
 
-    VulkanRHITextureView::VulkanRHITextureView(const RHITextureViewInfo& info, VulkanRHI& rhi, VkImage)
+    VulkanRHITextureView::VulkanRHITextureView(const RHITextureViewInfo& info, VulkanRHI& rhi)
         : RHITextureView(info)
     {
         if (info.subresourceRange.aspect == TEXTURE_ASPECT_NONE)

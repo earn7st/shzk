@@ -13,7 +13,7 @@ namespace shzk
 		Material,
 	};
 
-	std::string AssetTypeToString(const AssetType& type)
+	static std::string AssetTypeToString(const AssetType& type)
 	{
 		switch (type)
 		{

@@ -17,9 +17,9 @@ namespace shzk
 		fastgltf::Parser parser;
 
 		auto data = fastgltf::GltfDataBuffer::FromPath(path);
-        auto basePath = std::filesystem::path(path).parent_path();
+        m_basePath = std::filesystem::path(path).parent_path();
         auto assetResult = parser.loadGltf(
-            data.get(), basePath, fastgltf::Options::None);
+            data.get(), m_basePath, fastgltf::Options::None);
 
         if (assetResult.error() != fastgltf::Error::None) {
             SHZK_LOG_ERROR("Failed to parse glTF: {} ¡ª error code: {}",
@@ -33,7 +33,7 @@ namespace shzk
         for (size_t i = 0; i < gltf.textures.size(); ++i)
         {
             result.textures[i] = CreateTexture(gltf, gltf.textures[i]);
-            if (result.textures[i]) 
+            if (result.textures[i])
             {
                 SHZK_LOG_INFO("  Texture[{}] loaded: {}", i, result.textures[i]->GetName());
             }
@@ -74,9 +74,9 @@ namespace shzk
                 prim->texcoord = ReadTexcoords(gltf, primitive);
                 submesh.primitive = prim;
 
-                submesh.vertexBuffer = std::make_shared<VertexBuffer>();
+                // submesh.vertexBuffer = std::make_shared<VertexBuffer>();
 
-                submesh.indexBuffer = std::make_shared<IndexBuffer>();
+                // submesh.indexBuffer = std::make_shared<IndexBuffer>();
 
                 // submesh.material
 
@@ -92,7 +92,6 @@ namespace shzk
             result.models.size(),
             result.textures.size(),
             result.materials.size());
-
 	}
 
     Transform GltfLoader::ReadTransform(fastgltf::Node& node)
@@ -159,8 +158,31 @@ namespace shzk
 
     std::shared_ptr<Texture> GltfLoader::CreateTexture(const fastgltf::Asset& gltf, const fastgltf::Texture& texture)
     {
-        return std::shared_ptr<Texture>();
+        std::string texturePath;
+
+        if (texture.imageIndex.has_value())
+        {
+            auto& image = gltf.images[texture.imageIndex.value()];
+
+            std::visit(fastgltf::visitor{
+                [](auto&) {},
+                [&](fastgltf::sources::URI& source) {
+                    auto relativePath = source.uri.path();  // source.uri.path() returns the relative path
+                    texturePath = (m_basePath / std::filesystem::path(relativePath)).string();
+                },
+                }, image.data);
+        }
+
+        if (texturePath.empty())
+        {
+            SHZK_LOG_WARN("Texture has no file path, skipping");
+            return nullptr;
+        }
+
+        auto tex = std::make_shared<Texture>(texturePath, TextureType::Type2D);
+        return tex;
     }
+
     std::shared_ptr<Material> GltfLoader::CreateMaterial(const fastgltf::Asset& gltf, const fastgltf::Material& material)
     {
         return std::shared_ptr<Material>();

@@ -14,6 +14,7 @@ add_library(
     # asset
     "runtime/asset/AssetManager.cpp"
     "runtime/asset/Model.cpp"
+    "runtime/asset/Texture.cpp"
 
     # framework
     "runtime/framework/components/TransformComponent.cpp"

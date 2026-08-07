@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <filesystem>
 #include <glm/glm.hpp>
 #include <fastgltf/core.hpp>
 #include <fastgltf/tools.hpp>
@@ -67,5 +68,8 @@ namespace shzk
 
 			return result;
 		}
+
+	private:
+		std::filesystem::path m_basePath;
 	};
 }

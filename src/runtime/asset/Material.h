@@ -10,7 +10,7 @@ namespace shzk
 	{
 	public:
 		Material() : Asset(AssetType::Material) {}
-		~Material();
+		~Material() = default;
 
 		inline const std::string& GetName() const { return m_name; }
 

@@ -55,7 +55,7 @@ namespace shzk
 	{
 	public:
 		VulkanRHITextureView() = delete;
-		VulkanRHITextureView(const RHITextureViewInfo& info, VulkanRHI& rhi, VkImage = VK_NULL_HANDLE);
+		VulkanRHITextureView(const RHITextureViewInfo& info, VulkanRHI& rhi);
 		~VulkanRHITextureView() = default;
 		inline const VkImageView& GetHandle() { return m_handle; }
 

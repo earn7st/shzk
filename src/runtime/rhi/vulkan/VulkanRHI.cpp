@@ -150,6 +150,13 @@ namespace shzk
 		return texture;
 	}
 
+	std::shared_ptr<RHITextureView> VulkanRHI::CreateTextureView(const RHITextureViewInfo& info)
+	{
+		std::shared_ptr<RHITextureView> view = std::make_shared<VulkanRHITextureView>(info, *this);
+		assert(view);
+		return view;
+	}
+
 	std::shared_ptr<RHIGraphicsPipeline> VulkanRHI::CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info)
 	{
 		std::shared_ptr<RHIGraphicsPipeline> pipeline = std::make_shared<VulkanRHIGraphicsPipeline>(info, *this);

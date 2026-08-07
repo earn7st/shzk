@@ -37,6 +37,7 @@ namespace shzk
 		// Resources
 		virtual std::shared_ptr<RHIBuffer> CreateBuffer(const RHIBufferInfo& info) override final;
 		virtual std::shared_ptr<RHITexture> CreateTexture(const RHITextureInfo& info) override final;
+		virtual std::shared_ptr<RHITextureView> CreateTextureView(const RHITextureViewInfo& info) override final;
 		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) override final;
 
 		inline const VkInstance& GetInstance() { return m_instance; }
@@ -119,15 +120,25 @@ namespace shzk
 
 		virtual void Destroy() override final;
 
+		virtual void Flush() override final;
+		virtual void TextureBarrier(const RHITextureBarrier& barrier) override final;
+		virtual void BufferBarrier(const RHIBufferBarrier& barrier) override final;
+		virtual void CopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset) override final;
+		virtual void CopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) override final;
+		virtual void CopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size) override final;
+		virtual void CopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) override final;
+		virtual void GenerateMips(std::shared_ptr<RHITexture> src) override final;
+
 	private:
 		std::shared_ptr<RHIFence> m_fence;
 		std::shared_ptr<RHIQueue> m_queue;
 		std::shared_ptr<RHICommandPool> m_cmdPool;
 
-		VkCommandBuffer m_handle;
+		VkCommandBuffer m_handle	= VK_NULL_HANDLE;
 		VkCommandBuffer m_oldHandle = VK_NULL_HANDLE;
 		VkDevice m_device;
 	};
 
-	void RHITextureBarrierImpl(VkCommandBuffer& cmdBuffer, const RHITextureBarrier& barrier);
+	// implementations shared by command context and immediate command context
+	void RHITextureBarrierImpl(VkCommandBuffer& cmdBuffer, const RHITextureBarrier& barrier);	
 }
