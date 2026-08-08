@@ -1,0 +1,23 @@
+#pragma once
+
+#include "Asset.h"
+#include "runtime/rhi/RHIDefinitions.h"
+
+#include <string>
+
+namespace shzk
+{
+	class Shader : public Asset
+	{
+	public:
+		Shader() = delete;
+		Shader(const std::string& path, ShaderFrequency frequency, const std::string& entry = "main");
+		~Shader() = default;
+
+		std::string m_path;
+		std::string m_entry;
+
+		ShaderFrequency m_frequency;
+		std::shared_ptr<RHIShader> m_shader;
+	};
+}

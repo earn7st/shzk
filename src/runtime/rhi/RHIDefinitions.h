@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace shzk
@@ -463,7 +464,10 @@ namespace shzk
 
 	typedef struct RHIShaderInfo
 	{
-		
+		std::string entry = "main";
+
+		ShaderFrequency frequency;
+		std::vector<uint8_t> code;
 	} RHIShaderInfo;
 
 	typedef struct RHIRootSignatureInfo

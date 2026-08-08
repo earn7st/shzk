@@ -33,10 +33,10 @@ namespace shzk
 		Asset(AssetType type) : m_type(type) {}
 		virtual ~Asset() = default;
 
-		void SetName(std::string name) { m_name = name; };
-
-		std::string GetTypeName() const { return AssetTypeToString(m_type); }
-		AssetType GetType() const { return m_type; }
+		std::string GetAssetTypeName() const { return AssetTypeToString(m_type); }
+		AssetType GetAssetType() const { return m_type; }
+		void SetName(const std::string& name) { m_name = name; };
+		inline const std::string& GetName() const { return m_name; }
 
 	protected:
 		AssetType m_type	= AssetType::Unknown;

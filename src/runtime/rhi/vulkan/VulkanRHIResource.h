@@ -75,7 +75,19 @@ namespace shzk
 
 	class VulkanRHIShader : public RHIShader
 	{
+	public:
+		VulkanRHIShader() = delete;
+		VulkanRHIShader(const RHIShaderInfo& info, VulkanRHI& rhi);
+		~VulkanRHIShader() = default;
 
+		virtual void Destroy() override final;
+
+		VkPipelineShaderStageCreateInfo GetShaderStageCreateInfo();
+
+		inline VkShaderModule& GetHandle() { return m_handle; }
+
+	private:
+		VkShaderModule	m_handle;
 	};
 
 	class VulkanRHIDescriptorSet : public RHIDescriptorSet

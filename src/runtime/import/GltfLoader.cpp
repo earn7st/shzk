@@ -42,7 +42,7 @@ namespace shzk
         result.materials.resize(gltf.materials.size());
         for (size_t i = 0; i < gltf.materials.size(); ++i)
         {
-            result.materials[i] = CreateMaterial(gltf, gltf.materials[i]);
+            result.materials[i] = CreateMaterial(gltf, gltf.materials[i], result.textures);
             if (result.materials[i])
             {
                 SHZK_LOG_INFO("  Material[{}] loaded: {}", i, result.materials[i]->GetName());
@@ -120,12 +120,6 @@ namespace shzk
             else if constexpr (std::is_same_v<T, fastgltf::math::fmat4x4>)
             {
                 // TODO: mat4x4
-                /*
-                result.translation = glm::vec3(
-                    transform[3][0],
-                    transform[3][1],
-                    transform[3][2]);
-                */
             }
             }, node.transform);
 
@@ -183,9 +177,54 @@ namespace shzk
         return tex;
     }
 
-    std::shared_ptr<Material> GltfLoader::CreateMaterial(const fastgltf::Asset& gltf, const fastgltf::Material& material)
+    std::shared_ptr<Material> GltfLoader::CreateMaterial(const fastgltf::Asset& gltf, const fastgltf::Material& material, const std::vector<std::shared_ptr<Texture>>& textures)
     {
-        return std::shared_ptr<Material>();
+        auto mat = std::make_shared<Material>();
+
+        mat->m_baseColor = glm::vec4(
+            material.pbrData.baseColorFactor.x(),
+            material.pbrData.baseColorFactor.y(),
+            material.pbrData.baseColorFactor.z(),
+            material.pbrData.baseColorFactor.w());
+        mat->m_metallic = material.pbrData.metallicFactor;
+        mat->m_roughness = material.pbrData.roughnessFactor;
+
+        mat->m_emission = glm::vec3(
+            material.emissiveFactor.x(),
+            material.emissiveFactor.y(),
+            material.emissiveFactor.z());
+
+        mat->m_alphaCutoff = material.alphaCutoff;
+
+        auto getTexture = [&](const auto& optionalTexInfo) -> std::shared_ptr<Texture> {
+            if (!optionalTexInfo.has_value())
+                return nullptr;
+            size_t idx = optionalTexInfo->textureIndex;
+            if (idx >= textures.size())
+                return nullptr;
+            return textures[idx];
+            };
+
+        mat->m_textureDiffuse = getTexture(material.pbrData.baseColorTexture);
+        mat->m_textureNormal = getTexture(material.normalTexture);
+        mat->m_textureArm = getTexture(material.pbrData.metallicRoughnessTexture);
+        mat->m_textureSpecular = nullptr;   // KHR_materials_pbrSpecularGlossiness
+
+        // general slots
+        mat->m_texture2D[0] = getTexture(material.occlusionTexture);  // glTF occlusion ¡ú 2D[0]
+        mat->m_texture2D[1] = getTexture(material.emissiveTexture);   // glTF emissive ¡ú 2D[1]
+
+        mat->m_ints[0] = static_cast<int32_t>(material.alphaMode);  // 0=Opaque, 1=Mask, 2=Blend
+        mat->m_ints[1] = material.doubleSided ? 1 : 0;
+        mat->m_ints[2] = material.unlit ? 1 : 0;
+        mat->m_floats[0] = (material.normalTexture.has_value())
+            ? material.normalTexture->scale         // glTF normal scale
+            : 1.0f;
+        mat->m_floats[1] = (material.occlusionTexture.has_value())
+            ? material.occlusionTexture->strength   // glTF occlusion strength
+            : 1.0f;
+
+        return mat;
     }
 
     const fastgltf::Accessor* GltfLoader::FindAttributeAccessor(

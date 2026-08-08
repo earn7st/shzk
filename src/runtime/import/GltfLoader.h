@@ -24,6 +24,9 @@ namespace shzk
 		std::vector<std::shared_ptr<Texture>> textures;
 		std::vector<std::shared_ptr<Material>> materials;
 	};
+	// GltfLoadResult is filled by GltfLoader::Load,
+	// the content in it should be managed by AssetManager
+	// Model/Texture/Material should be able to be used already
 
 	class GltfLoader
 	{
@@ -37,7 +40,7 @@ namespace shzk
 		std::vector<glm::vec2> ReadTexcoords(const fastgltf::Asset& gltf, const fastgltf::Primitive& primitive);
 
 		std::shared_ptr<Texture>	CreateTexture(const fastgltf::Asset& gltf, const fastgltf::Texture& texture);
-		std::shared_ptr<Material>	CreateMaterial(const fastgltf::Asset& gltf, const fastgltf::Material& material);
+		std::shared_ptr<Material>	CreateMaterial(const fastgltf::Asset& gltf, const fastgltf::Material& material, const std::vector<std::shared_ptr<Texture>>& textures);
 
 		// helpers
 		const fastgltf::Accessor* FindAttributeAccessor(

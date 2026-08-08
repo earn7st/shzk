@@ -689,6 +689,7 @@ Present 后 → 下一帧 Acquire 返回 PRESENT_SRC_KHR layout 的 image
 
 ## 用户偏好
 
+- **永远不要尝试修改用户的代码**——只回答问题、解释原理、给出建议。用户可以自己改。不要用 Edit/Write/Bash(sed) 等任何方式修改源文件
 - **每次回答前阅读并分析用户当前的实现作为前提给出答案**——不要凭记忆，不要假设用户改了或没改什么。必须 Read 相关文件后再回答
 - **以工业界成熟引擎的做法为准**——RHI 层优先参考 ToyRenderer（UE 风格，单后端但有完整抽象），RenderResource/RenderSystem 同样参考 ToyRenderer。也要参考 UE5 实际源码（`C:\Users\earn\UE5\`），理解 UE 的实践并判断哪些适合 SHZK 的规模
 - **类初始化按决策树选择模式**——有子类用 Static Factory Init（模式 1），依赖外部系统用 Two-Phase Init（模式 2），无依赖用 RAII 构造（模式 3），全局单例无依赖用 trivial 构造 + 运行时 setter 注入（模式 4）。详见上文"类初始化模式"

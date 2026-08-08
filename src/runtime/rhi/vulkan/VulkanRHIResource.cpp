@@ -163,6 +163,34 @@ namespace shzk
 		vkDestroyImageView(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
     }
 
+    VulkanRHIShader::VulkanRHIShader(const RHIShaderInfo& info, VulkanRHI& rhi)
+        : RHIShader(info)
+    {
+        VkShaderModuleCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        createInfo.codeSize = info.code.size();
+        createInfo.pCode = (const uint32_t*)info.code.data();
+
+        VK_CHECK(vkCreateShaderModule(rhi.GetDevice(), &createInfo, nullptr, &m_handle));
+        this->m_info.code.clear();
+    }
+
+    VkPipelineShaderStageCreateInfo VulkanRHIShader::GetShaderStageCreateInfo()
+    {
+        VkPipelineShaderStageCreateInfo shaderStage = {};
+        shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        shaderStage.stage = VulkanUtil::ShaderFrequencyToVkStageFlagBits(m_info.frequency);
+        shaderStage.module = m_handle;
+        shaderStage.pName = m_info.entry.c_str();
+
+        return shaderStage;
+    }
+
+    void VulkanRHIShader::Destroy()
+    {
+        vkDestroyShaderModule(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
+    }
+
     VulkanRHIDescriptorSet::VulkanRHIDescriptorSet(VulkanRHI& rhi, VkDescriptorSetLayout layout)
 		: RHIDescriptorSet()
     {

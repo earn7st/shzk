@@ -91,9 +91,13 @@ namespace shzk
 			: RHIResource(RHIResourceType::Shader), m_info(info)  {}
 
 		inline const RHIShaderInfo& GetInfo() const { return m_info; }
+		inline ShaderFrequency GetFrequency() const { return m_frequency; }
 
 	protected:
 		RHIShaderInfo m_info;
+	
+	private:
+		ShaderFrequency m_frequency;
 	};
 
 	// DescriptorSet and RootSignature

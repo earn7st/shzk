@@ -30,15 +30,12 @@ namespace shzk
 		Model() : Asset(AssetType::Model) {};	// loader to fill
 		~Model() = default;
 
-		inline const std::string& GetName() const { return m_name; }
 		inline const std::vector<Submesh>& GetSubmeshes() const { return m_submeshes; }
 
 		void AddSubmesh(Submesh submesh) { m_submeshes.push_back(submesh); }
 
 	private:
-		std::string m_name;
 		std::string m_path;
-
 		std::vector<Submesh> m_submeshes;
 	};
 }

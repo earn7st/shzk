@@ -5,6 +5,11 @@
 #include "editor/Editor.h"
 #include "runtime/global/Engine.h"
 
+void InitScene()
+{
+
+}
+
 int main()
 {
 	// _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_CHECK_ALWAYS_DF);
@@ -15,6 +20,8 @@ int main()
 	engineInitInfo.height = 720;
 
 	shzk::Engine::Init(engineInitInfo);
+
+	InitScene();
 
 	shzk::Editor* editor = new shzk::Editor();
 	editor->Run();

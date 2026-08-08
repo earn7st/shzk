@@ -15,6 +15,8 @@ add_library(
     "runtime/asset/AssetManager.cpp"
     "runtime/asset/Model.cpp"
     "runtime/asset/Texture.cpp"
+    "runtime/asset/Material.cpp"
+    "runtime/asset/Shader.cpp"
 
     # framework
     "runtime/framework/components/TransformComponent.cpp"
@@ -24,11 +26,12 @@ add_library(
     
     # render
     "runtime/render/RenderSystem.cpp"
+    "runtime/render/MeshPassProcessor.cpp"
+    "runtime/render/resources/RenderResourceManager.cpp"
     
     # rhi
     "runtime/rhi/RHI.cpp"
     "runtime/rhi/RHICommandList.cpp"
-    
     "runtime/rhi/RHIResource.cpp"
 
     # vulkan rhi

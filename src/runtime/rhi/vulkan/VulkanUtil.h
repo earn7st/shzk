@@ -63,7 +63,7 @@ namespace shzk
             case FORMAT_R8G8_UNORM:           format = VK_FORMAT_R8G8_UNORM;              break;
             case FORMAT_R8G8B8_UNORM:         format = VK_FORMAT_R8G8B8_UNORM;            break;
             case FORMAT_R8G8B8A8_UNORM:       format = VK_FORMAT_R8G8B8A8_UNORM;          break;
-			case FORMAT_B8G8R8A8_UNORM:       format = VK_FORMAT_B8G8R8A8_UNORM;          break;
+            case FORMAT_B8G8R8A8_UNORM:       format = VK_FORMAT_B8G8R8A8_UNORM;          break;
             case FORMAT_R16_UNORM:            format = VK_FORMAT_R16_UNORM;               break;
             case FORMAT_R16G16_UNORM:         format = VK_FORMAT_R16G16_UNORM;            break;
             case FORMAT_R16G16B16_UNORM:      format = VK_FORMAT_R16G16B16_UNORM;         break;
@@ -147,7 +147,7 @@ namespace shzk
             case VK_FORMAT_R8G8_UNORM:           format = FORMAT_R8G8_UNORM;              break;
             case VK_FORMAT_R8G8B8_UNORM:         format = FORMAT_R8G8B8_UNORM;            break;
             case VK_FORMAT_R8G8B8A8_UNORM:       format = FORMAT_R8G8B8A8_UNORM;          break;
-			case VK_FORMAT_B8G8R8A8_UNORM:       format = FORMAT_B8G8R8A8_UNORM;          break;
+            case VK_FORMAT_B8G8R8A8_UNORM:       format = FORMAT_B8G8R8A8_UNORM;          break;
             case VK_FORMAT_R16_UNORM:            format = FORMAT_R16_UNORM;               break;
             case VK_FORMAT_R16G16_UNORM:         format = FORMAT_R16G16_UNORM;            break;
             case VK_FORMAT_R16G16B16_UNORM:      format = FORMAT_R16G16B16_UNORM;         break;
@@ -257,7 +257,7 @@ namespace shzk
             VkAccessFlags accessFlags = VK_ACCESS_NONE;
             switch (state) {
             case RHIResourceState::Undefined:                   accessFlags = VK_ACCESS_NONE;                                           break;
-            case RHIResourceState::Common:                      accessFlags = VK_ACCESS_NONE;                                           break;  
+            case RHIResourceState::Common:                      accessFlags = VK_ACCESS_NONE;                                           break;
             case RHIResourceState::TransferSrc:                 accessFlags = VK_ACCESS_TRANSFER_READ_BIT;                              break;
             case RHIResourceState::TransferDst:                 accessFlags = VK_ACCESS_TRANSFER_WRITE_BIT;                             break;
             case RHIResourceState::VertexBuffer:                accessFlags = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;                      break;
@@ -266,9 +266,9 @@ namespace shzk
             case RHIResourceState::DepthStencilAttachment:      accessFlags = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;             break;
             case RHIResourceState::UnorderedAccess:             accessFlags = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;   break;
             case RHIResourceState::ShaderResource:              accessFlags = VK_ACCESS_SHADER_READ_BIT;                                break;
-            // case RHIResourceState::IndirectArgument:            accessFlags = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;                      break;
+                // case RHIResourceState::IndirectArgument:            accessFlags = VK_ACCESS_INDIRECT_COMMAND_READ_BIT;                      break;
             case RHIResourceState::Present:                     accessFlags = VK_ACCESS_NONE;                                           break;
-            // case RHIResourceState::AccelerationStructure:         accessFlags = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;   break;
+                // case RHIResourceState::AccelerationStructure:         accessFlags = VK_ACCESS_ACCELERATION_STRUCTURE_READ_BIT_KHR | VK_ACCESS_ACCELERATION_STRUCTURE_WRITE_BIT_KHR;   break;
             default:                                            SHZK_LOG_ERROR("ResourceState Unsupported!");
             }
             return accessFlags;
@@ -296,35 +296,35 @@ namespace shzk
         {
             VkPipelineStageFlags flags = 0;
 
-            if (accessFlags & VK_ACCESS_INDIRECT_COMMAND_READ_BIT)      flags |=    VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
+            if (accessFlags & VK_ACCESS_INDIRECT_COMMAND_READ_BIT)      flags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;
 
             if (accessFlags & (VK_ACCESS_INDEX_READ_BIT |
-                VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT))                   flags |=    VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
+                VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT))                   flags |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
 
             if (accessFlags & (VK_ACCESS_UNIFORM_READ_BIT |
                 VK_ACCESS_SHADER_READ_BIT |
-                VK_ACCESS_SHADER_WRITE_BIT))                            flags |=    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-                                                                                    VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-                                                                                    VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-                                                                                    VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-                                                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-                                                                                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                                                                                    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+                VK_ACCESS_SHADER_WRITE_BIT))                            flags |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+                VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
+                VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
+                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
 
-            if (accessFlags & VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)      flags |=    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+            if (accessFlags & VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)      flags |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
             if (accessFlags & (VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT))          flags |=    VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-                                                                                    VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT))          flags |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
+                VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 
             if (accessFlags & (VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT))                  flags |=    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT))                  flags |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
             if (accessFlags & (VK_ACCESS_TRANSFER_READ_BIT |
-                VK_ACCESS_TRANSFER_WRITE_BIT))                          flags |=    VK_PIPELINE_STAGE_TRANSFER_BIT;
+                VK_ACCESS_TRANSFER_WRITE_BIT))                          flags |= VK_PIPELINE_STAGE_TRANSFER_BIT;
 
             if (accessFlags & (VK_ACCESS_HOST_READ_BIT |
-                VK_ACCESS_HOST_WRITE_BIT))                              flags |=    VK_PIPELINE_STAGE_HOST_BIT;
+                VK_ACCESS_HOST_WRITE_BIT))                              flags |= VK_PIPELINE_STAGE_HOST_BIT;
 
 
             if (flags == 0) flags = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -363,7 +363,7 @@ namespace shzk
 
         static VkImageViewType TextureViewTypeToVk(const TextureViewType& type)
         {
-			VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+            VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
             switch (type)
             {
             case TextureViewType::View1D:           viewType = VK_IMAGE_VIEW_TYPE_1D; break;
@@ -373,17 +373,36 @@ namespace shzk
             case TextureViewType::View1DArray:      viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY; break;
             case TextureViewType::View2DArray:      viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY; break;
             case TextureViewType::ViewCubeArray:    viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY; break;
-			default:                                SHZK_LOG_ERROR("TextureViewType Unsupported!");
+            default:                                SHZK_LOG_ERROR("TextureViewType Unsupported!");
             }
             return viewType;
         }
+
         static VkImageAspectFlags TextureAspectFlagsToVk(const TextureAspectFlags& aspectFlags)
         {
             VkImageAspectFlags vkAspectFlags = 0;
             if (aspectFlags & TEXTURE_ASPECT_COLOR)      vkAspectFlags |= VK_IMAGE_ASPECT_COLOR_BIT;
             if (aspectFlags & TEXTURE_ASPECT_DEPTH)      vkAspectFlags |= VK_IMAGE_ASPECT_DEPTH_BIT;
             if (aspectFlags & TEXTURE_ASPECT_STENCIL)    vkAspectFlags |= VK_IMAGE_ASPECT_STENCIL_BIT;
-			return vkAspectFlags;
+            return vkAspectFlags;
+        }
+
+        static VkShaderStageFlags ShaderFrequencyToVkStageFlags(ShaderFrequency frequency)
+        {
+            VkShaderStageFlags stageFlags;
+            if (frequency & SHADER_FREQUENCY_COMPUTE)        stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
+            if (frequency & SHADER_FREQUENCY_VERTEX)         stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
+            if (frequency & SHADER_FREQUENCY_FRAGMENT)       stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
+            if (frequency & SHADER_FREQUENCY_GEOMETRY)       stageFlags |= VK_SHADER_STAGE_GEOMETRY_BIT;
+            return stageFlags;
+        }
+
+        static VkShaderStageFlagBits ShaderFrequencyToVkStageFlagBits(ShaderFrequency frequency)
+        {
+            if (frequency & SHADER_FREQUENCY_COMPUTE)        return VK_SHADER_STAGE_COMPUTE_BIT;
+            if (frequency & SHADER_FREQUENCY_VERTEX)         return VK_SHADER_STAGE_VERTEX_BIT;
+            if (frequency & SHADER_FREQUENCY_FRAGMENT)       return VK_SHADER_STAGE_FRAGMENT_BIT;
+            if (frequency & SHADER_FREQUENCY_GEOMETRY)       return VK_SHADER_STAGE_GEOMETRY_BIT;
         }
     }
 }

@@ -26,16 +26,8 @@ namespace shzk
         Texture(std::string path, TextureType type);
         ~Texture() = default;
 
-        inline void SetName(std::string name) { m_name = name; }
-        inline const std::string& GetName() const { return m_name; }
-
-    private:
-        void LoadFromFile();
-        void InitRHI();
-
-    private:    
+    public:
         TextureType m_type = TextureType::Max;
-        std::string m_name = "Untitled";
         std::vector<std::string> m_paths;
 
         Extent3D    m_extent{};
@@ -45,5 +37,9 @@ namespace shzk
         std::shared_ptr<RHITexture> m_texture;
         std::shared_ptr<RHITextureView> m_textureView;
         bool m_rhiInitialized = false;
+
+    private:
+        void LoadFromFile();
+        void InitRHI();
     };
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "RenderPass.h"
 
 #include <memory>
 
@@ -6,7 +7,7 @@ namespace shzk
 {
 	class MeshPassProcessor;
 
-	class MeshPass
+	class MeshPass : public RenderPass
 	{
 	public:
 

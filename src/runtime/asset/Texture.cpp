@@ -40,6 +40,7 @@ namespace shzk
 			return;
 		}
 		
+		auto immediateCmd = RHI::Get()->GetCommandContextImmediate();
 		for (uint32_t i = 0; i < m_paths.size(); ++i)
 		{
 			std::string& path = m_paths[i];
@@ -72,23 +73,23 @@ namespace shzk
 			std::shared_ptr<RHIBuffer> stagingBuffer = RHI::Get()->CreateBuffer(bufferInfo);
 			memcpy(stagingBuffer->Map(), pixels, bufferSize);
 
-			RHI::Get()->GetCommandContextImmediate()->RHITextureBarrierCommand(
+			immediateCmd->RHITextureBarrierCommand(
 				{ m_texture,
 				RHIResourceState::TransferSrc, RHIResourceState::TransferDst,
 				{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, i, 1} });
-			RHI::Get()->GetCommandContextImmediate()->RHICopyBufferToTexture(stagingBuffer, 0, m_texture, {TEXTURE_ASPECT_COLOR, 0, i, 1});
+			immediateCmd->RHICopyBufferToTexture(stagingBuffer, 0, m_texture, {TEXTURE_ASPECT_COLOR, 0, i, 1});
 
 			stbi_image_free(pixels);
 		}
 
-		RHI::Get()->GetCommandContextImmediate()->RHITextureBarrierCommand({m_texture,
+		immediateCmd->RHITextureBarrierCommand({m_texture,
 				RHIResourceState::TransferDst, RHIResourceState::TransferSrc,
 						{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, 0, m_arrayLayer} });
-		RHI::Get()->GetCommandContextImmediate()->RHIGenerateMips(m_texture);
-		RHI::Get()->GetCommandContextImmediate()->RHITextureBarrierCommand({ m_texture,
+		immediateCmd->RHIGenerateMips(m_texture);
+		immediateCmd->RHITextureBarrierCommand({ m_texture,
 			RHIResourceState::TransferSrc, RHIResourceState::TransferDst,
 					{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, 0, m_arrayLayer} });
-		RHI::Get()->GetCommandContextImmediate()->RHISubmit();
+		immediateCmd->RHISubmit();
 	}
 
 	void shzk::Texture::InitRHI()
