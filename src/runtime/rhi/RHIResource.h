@@ -50,11 +50,13 @@ namespace shzk
 
 		inline const RHITextureInfo& GetInfo() const { return m_info; }
 
+		Extent3D MipExtent(uint32_t mipLevel);
+
 	protected:
 		RHITextureInfo m_info;
 
-		TextureSubresourceRange m_defaultRange;
-		TextureSubresourceLayers m_defaultLayers;
+		TextureSubresourceRange m_defaultRange = {};
+		TextureSubresourceLayers m_defaultLayers = {};
 	};
 
 	class RHITextureView : public RHIResource

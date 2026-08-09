@@ -27,6 +27,7 @@ add_library(
     # render
     "runtime/render/RenderSystem.cpp"
     "runtime/render/MeshPassProcessor.cpp"
+    "runtime/render/resources/Buffer.cpp"
     "runtime/render/resources/RenderResourceManager.cpp"
     
     # rhi
@@ -79,6 +80,7 @@ target_link_libraries(
         vk-bootstrap
         imgui
         fastgltf::fastgltf
+        stb
 )
 
 add_dependencies(

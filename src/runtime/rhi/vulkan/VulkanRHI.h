@@ -144,4 +144,15 @@ namespace shzk
 
 	// implementations shared by command context and immediate command context
 	void RHITextureBarrierImpl(VkCommandBuffer& cmdBuffer, const RHITextureBarrier& barrier);	
+	void RHIBufferBarrierImpl(VkCommandBuffer& cmdBuffer, const RHIBufferBarrier& barrier);
+	void RHICopyTextureToBufferImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset);
+	void RHICopyBufferToTextureImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource);
+	void RHICopyBufferImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size);
+	void RHICopyTextureImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource);
+	void RHIGenerateMipsImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHITexture> src);
+
+	void RHIBlitTexture(VkCommandBuffer& cmdBuffer, 
+		std::shared_ptr<RHITexture> src, std::shared_ptr<RHITexture> dst,
+		TextureSubresourceLayers srcSubresource, TextureSubresourceLayers dstSubresource,
+		FilterType filter);
 }

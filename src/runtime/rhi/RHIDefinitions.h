@@ -229,6 +229,7 @@ namespace shzk
 		View1DArray,
 		View2DArray,
 		ViewCubeArray,
+
 		Max,
 	};
 
@@ -261,6 +262,14 @@ namespace shzk
 		SHADER_FREQUENCY_MAX_ENUM = 0x7FFFFFFF,
 	};
 	typedef uint32_t ShaderFrequency;
+
+	enum class FilterType : uint32_t
+	{
+		Nearest,
+		Linear,
+
+		Max,
+	};
 
 // structs
 	typedef struct Extent2D

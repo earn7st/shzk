@@ -1,7 +1,7 @@
 #include "Engine.h"
 #include "runtime/log/Log.h"
 #include "runtime/WindowSystem.h"
-
+#include "runtime/asset/AssetManager.h"
 #include "runtime/framework/Scene.h"
 #include "runtime/render/RenderSystem.h"
 #include "runtime/rhi/RHI.h"
@@ -24,6 +24,8 @@ namespace shzk
 		g_engine->m_renderSystem = std::make_shared<RenderSystem>();
 		g_engine->m_renderSystem->Init();
 
+		g_engine->m_assetManager->Init();
+
 	}
 
 	void Engine::Tick()
@@ -34,6 +36,7 @@ namespace shzk
 
 	void Engine::Shutdown()
 	{
+		g_engine->m_assetManager->Shutdown();
 		g_engine->m_renderSystem->Shutdown();
 		g_engine->m_rhi->Destroy();
 		g_engine->m_rhi.reset();

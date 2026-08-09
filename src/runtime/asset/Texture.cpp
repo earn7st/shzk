@@ -8,8 +8,10 @@
 #include "runtime/rhi/RHIDefinitions.h"
 #include "runtime/rhi/RHIResource.h"
 
+#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <filesystem>
+#include <iostream>
 
 namespace shzk
 {
@@ -27,9 +29,10 @@ namespace shzk
 	}
 
 	Texture::Texture(std::string path, TextureType type = TextureType::Type2D)
-		: Asset(AssetType::Texture), m_type(type), m_format(RHIFormat::FORMAT_R8G8B8A8_SRGB), m_arrayLayer(1)
+		: Asset(AssetType::Texture), m_type(type), m_format(RHIFormat::FORMAT_R8G8B8A8_SRGB), m_arrayLayer(1)	// default, TODO: overload versions
 	{
-		m_paths.push_back(std::filesystem::path(path).filename().string());
+		m_paths.push_back(path);
+		LoadFromFile();
 	}
 	
 	void Texture::LoadFromFile()
@@ -62,7 +65,8 @@ namespace shzk
 			}
 
 			// upload
-			uint32_t bufferSize = width * height * sizeof(uint8_t) * channels;
+			uint32_t targetChannelCount = RHIUtil::FormatToChannelCount(m_format);
+			uint32_t bufferSize = width * height * sizeof(uint8_t) * targetChannelCount;
 			RHIBufferInfo bufferInfo = {
 				.size = bufferSize,
 				.memoryUsage = MemoryUsage::CPUOnly,
@@ -87,7 +91,7 @@ namespace shzk
 						{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, 0, m_arrayLayer} });
 		immediateCmd->RHIGenerateMips(m_texture);
 		immediateCmd->RHITextureBarrierCommand({ m_texture,
-			RHIResourceState::TransferSrc, RHIResourceState::TransferDst,
+			RHIResourceState::TransferSrc, RHIResourceState::ShaderResource,
 					{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, 0, m_arrayLayer} });
 		immediateCmd->RHISubmit();
 	}

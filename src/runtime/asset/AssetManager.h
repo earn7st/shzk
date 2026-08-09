@@ -17,6 +17,11 @@ namespace shzk
 		AssetManager() = default;
 		~AssetManager() = default;
 
+		void Init();
+		void Shutdown();
+
+		void Register(const std::shared_ptr<Asset>& asset);
+
 		static std::shared_ptr<AssetManager>& Get() { return g_assetManager; }
 
 	private:

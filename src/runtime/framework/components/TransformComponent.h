@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Component.h"
-#include "runtime/core/Definitions.h"
+#include "runtime/core/Transform.h"
 
 namespace shzk
 {

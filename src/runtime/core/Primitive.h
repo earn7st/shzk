@@ -8,7 +8,7 @@ namespace shzk
 
 	/*
 	Primitive: CPU data of a mesh
-	(TODO) Should be serialized
+	Future: to be serialized
 	*/
 	class Primitive
 	{

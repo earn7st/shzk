@@ -231,12 +231,12 @@ namespace shzk
 
         static VkBufferUsageFlags ResourceTypeToVkBufferUsage(ResourceType type)
         {
-            VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+            VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT /*| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT*/;    // bindless
             if (type & RESOURCE_TYPE_UNIFORM_BUFFER)        usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             if (type & RESOURCE_TYPE_RW_BUFFER)             usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             if (type & RESOURCE_TYPE_BUFFER)                usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-            if (type & RESOURCE_TYPE_INDEX_BUFFER)          usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
-            if (type & RESOURCE_TYPE_VERTEX_BUFFER)         usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+            if (type & RESOURCE_TYPE_INDEX_BUFFER)          usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT /* | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR*/;  // raytracing
+            if (type & RESOURCE_TYPE_VERTEX_BUFFER)         usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT /*| VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR*/;
             if (type & RESOURCE_TYPE_INDIRECT_BUFFER)       usage |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
             // if (type & RESOURCE_TYPE_RAY_TRACING)           usage |= VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
 
@@ -303,13 +303,13 @@ namespace shzk
 
             if (accessFlags & (VK_ACCESS_UNIFORM_READ_BIT |
                 VK_ACCESS_SHADER_READ_BIT |
-                VK_ACCESS_SHADER_WRITE_BIT))                            flags |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
-                VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
-                VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
-                VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT |
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-                VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT |
-                VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+                VK_ACCESS_SHADER_WRITE_BIT))                            flags |=    VK_PIPELINE_STAGE_VERTEX_SHADER_BIT |
+                                                                                    /*VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT |
+                                                                                    VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT |
+                                                                                    VK_PIPELINE_STAGE_GEOMETRY_SHADER_BIT | */
+                                                                                    VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
+                                                                                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT /* |
+                                                                                    VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR*/;
 
             if (accessFlags & VK_ACCESS_INPUT_ATTACHMENT_READ_BIT)      flags |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
@@ -403,6 +403,17 @@ namespace shzk
             if (frequency & SHADER_FREQUENCY_VERTEX)         return VK_SHADER_STAGE_VERTEX_BIT;
             if (frequency & SHADER_FREQUENCY_FRAGMENT)       return VK_SHADER_STAGE_FRAGMENT_BIT;
             if (frequency & SHADER_FREQUENCY_GEOMETRY)       return VK_SHADER_STAGE_GEOMETRY_BIT;
+        }
+
+        static VkFilter FilterTypeToVk(FilterType type)
+        {
+            VkFilter filter;
+            switch (type) {
+            case FilterType::Nearest:   filter = VK_FILTER_NEAREST;     break;
+            case FilterType::Linear:    filter = VK_FILTER_LINEAR;      break;
+            default:                    filter = VK_FILTER_LINEAR;      break;
+            }
+            return  filter;
         }
     }
 }

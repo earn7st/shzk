@@ -320,7 +320,7 @@ namespace shzk
 		createInfo.physicalDevice = m_physicalDevice;
 		createInfo.device = m_device;
 		createInfo.instance = m_instance;
-		createInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+		createInfo.flags = 0;	// TODO VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT -> bindless
 		createInfo.pVulkanFunctions = &vulkanFunctions;
 
 		VK_CHECK(vmaCreateAllocator(&createInfo, &m_allocator));
@@ -480,30 +480,37 @@ namespace shzk
 
 	void VulkanRHICommandContextImmediate::RHITextureBarrierCommand(const RHITextureBarrier& barrier)
 	{
+		RHITextureBarrierImpl(m_handle, barrier);
 	}
 
 	void VulkanRHICommandContextImmediate::RHIBufferBarrierCommand(const RHIBufferBarrier& barrier)
 	{
+		RHIBufferBarrierImpl(m_handle, barrier);
 	}
 
 	void VulkanRHICommandContextImmediate::RHICopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset)
 	{
+		RHICopyTextureToBufferImpl(m_handle, src, srcSubresource, dst, dstOffset);
 	}
 
 	void VulkanRHICommandContextImmediate::RHICopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource)
 	{
+		RHICopyBufferToTextureImpl(m_handle, src, srcOffset, dst, dstSubresource);
 	}
 
 	void VulkanRHICommandContextImmediate::RHICopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size)
 	{
+		RHICopyBufferImpl(m_handle, src, srcOffset, dst, dstOffset, size);
 	}
 
 	void VulkanRHICommandContextImmediate::RHICopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource)
 	{
+		RHICopyTextureImpl(m_handle, src, srcSubresource, dst, dstSubresource);
 	}
 
 	void VulkanRHICommandContextImmediate::RHIGenerateMips(std::shared_ptr<RHITexture> src)
 	{
+		RHIGenerateMipsImpl(m_handle, src);
 	}
 
 	void VulkanRHICommandContextImmediate::BeginImmediateCommand()
@@ -579,5 +586,172 @@ namespace shzk
 			0, nullptr,
 			0, nullptr,
 			1, &memoryBarrier);
+	}
+
+	void RHIBufferBarrierImpl(VkCommandBuffer& cmdBuffer, const RHIBufferBarrier& barrier)
+	{
+		VkAccessFlags srcAccessMask = VulkanUtil::ResourceStateToVkAccessFlags(barrier.srcState);
+		VkAccessFlags dstAccessMask = VulkanUtil::ResourceStateToVkAccessFlags(barrier.dstState);
+		VkPipelineStageFlags srcStage = VulkanUtil::VkAccessFlagsToVkPipelineStageFlags(srcAccessMask);
+		VkPipelineStageFlags dstStage = VulkanUtil::VkAccessFlagsToVkPipelineStageFlags(dstAccessMask);
+
+		VkBufferMemoryBarrier memoryBarrier = {};
+		memoryBarrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+		memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		memoryBarrier.srcAccessMask = srcAccessMask;
+		memoryBarrier.dstAccessMask = dstAccessMask;
+		memoryBarrier.buffer = CastTo<VulkanRHIBuffer>(barrier.buffer)->GetHandle();
+		memoryBarrier.offset = barrier.offset;
+		memoryBarrier.size = barrier.size == 0 ? VK_WHOLE_SIZE : barrier.size;
+
+		vkCmdPipelineBarrier(
+			cmdBuffer,
+			srcStage, dstStage, 0,
+			0, nullptr,
+			1, &memoryBarrier,
+			0, nullptr);
+	}
+
+	void RHICopyTextureToBufferImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset)
+	{
+		VkBufferImageCopy copy = {};
+		copy.bufferOffset = dstOffset;
+		copy.bufferRowLength = 0;
+		copy.bufferImageHeight = 0;
+		copy.imageSubresource = VulkanUtil::SubresourceToVk(srcSubresource);
+		copy.imageOffset = { 0, 0, 0 };
+		copy.imageExtent = VulkanUtil::ExtentToVk(src->MipExtent(srcSubresource.mipLevel));
+
+		vkCmdCopyImageToBuffer(cmdBuffer,
+			CastTo<VulkanRHITexture>(src)->GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			CastTo<VulkanRHIBuffer>(dst)->GetHandle(),
+			1, &copy);
+	}
+
+	void RHICopyBufferToTextureImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource)
+	{
+		VkBufferImageCopy copy = {};
+		copy.bufferOffset = srcOffset;
+		copy.bufferRowLength = 0;
+		copy.bufferImageHeight = 0;
+		copy.imageSubresource = VulkanUtil::SubresourceToVk(dstSubresource);
+		copy.imageOffset = { 0, 0, 0 };
+		copy.imageExtent = VulkanUtil::ExtentToVk(dst->MipExtent(dstSubresource.mipLevel));
+
+		vkCmdCopyBufferToImage(cmdBuffer,
+			CastTo<VulkanRHIBuffer>(src)->GetHandle(),
+			CastTo<VulkanRHITexture>(dst)->GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1, &copy);
+	}
+
+	void RHICopyBufferImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size)
+	{
+		VkBufferCopy copy{};
+		copy.srcOffset = srcOffset;
+		copy.dstOffset = dstOffset;
+		copy.size = size;
+
+		vkCmdCopyBuffer(cmdBuffer,
+			CastTo<VulkanRHIBuffer>(src)->GetHandle(),
+			CastTo<VulkanRHIBuffer>(dst)->GetHandle(),
+			1, &copy);
+	}
+
+	void RHICopyTextureImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource)
+	{
+		VkImageCopy imageCopy = {};
+		imageCopy.srcOffset = { 0, 0, 0 };
+		imageCopy.dstOffset = { 0, 0, 0 };
+		imageCopy.srcSubresource = (srcSubresource.aspect == 0) ? VulkanUtil::SubresourceToVk(src->GetDefaultSubresourceLayers()) : VulkanUtil::SubresourceToVk(srcSubresource);
+		imageCopy.dstSubresource = (dstSubresource.aspect == 0) ? VulkanUtil::SubresourceToVk(dst->GetDefaultSubresourceLayers()) : VulkanUtil::SubresourceToVk(dstSubresource);
+		imageCopy.extent = VulkanUtil::ExtentToVk(src->MipExtent(srcSubresource.mipLevel));
+
+		vkCmdCopyImage(cmdBuffer,
+			CastTo<VulkanRHITexture>(src)->GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			CastTo<VulkanRHITexture>(dst)->GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1, &imageCopy);
+	}
+
+	void RHIGenerateMipsImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHITexture> src)
+	{
+		uint32_t mipLevels = src->GetInfo().mipLevels;
+		if (mipLevels <= 1) return;
+
+		uint32_t baseMipLevel	= 0;
+		uint32_t baseArrayLayer = 0;
+
+		for (uint32_t i = 0; i < src->GetInfo().arrayLayers; ++i)
+		{
+			baseMipLevel		= 0;
+			baseArrayLayer	= i;
+			
+			RHITextureBarrier barrier{};
+			barrier.texture	= src;
+			barrier.srcState = RHIResourceState::TransferSrc;
+			barrier.dstState = RHIResourceState::TransferDst;
+			barrier.subresource = {
+				TEXTURE_ASPECT_COLOR,
+				1, mipLevels - 1,
+				baseArrayLayer, 1};
+			RHITextureBarrierImpl(cmdBuffer, barrier);
+
+			for (uint32_t j = 0; j < mipLevels - 1; ++j)	// Generate one mip level at a time
+			{
+				TextureAspectFlags	  aspect = TEXTURE_ASPECT_NONE;
+				uint32_t              mipLevel = 0;
+				uint32_t              baseArrayLayer = 0;
+				uint32_t              layerCount = 0;
+				RHIBlitTexture(
+					cmdBuffer,
+					src, src,
+					{TEXTURE_ASPECT_COLOR, baseMipLevel + j, baseArrayLayer, 1}, 
+					{TEXTURE_ASPECT_COLOR, baseMipLevel + j + 1, baseArrayLayer, 1 },
+					FilterType::Linear
+				);
+
+				RHITextureBarrier barrier{};
+				barrier.texture = src;
+				barrier.srcState = RHIResourceState::TransferDst;
+				barrier.dstState = RHIResourceState::TransferSrc;
+				barrier.subresource = {
+					TEXTURE_ASPECT_COLOR,
+					baseMipLevel + j + 1, 1,
+					baseArrayLayer, 1 };
+				RHITextureBarrierImpl(cmdBuffer, barrier);
+			}
+		}
+
+	}
+	void RHIBlitTexture(VkCommandBuffer& cmdBuffer, 
+		std::shared_ptr<RHITexture> src, std::shared_ptr<RHITexture> dst, 
+		TextureSubresourceLayers srcSubresource, TextureSubresourceLayers dstSubresource, 
+		FilterType filter)
+	{
+		VkImageSubresourceLayers srcLayer = VulkanUtil::SubresourceToVk(srcSubresource);
+		VkImageSubresourceLayers dstLayer = VulkanUtil::SubresourceToVk(dstSubresource);
+
+		uint32_t srcMip = srcSubresource.mipLevel;
+		uint32_t dstMip = dstSubresource.mipLevel;
+
+		VkImageBlit blit = {};
+		blit.srcOffsets[0] = { 0, 0, 0 };
+		blit.srcOffsets[1] = { (int32_t)(src->GetInfo().extent.width / pow(2, srcMip)),
+								(int32_t)(src->GetInfo().extent.height / pow(2, srcMip)), 1 };
+		blit.srcSubresource = srcLayer;
+
+		blit.dstOffsets[0] = { 0, 0, 0 };
+		blit.dstOffsets[1] = { (int32_t)(dst->GetInfo().extent.width / pow(2, dstMip)),
+								(int32_t)(dst->GetInfo().extent.height / pow(2, dstMip)), 1 };
+		blit.dstSubresource = dstLayer;
+
+		vkCmdBlitImage(cmdBuffer,
+			CastTo<VulkanRHITexture>(src)->GetHandle(),
+			VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+			CastTo<VulkanRHITexture>(dst)->GetHandle(),
+			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			1,
+			&blit,
+			VulkanUtil::FilterTypeToVk(filter));
 	}
 }

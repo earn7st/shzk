@@ -5,10 +5,6 @@
 #include "editor/Editor.h"
 #include "runtime/global/Engine.h"
 
-void InitScene()
-{
-
-}
 
 int main()
 {
@@ -20,8 +16,6 @@ int main()
 	engineInitInfo.height = 720;
 
 	shzk::Engine::Init(engineInitInfo);
-
-	InitScene();
 
 	shzk::Editor* editor = new shzk::Editor();
 	editor->Run();

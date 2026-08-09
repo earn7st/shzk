@@ -4,20 +4,23 @@
 #include "runtime/asset/Material.h"
 #include "runtime/core/Primitive.h"
 #include "runtime/log/Log.h"
+#include "runtime/render/resources/Buffer.h"
 
 #include <fastgltf/core.hpp>
 #include <fastgltf/tools.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <filesystem>
+#include <iostream>
 
 namespace shzk
 {
 	void GltfLoader::Load(std::string path, GltfLoadResult& result)
 	{
+        m_basePath = std::filesystem::path(path).parent_path();
+
 		fastgltf::Parser parser;
 
 		auto data = fastgltf::GltfDataBuffer::FromPath(path);
-        m_basePath = std::filesystem::path(path).parent_path();
         auto assetResult = parser.loadGltf(
             data.get(), m_basePath, fastgltf::Options::None);
 
@@ -63,22 +66,25 @@ namespace shzk
             auto& mesh = gltf.meshes[node.meshIndex.value()];
             for (size_t primIdx = 0; primIdx < mesh.primitives.size(); ++primIdx)
             {
-                auto& primitive = mesh.primitives[primIdx];
+                auto& gltfPrimitive = mesh.primitives[primIdx];
 
                 Submesh submesh;
+                // Transform
                 submesh.localTransform = ReadTransform(node);
-
+                // Primitive
                 auto prim = std::make_shared<Primitive>();
-                prim->position = ReadPositions(gltf, primitive);
-                prim->normal = ReadNormals(gltf, primitive);
-                prim->texcoord = ReadTexcoords(gltf, primitive);
+                prim->position = ReadPositions(gltf, gltfPrimitive);
+                prim->normal = ReadNormals(gltf, gltfPrimitive);
+                prim->texcoord = ReadTexcoords(gltf, gltfPrimitive);
                 submesh.primitive = prim;
-
-                // submesh.vertexBuffer = std::make_shared<VertexBuffer>();
-
-                // submesh.indexBuffer = std::make_shared<IndexBuffer>();
-
-                // submesh.material
+                // VertexBuffer, IndexBuffer
+                submesh.vertexBuffer = std::make_shared<VertexBuffer>(submesh.primitive);
+                auto indices = ReadIndices(gltf, gltfPrimitive);
+                submesh.indexBuffer = std::make_shared<IndexBuffer>(indices);
+                // Material
+                submesh.material = gltfPrimitive.materialIndex.has_value()
+                    ? result.materials[gltfPrimitive.materialIndex.value()]
+                    : nullptr;
 
                 model->AddSubmesh(std::move(submesh));
             }
@@ -150,6 +156,44 @@ namespace shzk
         return ReadAccessorData<glm::vec2, fastgltf::math::fvec2>(gltf, *accessor);
     }
 
+    std::vector<uint32_t> GltfLoader::ReadIndices(
+        const fastgltf::Asset& gltf,
+        const fastgltf::Primitive& primitive)
+    {
+        if (!primitive.indicesAccessor.has_value())
+            return {};
+
+        const auto& accessor = gltf.accessors[primitive.indicesAccessor.value()];
+
+        std::vector<uint32_t> result;
+        result.reserve(accessor.count);
+        
+        // all cast to uint32_t
+        switch (accessor.componentType)
+        {
+        case fastgltf::ComponentType::UnsignedInt:
+            fastgltf::iterateAccessor<uint32_t>(gltf, accessor,
+                [&](uint32_t idx) { result.push_back(idx); });
+            break;
+
+        case fastgltf::ComponentType::UnsignedShort:
+            fastgltf::iterateAccessor<uint16_t>(gltf, accessor,
+                [&](uint16_t idx) { result.push_back(static_cast<uint32_t>(idx)); });
+            break;
+
+        case fastgltf::ComponentType::UnsignedByte:
+            fastgltf::iterateAccessor<uint8_t>(gltf, accessor,
+                [&](uint8_t idx) { result.push_back(static_cast<uint32_t>(idx)); });
+            break;
+
+        default:
+            SHZK_LOG_ERROR("Unsupported index component type");
+            return {};
+        }
+
+        return result;
+    }
+
     std::shared_ptr<Texture> GltfLoader::CreateTexture(const fastgltf::Asset& gltf, const fastgltf::Texture& texture)
     {
         std::string texturePath;
@@ -158,13 +202,12 @@ namespace shzk
         {
             auto& image = gltf.images[texture.imageIndex.value()];
 
-            std::visit(fastgltf::visitor{
-                [](auto&) {},
-                [&](fastgltf::sources::URI& source) {
-                    auto relativePath = source.uri.path();  // source.uri.path() returns the relative path
-                    texturePath = (m_basePath / std::filesystem::path(relativePath)).string();
-                },
-                }, image.data);
+            if (auto* uri = std::get_if<fastgltf::sources::URI>(&image.data))
+            {
+                texturePath = (m_basePath / uri->uri.fspath()).generic_string();
+                SHZK_LOG_INFO("  URI: {}", texturePath);
+            }
+            // TODO: BufferView, Array... 
         }
 
         if (texturePath.empty())

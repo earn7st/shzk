@@ -1,10 +1,10 @@
 #pragma once
-
-#include "runtime/core/Definitions.h"
 #include "runtime/asset/Asset.h"
+#include "runtime/core/Transform.h"
 
 #include <vector>
 #include <memory>
+#include <glm/glm.hpp>
 
 namespace shzk
 {
