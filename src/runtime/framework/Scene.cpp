@@ -2,6 +2,7 @@
 
 #include "runtime/log/Log.h"
 #include "runtime/framework/Node.h"
+#include "runtime/framework/components/CameraComponent.h"
 
 #include <cassert>
 
@@ -41,25 +42,20 @@ namespace shzk
 		return std::shared_ptr<Node>();
 	}
 
+	std::shared_ptr<CameraComponent> Scene::GetActiveCamera()
+	{
+		for (auto& node : m_nodes)
+		{
+			std::shared_ptr<CameraComponent> component = node->TryGetComponent<CameraComponent>();
+			if (component) return component;
+		}
+		return nullptr;
+	}
+
 	void Scene::AddNode(std::shared_ptr<Node> node)
 	{
 		assert(node);
 		m_nodes.push_back(node);
 		SHZK_LOG_INFO("Node {} added to Scene {}", node->m_name, m_name);
-	}
-
-	void Scene::AddCameraNode(std::shared_ptr<Node> node)
-	{
-		assert(node);
-		for (auto& component : node->m_components)
-		{
-			if (component->GetType() == ComponentType::Camera)
-			{
-				m_cameraNode = node;
-				SHZK_LOG_INFO("Camera Node {} added to Scene {}", node->m_name, m_name);
-				return;
-			}
-		}
-		SHZK_LOG_ERROR("Node {} doesn't have Camera Component, cannot be added as Camera Node to Scene {}", node->m_name, m_name);
 	}
 }

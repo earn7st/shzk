@@ -1,6 +1,6 @@
 #pragma once
 
-#include "COmponent.h"
+#include "Component.h"
 
 namespace shzk
 {

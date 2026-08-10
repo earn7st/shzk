@@ -15,6 +15,7 @@ namespace shzk
 	
 		virtual void CollectDrawBatch(std::vector<DrawBatch>& drawBatches) override final;
 
+		void SetModel(const std::shared_ptr<Model>& model) { m_model = model; }
 		std::shared_ptr<Model> GetModel() const { return m_model; }
 
 	private:

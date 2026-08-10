@@ -1,6 +1,5 @@
 #pragma once
 
-#include <iostream>
 #include <memory>
 #include <string>
 
@@ -37,7 +36,7 @@ namespace shzk
 		static std::shared_ptr<RenderSystem>& GetRenderSystem() { return g_engine->m_renderSystem; }
 		static std::shared_ptr<RHI>& GetRHI() { return g_engine->m_rhi; }
 
-		void SetActiveScene(std::shared_ptr<Scene> scene) { m_activeScene = scene; }
+		void SetActiveScene(const std::shared_ptr<Scene>& scene) { m_activeScene = scene; }
 
 	private:
 		std::shared_ptr<WindowSystem>	m_windowSystem;

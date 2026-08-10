@@ -52,7 +52,9 @@ add_library(
 
 )
 
-target_compile_definitions(shzk_runtime PUBLIC VK_NO_PROTOTYPES)
+target_compile_definitions(shzk_runtime PUBLIC 
+    VK_NO_PROTOTYPES
+    SHZK_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets/")
 if(WIN32)
     target_compile_definitions(shzk_runtime PUBLIC NOMINMAX)
 endif()

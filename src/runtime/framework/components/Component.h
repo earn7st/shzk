@@ -1,7 +1,5 @@
 #pragma once
 
-#include "runtime/framework/Node.h"
-
 #include <memory>
 
 namespace shzk
@@ -22,9 +20,7 @@ namespace shzk
 	{
 	public:
 		Component(ComponentType type) : m_type(type) {}
-		~Component() = default;
-
-		virtual void Init();
+		virtual ~Component() = default;
 
 		ComponentType GetType() const { return m_type; }
 
@@ -33,5 +29,6 @@ namespace shzk
 		ComponentType m_type;
 	
 		friend class Node;
+		friend class Scene;
 	};
 }

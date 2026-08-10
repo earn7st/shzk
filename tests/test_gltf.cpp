@@ -158,12 +158,13 @@ int main()
     TestBasicMesh();
     TestDamagedHelmetGltf();
 
-    std::cout << "\n=== " << g_passed << " passed, "
-        << g_failed << " failed ===" << std::endl;
-
     shzk::AssetManager::Get()->PrintAllAssets();
 
     shzk::Engine::Shutdown();
+
+    std::cout << "\n=== " << g_passed << " passed, "
+        << g_failed << " failed ===" << std::endl;
+   
     return g_failed > 0 ? 1 : 0;
 	return 0;
 }

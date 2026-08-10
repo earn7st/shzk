@@ -7,6 +7,7 @@
 namespace shzk
 {
 	class Node;
+	class CameraComponent;
 
 	class Scene
 	{
@@ -20,13 +21,12 @@ namespace shzk
 		std::shared_ptr<Node> GetNodeByName(const std::string& name) const;
 		std::shared_ptr<Node> GetNodeById(uint32_t id) const;
 
+		std::shared_ptr<CameraComponent> GetActiveCamera();
+
 		void AddNode(std::shared_ptr<Node> node);
-		void AddCameraNode(std::shared_ptr<Node> node);
 
 	private:
 		std::string m_name;
 		std::vector<std::shared_ptr<Node>> m_nodes;
-		
-		std::shared_ptr<Node> m_cameraNode;		// main camera
 	};
 }
