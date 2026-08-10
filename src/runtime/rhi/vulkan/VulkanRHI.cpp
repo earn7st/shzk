@@ -456,12 +456,12 @@ namespace shzk
 
 	VulkanRHICommandContextImmediate::VulkanRHICommandContextImmediate(VulkanRHI& rhi)
 	{
-		m_fence = rhi.CreateFence();
+		m_fence = rhi.CreateFence();	// unsignaled
 		m_queue = rhi.GetQueue({ .type = RHIQueueType::Graphics, .index = 0 });
 		m_cmdPool = rhi.CreateCommandPool({ .queue = m_queue });
 		m_device = rhi.GetDevice();		// save device handle here
 										// because immediate commands can be called frequently, better not be casting global RHI every frame
-
+		
 		BeginImmediateCommand();
 		// VkCommandBuffer is instantly created when use
 	} 
@@ -475,6 +475,7 @@ namespace shzk
 	void VulkanRHICommandContextImmediate::RHISubmit()
 	{
 		EndImmediateCommand();
+		m_fence->Wait();
 		BeginImmediateCommand();
 	}
 
@@ -532,7 +533,7 @@ namespace shzk
 
 	void VulkanRHICommandContextImmediate::EndImmediateCommand()
 	{
-		m_fence->Wait(); 
+		// m_fence->Wait(); 
 		if (m_oldHandle != VK_NULL_HANDLE)
 		{
 			vkFreeCommandBuffers(VULKAN_RHI()->GetDevice(), CastTo<VulkanRHICommandPool>(m_cmdPool)->GetHandle(), 1, &m_oldHandle);

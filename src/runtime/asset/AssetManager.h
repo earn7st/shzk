@@ -7,6 +7,7 @@
 namespace shzk
 {
 	class Asset;
+	struct GltfLoadResult;
 
 	class AssetManager
 	{
@@ -17,13 +18,18 @@ namespace shzk
 		AssetManager() = default;
 		~AssetManager() = default;
 
+		static std::shared_ptr<AssetManager>& Get() { return g_assetManager; }
+
+
 		void Init();
 		void Shutdown();
 
+		void ProcessGltfLoadResult(const GltfLoadResult& result);
 		void Register(const std::shared_ptr<Asset>& asset);
 
-		static std::shared_ptr<AssetManager>& Get() { return g_assetManager; }
-
+		// Debug
+		void PrintAllAssets();
+		
 	private:
 		std::shared_ptr<Asset> GetOrLoadAssetInternal(std::string name, std::string path);
 

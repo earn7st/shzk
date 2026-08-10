@@ -9,7 +9,7 @@ namespace shzk
 	public:
 		RHIResource() = delete;
 		RHIResource(RHIResourceType resourceType) : m_resourceType(resourceType) {}
-		~RHIResource() = default;
+		virtual ~RHIResource() = default;
 
 		inline RHIResourceType GetType() const { return m_resourceType; }
 

@@ -5,9 +5,11 @@
 #include "runtime/import/GltfLoader.h"
 #include "runtime/asset/Model.h"
 #include "runtime/asset/Texture.h"
+#include "runtime/asset/AssetManager.h"
 #include "runtime/asset/Material.h"
 #include "runtime/core/Primitive.h"
 #include "runtime/render/resources/Buffer.h"
+
 
 static int g_passed = 0;
 static int g_failed = 0;
@@ -99,6 +101,8 @@ void TestBasicMesh()
 
     PrintResult(result);
 
+    shzk::AssetManager::Get()->ProcessGltfLoadResult(result);
+
     TEST_ASSERT(!result.models.empty(), "at least 1 model");
     TEST_ASSERT(result.models[0]->GetSubmeshes().size() > 0, "at least 1 submesh");
 
@@ -123,6 +127,8 @@ void TestDamagedHelmetGltf()
     loader.Load(SHZK_ASSETS_DIR "DamagedHelmet/glTF/DamagedHelmet.gltf", result);
 
     PrintResult(result);
+
+    shzk::AssetManager::Get()->ProcessGltfLoadResult(result);
 
     TEST_ASSERT(!result.models.empty(), "at least 1 model");
     TEST_ASSERT(!result.materials.empty(), "materials populated");
@@ -154,6 +160,8 @@ int main()
 
     std::cout << "\n=== " << g_passed << " passed, "
         << g_failed << " failed ===" << std::endl;
+
+    shzk::AssetManager::Get()->PrintAllAssets();
 
     shzk::Engine::Shutdown();
     return g_failed > 0 ? 1 : 0;

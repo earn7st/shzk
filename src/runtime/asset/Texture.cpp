@@ -29,7 +29,7 @@ namespace shzk
 	}
 
 	Texture::Texture(std::string path, TextureType type = TextureType::Type2D)
-		: Asset(AssetType::Texture), m_type(type), m_format(RHIFormat::FORMAT_R8G8B8A8_SRGB), m_arrayLayer(1)	// default, TODO: overload versions
+		: Asset(AssetType::Texture), m_type(type), m_format(RHIFormat::FORMAT_R8G8B8A8_SRGB), m_arrayLayer(1)
 	{
 		m_paths.push_back(path);
 		LoadFromFile();
@@ -42,6 +42,8 @@ namespace shzk
 			SHZK_LOG_ERROR("File paths num incorrect for texture type CUBE");
 			return;
 		}
+
+		m_name = std::filesystem::path(m_paths[0]).filename().generic_string();	// TODO: proper naming
 		
 		auto immediateCmd = RHI::Get()->GetCommandContextImmediate();
 		for (uint32_t i = 0; i < m_paths.size(); ++i)
@@ -79,9 +81,10 @@ namespace shzk
 
 			immediateCmd->RHITextureBarrierCommand(
 				{ m_texture,
-				RHIResourceState::TransferSrc, RHIResourceState::TransferDst,
+				RHIResourceState::Undefined, RHIResourceState::TransferDst,
 				{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, i, 1} });
 			immediateCmd->RHICopyBufferToTexture(stagingBuffer, 0, m_texture, {TEXTURE_ASPECT_COLOR, 0, i, 1});
+			immediateCmd->RHISubmit();
 
 			stbi_image_free(pixels);
 		}
@@ -99,8 +102,7 @@ namespace shzk
 	void shzk::Texture::InitRHI()
 	{
 		ResourceType resourceType = (m_type == TextureType::TypeCube) ? (RESOURCE_TYPE_TEXTURE_CUBE | RESOURCE_TYPE_TEXTURE) : RESOURCE_TYPE_TEXTURE;
-		if (RHIUtil::IsRWFormat(m_format))      resourceType |= RESOURCE_TYPE_RW_TEXTURE;
-		if (RHIUtil::IsRWFormat(m_format))      resourceType |= RESOURCE_TYPE_RENDER_TARGET;
+		if (RHIUtil::IsRWFormat(m_format))      resourceType |= RESOURCE_TYPE_RW_TEXTURE | RESOURCE_TYPE_RENDER_TARGET;		// TODO
 
 		TextureAspectFlags aspects = RHIUtil::IsDepthStencilFormat(m_format) ? TEXTURE_ASPECT_DEPTH_STENCIL :
 			RHIUtil::IsDepthFormat(m_format) ? TEXTURE_ASPECT_DEPTH :

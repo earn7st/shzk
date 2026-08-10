@@ -22,7 +22,7 @@ namespace shzk
 
 		auto data = fastgltf::GltfDataBuffer::FromPath(path);
         auto assetResult = parser.loadGltf(
-            data.get(), m_basePath, fastgltf::Options::None);
+            data.get(), m_basePath, fastgltf::Options::LoadExternalBuffers);
 
         if (assetResult.error() != fastgltf::Error::None) {
             SHZK_LOG_ERROR("Failed to parse glTF: {} ¡ª error code: {}",
@@ -45,7 +45,9 @@ namespace shzk
         result.materials.resize(gltf.materials.size());
         for (size_t i = 0; i < gltf.materials.size(); ++i)
         {
-            result.materials[i] = CreateMaterial(gltf, gltf.materials[i], result.textures);
+            auto& material = gltf.materials[i];
+            result.materials[i] = CreateMaterial(gltf, material, result.textures);
+            result.materials[i]->SetName("Material_" + std::to_string(uint32_t(i)));
             if (result.materials[i])
             {
                 SHZK_LOG_INFO("  Material[{}] loaded: {}", i, result.materials[i]->GetName());
