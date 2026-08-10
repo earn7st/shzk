@@ -10,7 +10,7 @@ namespace shzk
 	{
 		VkFenceCreateInfo fenceCreateInfo{};
 		fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;	// fence created as SIGNALED as default
+		fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;	// fence created as SIGNALED as default 
 		VK_CHECK(vkCreateFence(rhi.GetDevice(), &fenceCreateInfo, nullptr, &m_handle));
 	}
 

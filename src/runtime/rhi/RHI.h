@@ -2,9 +2,10 @@
 
 #include "RHIDefinitions.h"
 
-#include <iostream>
 #include <memory>
 #include <glm/glm.hpp>
+#include <array>
+#include <vector>
 
 class SDL_Window;
 
@@ -24,6 +25,7 @@ namespace shzk
 	class RHICommandContextImmediate;
 	class RHITexture;
 	class RHIGraphicsPipeline;
+	class RHIResource;
 
 	class RHI
 	{
@@ -52,15 +54,22 @@ namespace shzk
 
 		std::shared_ptr<RHICommandContextImmediate> GetCommandContextImmediate() const { return m_cmdContextImmediate; }	// TODO: RHICommandListImmediate
 
+		void Tick();
+
 	protected:
 		RHI() = delete;
 		RHI(const RHIInfo& rhiInfo) : m_rhiInfo(rhiInfo) {}
 		~RHI() = default;
 
+		void RegisterResource(std::shared_ptr<RHIResource> res);
+		void DeferredResourceDeletes();	// should be called every tick, handle RHIResource deletion
+		void DestroyAllResources();
+
 	protected:
 		RHIInfo m_rhiInfo;
-
 		std::shared_ptr<RHICommandContextImmediate> m_cmdContextImmediate;
+		// Resource Map
+		std::array<std::vector<std::shared_ptr<RHIResource>>, (size_t)RHIResourceType::Max> m_resourceMap;
 	};
 
 	class RHIQueue

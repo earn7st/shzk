@@ -15,7 +15,7 @@ namespace shzk
 	public:
 		VulkanRHIBuffer() = delete;
 		VulkanRHIBuffer(const RHIBufferInfo& info, VulkanRHI& rhi);
-		~VulkanRHIBuffer() { Destroy(); };
+		~VulkanRHIBuffer() = default;
 
 		inline const VkBuffer& GetHandle() const { return m_handle; }
 
@@ -40,7 +40,7 @@ namespace shzk
 	public:
 		VulkanRHITexture() = delete;
 		VulkanRHITexture(const RHITextureInfo& info, VulkanRHI& rhi, VkImage image = VK_NULL_HANDLE);
-		~VulkanRHITexture() { Destroy(); };
+		~VulkanRHITexture() = default;
 
 		inline const VkImage& GetHandle() { return m_handle; }
 
@@ -59,7 +59,7 @@ namespace shzk
 	public:
 		VulkanRHITextureView() = delete;
 		VulkanRHITextureView(const RHITextureViewInfo& info, VulkanRHI& rhi);
-		~VulkanRHITextureView() { Destroy(); };
+		~VulkanRHITextureView() = default;
 
 		inline const VkImageView& GetHandle() { return m_handle; }
 
@@ -79,7 +79,7 @@ namespace shzk
 	public:
 		VulkanRHIShader() = delete;
 		VulkanRHIShader(const RHIShaderInfo& info, VulkanRHI& rhi);
-		~VulkanRHIShader() { Destroy(); };
+		~VulkanRHIShader() = default;
 
 		virtual void Destroy() override final;
 
@@ -96,7 +96,7 @@ namespace shzk
 	public:
 		VulkanRHIDescriptorSet() = delete;
 		VulkanRHIDescriptorSet(VulkanRHI& rhi, VkDescriptorSetLayout layout);
-		~VulkanRHIDescriptorSet() { Destroy(); };
+		~VulkanRHIDescriptorSet() = default;
 
 	protected:
 		virtual void Destroy() override final;
@@ -115,7 +115,7 @@ namespace shzk
 	public:
 		VulkanRHIGraphicsPipeline() = delete;
 		VulkanRHIGraphicsPipeline(const RHIGraphicsPipelineInfo& info, VulkanRHI& rhi);
-		~VulkanRHIGraphicsPipeline() { Destroy(); };
+		~VulkanRHIGraphicsPipeline() = default;
 
 		inline const VkPipeline& GetHandle() { return m_handle; }
 		inline const VkPipelineLayout& GetLayout() { return m_layout; }

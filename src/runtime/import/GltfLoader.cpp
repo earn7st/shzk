@@ -47,7 +47,10 @@ namespace shzk
         {
             auto& material = gltf.materials[i];
             result.materials[i] = CreateMaterial(gltf, material, result.textures);
-            result.materials[i]->SetName("Material_" + std::to_string(uint32_t(i)));
+            if (!material.name.empty())
+                result.materials[i]->SetName(std::string(material.name));
+            else
+                result.materials[i]->SetName("Material_" + std::to_string(uint32_t(i)));
             if (result.materials[i])
             {
                 SHZK_LOG_INFO("  Material[{}] loaded: {}", i, result.materials[i]->GetName());

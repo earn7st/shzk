@@ -24,6 +24,7 @@ namespace shzk
 		g_engine->m_renderSystem = std::make_shared<RenderSystem>();
 		g_engine->m_renderSystem->Init();
 
+		g_engine->m_assetManager = AssetManager::Get();
 		g_engine->m_assetManager->Init();
 
 	}
@@ -32,6 +33,8 @@ namespace shzk
 	{
 		g_engine->m_windowSystem->Tick();
 		g_engine->m_renderSystem->Tick();
+
+		g_engine->m_rhi->Tick();	// RHIResources deferred deletion
 	}
 
 	void Engine::Shutdown()

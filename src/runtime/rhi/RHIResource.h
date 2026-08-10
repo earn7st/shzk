@@ -18,6 +18,8 @@ namespace shzk
 
 	protected:
 		RHIResourceType m_resourceType;
+		uint32_t		m_framesLastUsed = 0;
+		friend class RHI;
 	};
 
 	class RHIBuffer : public RHIResource

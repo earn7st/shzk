@@ -47,7 +47,9 @@ namespace shzk
 				queue->WaitIdle();
 			}
 		}
-		
+
+		DestroyAllResources();
+
 		// Reverse order of construction
 		// Descriptor pool
 		if (m_descriptorPool)
@@ -140,6 +142,7 @@ namespace shzk
 	{
 		std::shared_ptr<RHIBuffer> buffer = std::make_shared<VulkanRHIBuffer>(info, *this);
 		assert(buffer);
+		RegisterResource(buffer);
 		return buffer;
 	}
 
@@ -147,6 +150,7 @@ namespace shzk
 	{
 		std::shared_ptr<RHITexture> texture = std::make_shared<VulkanRHITexture>(info, *this, nullptr);
 		assert(texture);
+		RegisterResource(texture);
 		return texture;
 	}
 
@@ -154,12 +158,15 @@ namespace shzk
 	{
 		std::shared_ptr<RHITextureView> view = std::make_shared<VulkanRHITextureView>(info, *this);
 		assert(view);
+		RegisterResource(view);
 		return view;
 	}
 
 	std::shared_ptr<RHIGraphicsPipeline> VulkanRHI::CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info)
 	{
 		std::shared_ptr<RHIGraphicsPipeline> pipeline = std::make_shared<VulkanRHIGraphicsPipeline>(info, *this);
+		assert(pipeline);
+		RegisterResource(pipeline);
 		return pipeline;
 	}
 
@@ -456,12 +463,12 @@ namespace shzk
 
 	VulkanRHICommandContextImmediate::VulkanRHICommandContextImmediate(VulkanRHI& rhi)
 	{
-		m_fence = rhi.CreateFence();	// unsignaled
+		m_fence = rhi.CreateFence();
 		m_queue = rhi.GetQueue({ .type = RHIQueueType::Graphics, .index = 0 });
 		m_cmdPool = rhi.CreateCommandPool({ .queue = m_queue });
 		m_device = rhi.GetDevice();		// save device handle here
 										// because immediate commands can be called frequently, better not be casting global RHI every frame
-		
+
 		BeginImmediateCommand();
 		// VkCommandBuffer is instantly created when use
 	} 
@@ -475,7 +482,6 @@ namespace shzk
 	void VulkanRHICommandContextImmediate::RHISubmit()
 	{
 		EndImmediateCommand();
-		m_fence->Wait();
 		BeginImmediateCommand();
 	}
 
@@ -533,7 +539,7 @@ namespace shzk
 
 	void VulkanRHICommandContextImmediate::EndImmediateCommand()
 	{
-		// m_fence->Wait(); 
+		m_fence->Wait(); 
 		if (m_oldHandle != VK_NULL_HANDLE)
 		{
 			vkFreeCommandBuffers(VULKAN_RHI()->GetDevice(), CastTo<VulkanRHICommandPool>(m_cmdPool)->GetHandle(), 1, &m_oldHandle);

@@ -403,6 +403,7 @@ namespace shzk
             if (frequency & SHADER_FREQUENCY_VERTEX)         return VK_SHADER_STAGE_VERTEX_BIT;
             if (frequency & SHADER_FREQUENCY_FRAGMENT)       return VK_SHADER_STAGE_FRAGMENT_BIT;
             if (frequency & SHADER_FREQUENCY_GEOMETRY)       return VK_SHADER_STAGE_GEOMETRY_BIT;
+            return VK_SHADER_STAGE_ALL;
         }
 
         static VkFilter FilterTypeToVk(FilterType type)

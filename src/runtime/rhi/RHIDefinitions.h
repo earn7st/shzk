@@ -13,6 +13,7 @@ namespace shzk
 #endif 
 
 #define FRAMES_IN_FLIGHT 2
+#define RESOURCE_DEFERRED_DELETE_FRAMES 6
 
 	class RHIQueue;
 	class RHISurface;
