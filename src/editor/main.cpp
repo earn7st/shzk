@@ -48,7 +48,6 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 		scene->AddNode(helmet);
 	}
 	
-	
 }
 
 int main()

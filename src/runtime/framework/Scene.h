@@ -16,6 +16,7 @@ namespace shzk
 		~Scene() = default;
 
 		void Tick();
+		void Clear();
 
 		std::vector<std::shared_ptr<Node>> GetNodes() { return m_nodes; }
 		std::shared_ptr<Node> GetNodeByName(const std::string& name) const;

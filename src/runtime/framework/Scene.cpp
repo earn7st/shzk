@@ -16,6 +16,11 @@ namespace shzk
 		}
 	}
 
+	void Scene::Clear()
+	{
+		m_nodes.clear();
+	}
+
 	std::shared_ptr<Node> Scene::GetNodeByName(const std::string& name) const
 	{
 		for (auto& node : m_nodes)

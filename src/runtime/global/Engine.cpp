@@ -39,6 +39,8 @@ namespace shzk
 
 	void Engine::Shutdown()
 	{
+		g_engine->m_activeScene->Clear();	// TODO: World Management
+
 		g_engine->m_assetManager->Shutdown();
 		g_engine->m_renderSystem->Shutdown();
 		g_engine->m_rhi->Destroy();

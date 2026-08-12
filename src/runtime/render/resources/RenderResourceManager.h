@@ -2,5 +2,13 @@
 
 namespace shzk
 {
+	class GraphicsPipelineState;
 
+	class RenderResourceManager
+	{
+	public:
+
+	private:
+	
+	};
 }

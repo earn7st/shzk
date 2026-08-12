@@ -1,7 +1,8 @@
 #pragma once
 
 #include "Component.h"
-#include "runtime/render/resources/Drawable.h"
+#include "Drawable.h"
+#include "runtime/render/resources/MeshBatch.h"
 
 namespace shzk
 {
@@ -13,7 +14,7 @@ namespace shzk
 		MeshComponent() : Component(ComponentType::Mesh) {}
 		~MeshComponent() = default;
 	
-		virtual void CollectDrawBatch(std::vector<DrawBatch>& drawBatches) override final;
+		virtual void CollectMeshBatch(std::vector<MeshBatch>& meshBatches) override final;
 
 		void SetModel(const std::shared_ptr<Model>& model) { m_model = model; }
 		std::shared_ptr<Model> GetModel() const { return m_model; }

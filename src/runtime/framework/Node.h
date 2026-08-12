@@ -23,7 +23,8 @@ namespace shzk
 		void SetName(std::string name) { m_name = std::move(name); }
 		uint32_t GetId() const { return m_id; }
 		const std::string& GetName() const { return m_name; }
-
+		
+		const std::vector<std::shared_ptr<Node>>& GetChildren() const { return m_children; }
 		void AddChildren(const std::shared_ptr<Node>& node);
 		void AddComponent(const std::shared_ptr<Component>& component);
 

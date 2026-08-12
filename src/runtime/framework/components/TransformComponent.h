@@ -12,7 +12,6 @@ namespace shzk
 		~TransformComponent() = default;
 
 		void SetTransform(const Transform& transform) { m_transform = transform; }
-		
 		const Transform& GetTransform() const { return m_transform; }
 
 	private:

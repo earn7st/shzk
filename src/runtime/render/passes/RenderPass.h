@@ -2,5 +2,8 @@
 
 namespace shzk
 {
+	class RenderPass
+	{
 
+	};
 }

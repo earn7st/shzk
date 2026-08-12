@@ -21,6 +21,8 @@ add_library(
     # framework
     "runtime/framework/components/TransformComponent.cpp"
     "runtime/framework/components/MeshComponent.cpp"
+    "runtime/framework/components/CameraComponent.cpp"
+    "runtime/framework/components/DirectionalLightComponent.cpp"
     "runtime/framework/Node.cpp"
     "runtime/framework/Scene.cpp"
     
