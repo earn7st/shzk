@@ -6,7 +6,7 @@
 
 namespace shzk
 {
-	void MeshComponent::CollectMeshBatch(std::vector<MeshBatch>& batches)
+	void MeshComponent::CollectMeshBatch(std::vector<MeshBatch>& batches, Transform& outTransform)
 	{
 		auto& submeshes = m_model->GetSubmeshes();
 		
@@ -18,7 +18,6 @@ namespace shzk
 				.firstIndex			= 0,
 				.indexCount			= submesh.indexBuffer->GetIndexNum(),
 				.baseVertexIndex = 0,
-				.modelMatrix		= submesh.localTransform.ToMat4x4(),
 			};
 
 			batches.emplace_back(element, submesh.material);

@@ -14,7 +14,8 @@ namespace shzk
 		MeshComponent() : Component(ComponentType::Mesh) {}
 		~MeshComponent() = default;
 	
-		virtual void CollectMeshBatch(std::vector<MeshBatch>& meshBatches) override final;
+		//virtual void CollectMeshBatch(std::vector<MeshBatch>& batches) override final;
+		virtual void CollectMeshBatch(std::vector<MeshBatch>& batches, Transform& outTransform) override final;
 
 		void SetModel(const std::shared_ptr<Model>& model) { m_model = model; }
 		std::shared_ptr<Model> GetModel() const { return m_model; }

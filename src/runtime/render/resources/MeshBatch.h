@@ -27,10 +27,9 @@ namespace shzk
 		uint32_t firstIndex = 0;
 		uint32_t indexCount = 0;
 		uint32_t baseVertexIndex = 0;
-		glm::mat4 modelMatrix = glm::mat4(1.0f);
 	} MeshBatchElement;
 	
-// 目前不能算作 batch，只是有一个元素的 batch
+// 目前只是固定有一个元素的 batch
 	typedef struct MeshBatch
 	{
 		// TODO: vertex factory?
