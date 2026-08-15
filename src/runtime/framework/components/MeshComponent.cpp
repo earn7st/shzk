@@ -6,20 +6,20 @@
 
 namespace shzk
 {
-	void MeshComponent::CollectMeshBatch(std::vector<MeshBatch>& batches, Transform& outTransform)
+	void MeshComponent::CollectMeshBatchWithTransform(std::vector<MeshBatch>& batches, const glm::mat4x4& accTransformMat)
 	{
 		auto& submeshes = m_model->GetSubmeshes();
 		
 		for (auto& submesh : submeshes)
 		{
-			MeshBatchElement element {
+			MeshBatchElement element{
 				.vertexBuffer		= submesh.vertexBuffer,
 				.indexBuffer		= submesh.indexBuffer,
 				.firstIndex			= 0,
 				.indexCount			= submesh.indexBuffer->GetIndexNum(),
-				.baseVertexIndex = 0,
+				.baseVertexIndex	= 0,
+				.modelMatrix		= accTransformMat,
 			};
-
 			batches.emplace_back(element, submesh.material);
 		}
 	}

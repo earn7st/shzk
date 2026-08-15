@@ -28,9 +28,12 @@ add_library(
     
     # render
     "runtime/render/RenderSystem.cpp"
-    "runtime/render/MeshPassProcessor.cpp"
+    "runtime/render/SceneRenderer.cpp"
     "runtime/render/resources/Buffer.cpp"
     "runtime/render/resources/RenderResourceManager.cpp"
+    "runtime/render/passes/MeshPass.cpp"
+    "runtime/render/passes/MeshPassProcessor.cpp"
+    "runtime/render/passes/ForwardPass.cpp"
     
     # rhi
     "runtime/rhi/RHI.cpp"

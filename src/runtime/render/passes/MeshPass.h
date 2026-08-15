@@ -10,8 +10,17 @@ namespace shzk
 	class MeshPass : public RenderPass
 	{
 	public:
+		MeshPass() = delete;
+		MeshPass(PassType type) : RenderPass(type) {}
+		~MeshPass() = default;
 
-	private:
+		virtual void Init() override;
+
+		std::shared_ptr<MeshPassProcessor> GetMeshPassProcessor() const { return m_meshPassProcessor; }
+
+	protected:
 		std::shared_ptr<MeshPassProcessor> m_meshPassProcessor;
+
+		
 	};
 }

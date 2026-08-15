@@ -499,8 +499,8 @@ namespace shzk
 
 	} RHIGraphicsPipelineInfo;
 
-// Cast
-// TODO: Type Traits
+// Cast helper
+// TODO: Type Traits - learnt but decided not to implement, because not all RHIthings are RHIResouce
 	template<typename Concrete, typename Abstract>
 	inline Concrete* CastTo(Abstract* ptr)
 	{
@@ -512,5 +512,4 @@ namespace shzk
 	{
 		return std::static_pointer_cast<Concrete>(ptr);
 	}
-
 }

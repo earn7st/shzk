@@ -1,5 +1,6 @@
 #pragma once
 
+#include "runtime/render/passes/RenderPass.h"
 #include "runtime/rhi/RHIDefinitions.h"
 
 #include <memory>
@@ -23,6 +24,11 @@ namespace shzk
 	class RHIFence;
 	class RHIGraphicsPipeline;
 
+	class RenderPass;
+	class MeshPass;
+
+	class SceneRenderer;
+
 	class RenderSystem
 	{
 	public:
@@ -35,7 +41,9 @@ namespace shzk
 		void Tick();
 
 	private:
+		void InitRHIFundamentals();
 		void InitPerFrameRHIResources();
+		void InitPasses();
 
 	private:
 		std::shared_ptr<RHISurface> m_rhiSurface;
@@ -53,5 +61,12 @@ namespace shzk
 		};
 		std::array<PerFrameRHIResource, FRAMES_IN_FLIGHT> m_perFrameResources;
 		uint32_t m_currentFrameIndex = 0;
+
+		// Passes
+		std::array<std::shared_ptr<RenderPass>, (size_t)PassType::Max>		m_passes;
+		std::array<std::shared_ptr<MeshPass>, (size_t)MeshPassType::Max>	m_meshPasses;
+		
+		// Other Functional Classes
+		std::shared_ptr<SceneRenderer>	m_sceneRenderer;
 	};
 }

@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <glm/glm.hpp>
+#include <iostream>
 
 namespace shzk
 {
@@ -27,6 +28,7 @@ namespace shzk
 		uint32_t firstIndex = 0;
 		uint32_t indexCount = 0;
 		uint32_t baseVertexIndex = 0;
+		glm::mat4x4	modelMatrix;	// TODO: Object ID + Uniform Buffer
 	} MeshBatchElement;
 	
 // 目前只是固定有一个元素的 batch

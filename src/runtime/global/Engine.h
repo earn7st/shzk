@@ -37,6 +37,7 @@ namespace shzk
 		static std::shared_ptr<RHI>& GetRHI() { return g_engine->m_rhi; }
 
 		void SetActiveScene(const std::shared_ptr<Scene>& scene) { m_activeScene = scene; }
+		const std::shared_ptr<Scene>& GetActiveScene() { return m_activeScene; }
 
 	private:
 		std::shared_ptr<WindowSystem>	m_windowSystem;

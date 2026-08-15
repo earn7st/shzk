@@ -10,7 +10,7 @@ namespace shzk
 	class Shader : public Asset
 	{
 	public:
-		Shader() = delete;
+		Shader() = default;
 		Shader(const std::string& path, ShaderFrequency frequency, const std::string& entry = "main");
 		~Shader() = default;
 

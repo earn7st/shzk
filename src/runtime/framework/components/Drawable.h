@@ -12,11 +12,7 @@ namespace shzk
 	class Drawable
 	{
 	public:
-		// virtual void CollectMeshBatch(std::vector<MeshBatch>& meshBatches) = 0;	// TODO
-
-		// for now, use push constants to uplaod per object transform
-		// so transform should be collected here
-		virtual void CollectMeshBatch(std::vector<MeshBatch>& meshBatches, Transform& outTransform) = 0;		
-
+		// virtual void CollectMeshBatch(std::vector<MeshBatch>& batches) = 0;
+		virtual void CollectMeshBatchWithTransform(std::vector<MeshBatch>& batches, const glm::mat4x4& accTransformMat) = 0;
 	};
 }
