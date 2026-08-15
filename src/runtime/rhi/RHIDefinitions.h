@@ -642,6 +642,11 @@ namespace shzk
 	typedef struct RHIVertexDeclaration
 	{
 		std::array<VertexElement, MAX_VERTEX_ELEMENT_COUNT> elements;
+
+		friend bool operator==(const RHIVertexDeclaration& a, const RHIVertexDeclaration& b)
+		{
+			return a.elements == b.elements;
+		}
 	};
 
 	typedef struct RHIBlendState
