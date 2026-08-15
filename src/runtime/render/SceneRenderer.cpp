@@ -1,6 +1,6 @@
 #include "SceneRenderer.h"
 #include "MeshDrawCommand.h"
-#include "runtime/render/resources/MeshBatch.h"
+#include "runtime/render/MeshBatch.h"
 #include "runtime/framework/Scene.h"
 #include "runtime/framework/Node.h"
 #include "runtime/framework/components/MeshComponent.h"

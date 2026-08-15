@@ -1,7 +1,7 @@
 #pragma once
 
 #include "runtime/core/Transform.h"
-#include "runtime/render/resources/MeshBatch.h"
+#include "runtime/render/MeshBatch.h"
 
 #include <vector>
 

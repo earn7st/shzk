@@ -2,7 +2,7 @@
 
 #include "Component.h"
 #include "Drawable.h"
-#include "runtime/render/resources/MeshBatch.h"
+#include "runtime/render/MeshBatch.h"
 
 namespace shzk
 {

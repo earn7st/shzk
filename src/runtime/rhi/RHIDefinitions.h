@@ -13,7 +13,10 @@ namespace shzk
 #endif 
 
 #define FRAMES_IN_FLIGHT 2
-#define RESOURCE_DEFERRED_DELETE_FRAMES 6
+#define RESOURCE_DEFERRED_DELETE_FRAMES 4
+#define MAX_RENDER_TARGETS 8
+	/** The maximum number of vertex elements which can be used by a vertex declaration. */
+#define MAX_VERTEX_ELEMENT_COUNT 16
 
 	class RHIQueue;
 	class RHISurface;
@@ -264,10 +267,156 @@ namespace shzk
 	};
 	typedef uint32_t ShaderFrequency;
 
-	enum class FilterType : uint32_t
+	enum class FilterType : uint8_t
 	{
 		Nearest,
 		Linear,
+
+		Max,
+	};
+
+	enum class CompareFunction : uint8_t
+	{
+		Less,
+		LessEqual,
+		Greater,
+		GreaterEqual,
+		Equal,
+		NotEqual,
+		Never,
+		Always,
+
+		Max,
+
+		// Utility enumerations
+		DepthNearOrEqual = GreaterEqual,
+		DepthNear = Greater,
+		DepthFartherOrEqual = LessEqual,
+		DepthFarther = Less,
+	};
+
+	enum class StencilOp : uint8_t
+	{
+		Keep,
+		Zero,
+		Replace,
+		SaturatedIncrement,
+		SaturatedDecrement,
+		Invert,
+		Increment,
+		Decrement,
+		
+		Max,
+	};
+
+	enum class BlendOperation : uint8_t
+	{
+		Add,
+		Subtract, 
+		Min,
+		max,
+		ReverseSubtract,
+
+		Max,
+	};
+
+	enum class BlendFactor : uint8_t
+	{
+		Zero,
+		One,
+		SourceColor,
+		InverseSourceColor,
+		SourceAlpha,
+		InverseSourceAlpha,
+		DestAlpha,
+		InverseDestAlpha,
+		DestColor,
+		InverseDestColor,
+		ConstantBlendFactor,
+		InverseConstantBlendFactor,
+		Source1Color,
+		InverseSource1Color,
+		Source1Alpha,
+		InverseSource1Alpha,
+		
+		Max,
+	};
+
+	enum ColorWriteMask
+	{
+		COLOR_WRITE_MASK_RED = 0x01,
+		COLOR_WRITE_MASK_GREEN = 0x02,
+		COLOR_WRITE_MASK_BLUE = 0x04,
+		COLOR_WRITE_MASK_ALPHA = 0x08,
+
+		COLOR_WRITE_MASK_NONE = 0,
+		COLOR_WRITE_MASK_RGB = COLOR_WRITE_MASK_RED | COLOR_WRITE_MASK_GREEN | COLOR_WRITE_MASK_BLUE,
+		COLOR_WRITE_MASK_RGBA = COLOR_WRITE_MASK_RED | COLOR_WRITE_MASK_GREEN | COLOR_WRITE_MASK_BLUE | COLOR_WRITE_MASK_ALPHA,
+		COLOR_WRITE_MASK_RG = COLOR_WRITE_MASK_RED | COLOR_WRITE_MASK_GREEN,
+		COLOR_WRITE_MASK_BA = COLOR_WRITE_MASK_BLUE | COLOR_WRITE_MASK_ALPHA,
+
+		Max,
+	};
+
+	enum class RasterizerFillMode : uint8_t
+	{
+		Point		= 0,
+		Wireframe	= 1,
+		Solid		= 2,
+
+		Max,
+	};
+
+	enum class RasterizerCullMode : uint8_t
+	{
+		None		= 0,
+		CW			= 1,
+		CCW			= 2,
+
+		Max,
+	};
+
+	enum class RasterizerDepthClipMode : uint8_t
+	{
+		DepthClip	= 0,
+		DepthClamp	= 1,
+
+		Max,
+	};
+
+	enum class PrimitiveType : uint8_t
+	{
+		TriangleList	= 0,
+		TriangleStrip	= 1,
+		LineList		= 2,
+		PointList		= 3,
+
+		Max,
+	};
+
+	enum class VertexElementType : uint8_t
+	{
+		None,
+		Float1,
+		Float2,
+		Float3,
+		Float4,
+		PackedNormal,	// FPackedNormal
+		UByte4,
+		UByte4N,
+		Color,
+		Short2,
+		Short4,
+		Short2N,		// 16 bit word normalized to (value/32767.0,value/32767.0,0,0,1)
+		Half2,			// 16 bit float using 1 bit sign, 5 bit exponent, 10 bit mantissa 
+		Half4,
+		Short4N,		// 4 X 16 bit word, normalized 
+		UShort2,
+		UShort4,
+		UShort2N,		// 16 bit word normalized to (value/65535.0,value/65535.0,0,0,1)
+		UShort4N,		// 4 X 16 bit word unsigned, normalized 
+		URGB10A2N,		// 10 bit r, g, b and 2 bit a normalized to (value/1023.0f, value/1023.0f, value/1023.0f, value/3.0f)
+		UInt,
 
 		Max,
 	};
@@ -373,6 +522,7 @@ namespace shzk
 		}
 	} PushConstantsInfo;
 
+// RHI
 	typedef struct RHIInfo
 	{
 		RHIBackendType type = RHIBackendType::Vulkan;
@@ -480,6 +630,110 @@ namespace shzk
 		std::vector<uint8_t> code;
 	} RHIShaderInfo;
 
+	typedef struct VertexElement
+	{
+		uint8_t streamIndex;
+		uint8_t offset;
+		VertexElementType type;
+		uint8_t attributeIndex;
+		uint16_t stride;
+	} VertexElement;
+
+	typedef struct RHIVertexDeclaration
+	{
+		std::array<VertexElement, MAX_VERTEX_ELEMENT_COUNT> elements;
+	};
+
+	typedef struct RHIBlendState
+	{
+		struct RenderTarget
+		{
+			BlendOperation colorBlendOp;
+			BlendFactor colorSrcBlend;
+			BlendFactor colorDstBlend;
+
+			BlendOperation alphaBlendOp;
+			BlendFactor alphaSrcBlend;
+			BlendFactor alphaDstBlend;
+
+			ColorWriteMask colorWriteMask;
+
+			bool bEnable;
+
+			friend bool operator== (const RenderTarget& a, const RenderTarget& b)
+			{
+				return  a.colorBlendOp == b.colorBlendOp &&
+					a.colorSrcBlend == b.colorSrcBlend &&
+					a.colorDstBlend == b.colorDstBlend &&
+					a.alphaBlendOp == b.alphaBlendOp &&
+					a.alphaSrcBlend == b.alphaSrcBlend &&
+					a.alphaDstBlend == b.alphaDstBlend &&
+					a.colorWriteMask == b.colorWriteMask &&
+					a.bEnable == b.bEnable;
+			}
+		};
+
+		std::array<RenderTarget, MAX_RENDER_TARGETS> renderTargets;
+
+		friend bool operator==(const RHIBlendState& a, const RHIBlendState& b)
+		{
+			return	a.renderTargets == b.renderTargets;
+		}
+
+	} RHIBlendState;
+
+	typedef struct RHIRasterizerState
+	{
+		RasterizerFillMode fillMode = RasterizerFillMode::Point;
+		RasterizerCullMode cullMode = RasterizerCullMode::None;
+
+		float depthBias				= 0.0f;
+		float slopeScaleDepthBias	= 0.0f;
+		RasterizerDepthClipMode depthClipMode = RasterizerDepthClipMode::DepthClip;
+
+		bool bAllowMSAA = false;
+
+		friend bool operator==(const RHIRasterizerState& a, const RHIRasterizerState& b)
+		{
+			return	a.fillMode == b.fillMode &&
+				a.cullMode == b.cullMode &&
+				a.depthBias == b.depthBias &&
+				a.slopeScaleDepthBias == b.slopeScaleDepthBias &&
+				a.depthClipMode == b.depthClipMode;
+		}
+
+	} RHIRasterizerState;
+
+	typedef struct RHIDepthStencilState
+	{
+		bool bEnableDepthWrite		= true;
+		bool bEnableDepthTest		= true;
+		CompareFunction DepthTest	= CompareFunction::LessEqual;
+
+		friend bool operator==(const RHIDepthStencilState& a, const  RHIDepthStencilState& b)
+		{
+			return	a.bEnableDepthTest == b.bEnableDepthTest &&
+				a.bEnableDepthWrite == b.bEnableDepthWrite &&
+				a.DepthTest == b.DepthTest;
+		}
+
+		/*
+		bool bEnableFrontFaceStencil			= false;
+		CompareFunction frontFaceStencilTest;
+		StencilOp frontFaceStencilFailStencilOp;
+		StencilOp frontFaceDepthFailStencilOp;
+		StencilOp frontFacePassStencilOp;
+		bool bEnableBackFaceStencil;
+		CompareFunction backFaceStencilTest;
+		StencilOp backFaceStencilFailStencilOp;
+		StencilOp backFaceDepthFailStencilOp;
+		StencilOp backFacePassStencilOp;
+		uint8_t stencilReadMask;
+		uint8_t stencilWriteMask;
+		*/
+	} RHIDepthStencilState;
+
+// PipelineState, Pipeline
 	typedef struct RHIRootSignatureInfo
 	{
 		std::vector<ShaderResourceEntry> entries;
