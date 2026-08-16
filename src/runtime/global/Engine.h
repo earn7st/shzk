@@ -9,6 +9,7 @@ namespace shzk
 	class RenderSystem;
 	class RHI;
 	class AssetManager;
+	class RenderResourceManager;
 	class Scene;
 
 	struct EngineInitInfo
@@ -44,6 +45,7 @@ namespace shzk
 		std::shared_ptr<RenderSystem>	m_renderSystem;
 		std::shared_ptr<RHI>			m_rhi;				// ref to global rhi
 		std::shared_ptr<AssetManager>	m_assetManager;		// ref to global asset manager
+		std::shared_ptr<RenderResourceManager> m_renderResourceManager;
 
 		std::shared_ptr<Scene> m_activeScene;	// TODO: World(SceneManager) -> Scenes, activeScene
 	};

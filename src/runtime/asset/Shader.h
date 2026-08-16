@@ -14,10 +14,11 @@ namespace shzk
 		Shader(const std::string& path, ShaderFrequency frequency, const std::string& entry = "main");
 		~Shader() = default;
 
+	private:
 		std::string m_path;
 		std::string m_entry;
 
 		ShaderFrequency m_frequency = SHADER_FREQUENCY_MAX_ENUM;
-		std::shared_ptr<RHIShader> m_shader;
+		std::shared_ptr<RHIShader> m_shader = nullptr;
 	};
 }

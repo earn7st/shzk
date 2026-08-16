@@ -4,6 +4,7 @@
 #include "runtime/asset/AssetManager.h"
 #include "runtime/framework/Scene.h"
 #include "runtime/render/RenderSystem.h"
+#include "runtime/render/resources/RenderResourceManager.h"
 #include "runtime/rhi/RHI.h"
 
 namespace shzk
@@ -26,6 +27,9 @@ namespace shzk
 
 		g_engine->m_assetManager = AssetManager::Get();
 		g_engine->m_assetManager->Init();
+
+		g_engine->m_renderResourceManager = RenderResourceManager::Get();
+		g_engine->m_renderResourceManager->Init();
 
 	}
 

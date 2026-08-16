@@ -3,6 +3,7 @@
 // #include <crtdbg.h>
 #include <memory>
 #include "editor/Editor.h"
+#include "runtime/asset/AssetManager.h"
 #include "runtime/global/Engine.h"
 // framework
 #include "runtime/framework/Scene.h"
@@ -18,6 +19,7 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 	shzk::GltfLoader gltfLoader;
 	shzk::GltfLoadResult result;
 	gltfLoader.Load(SHZK_ASSETS_DIR "DamagedHelmet/glTF/DamagedHelmet.gltf", result);
+	shzk::AssetManager::Get()->ProcessGltfLoadResult(result);
 
 	// Camera
 	if (true)

@@ -25,6 +25,7 @@ namespace shzk
 		auto& passes = Engine::GetRenderSystem()->GetMeshPasses();
 		for (auto& pass : passes)
 		{
+			if (!pass) continue;
 			pass->GetMeshPassProcessor()->Process(batches);
 		}
 	}

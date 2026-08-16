@@ -6,5 +6,7 @@ namespace shzk
 	void MeshPass::Init()
 	{
 		m_meshPassProcessor->Init();
+
+		
 	}
 }

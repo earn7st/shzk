@@ -60,7 +60,8 @@ add_library(
 
 target_compile_definitions(shzk_runtime PUBLIC 
     VK_NO_PROTOTYPES
-    SHZK_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets/")
+    SHZK_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets/"
+    SHZK_SPIRV_DIR="${CMAKE_SOURCE_DIR}/bin/shaders/")
 if(WIN32)
     target_compile_definitions(shzk_runtime PUBLIC NOMINMAX)
 endif()
