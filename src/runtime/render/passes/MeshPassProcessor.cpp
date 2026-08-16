@@ -2,6 +2,11 @@
 
 namespace shzk
 {
+	void MeshPassProcessor::Process(const std::vector<MeshBatch>& batches)
+	{
+
+	}
+
 	void MeshPassProcessor::BuildMeshDrawCommand()
 	{
 	}

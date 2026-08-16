@@ -39,6 +39,7 @@ namespace shzk
 		virtual std::shared_ptr<RHITexture> CreateTexture(const RHITextureInfo& info) override final;
 		virtual std::shared_ptr<RHITextureView> CreateTextureView(const RHITextureViewInfo& info) override final;
 		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) override final;
+		virtual std::shared_ptr<RHIShader> CreateShader(const RHIShaderInfo& info) override final;
 
 		inline const VkInstance& GetInstance() { return m_instance; }
 		inline const VkPhysicalDevice& GetPhysicalDevice() { return m_physicalDevice; }

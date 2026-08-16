@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <array>
 
 namespace shzk
 {
@@ -637,6 +638,15 @@ namespace shzk
 		VertexElementType type;
 		uint8_t attributeIndex;
 		uint16_t stride;
+
+		friend bool operator== (const VertexElement& a, const VertexElement& b)
+		{
+			return  a.streamIndex == b.streamIndex &&
+				a.offset == b.offset &&
+				a.type == b.type &&
+				a.stride == b.stride &&
+				a.attributeIndex == b.attributeIndex;
+		}
 	} VertexElement;
 
 	typedef struct RHIVertexDeclaration
@@ -645,9 +655,17 @@ namespace shzk
 
 		friend bool operator==(const RHIVertexDeclaration& a, const RHIVertexDeclaration& b)
 		{
+			if (a.elements.size() != b.elements.size()) return false;
 			return a.elements == b.elements;
 		}
-	};
+	} RHIVertexDeclaration;
+
+	typedef struct BoundShaderStateInput
+	{
+		std::shared_ptr<RHIVertexDeclaration> declaration;
+		std::shared_ptr<RHIShader> vertexShader;
+		std::shared_ptr<RHIShader> fragmentShader;
+	} BoundShaderStateInput;
 
 	typedef struct RHIBlendState
 	{
@@ -665,7 +683,7 @@ namespace shzk
 
 			bool bEnable;
 
-			friend bool operator== (const RenderTarget& a, const RenderTarget& b)
+			friend bool operator==(const RenderTarget& a, const RenderTarget& b)
 			{
 				return  a.colorBlendOp == b.colorBlendOp &&
 					a.colorSrcBlend == b.colorSrcBlend &&

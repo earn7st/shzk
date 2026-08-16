@@ -12,6 +12,7 @@ namespace shzk
 		m_meshPassProcessor = std::make_shared<ForwardPassProcessor>(this);
 		MeshPass::Init();	// mesh pass processor init
 
+
 	}
 
 // ForwardPassProcessor
@@ -20,9 +21,11 @@ namespace shzk
 		MeshPassProcessor::Init();
 
 		// nothing else (?)
-	}
+	}		
 
-	void ForwardPassProcessor::AddMeshBatch()
+	void ForwardPassProcessor::AddMeshBatch(const MeshBatch& batch)
 	{
+		// TODO: RenderPass Mask
+
 	}
 }

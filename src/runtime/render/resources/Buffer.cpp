@@ -5,9 +5,17 @@
 
 namespace shzk
 {
+    typedef struct InterleavedVertex
+    {
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 texcoord;
+    } InterleavedVertex;
+    static_assert(sizeof(InterleavedVertex) == 32);
+
 	VertexBuffer::VertexBuffer(const std::shared_ptr<Primitive>& primitive)
 	{
-        m_interleavedStride = sizeof(InterleavedVertex);
+        m_stride = sizeof(InterleavedVertex);
         m_vertexNum = static_cast<uint32_t>(primitive->position.size());
         if (m_vertexNum == 0) return;
 
@@ -24,7 +32,7 @@ namespace shzk
                 ? primitive->texcoord[i] : glm::vec2(0, 0);
         }
 
-        uint32_t bufferSize = m_vertexNum * m_interleavedStride;
+        uint32_t bufferSize = m_vertexNum * m_stride;
 
         RHIBufferInfo stagingInfo = {
             .size = bufferSize,
@@ -41,10 +49,10 @@ namespace shzk
             .type = RESOURCE_TYPE_VERTEX_BUFFER,
             .creationFlag = BUFFER_CREATION_NONE
         };
-        m_interleavedBuffer = RHI::Get()->CreateBuffer(gpuInfo);
+        m_buffer = RHI::Get()->CreateBuffer(gpuInfo);
 
         auto immediateCmd = RHI::Get()->GetCommandContextImmediate();
-        immediateCmd->RHICopyBuffer(staging, 0, m_interleavedBuffer, 0, bufferSize);
+        immediateCmd->RHICopyBuffer(staging, 0, m_buffer, 0, bufferSize);
         immediateCmd->RHISubmit();
 	}
 

@@ -170,6 +170,14 @@ namespace shzk
 		return pipeline;
 	}
 
+	std::shared_ptr<RHIShader> VulkanRHI::CreateShader(const RHIShaderInfo& info)
+	{
+		std::shared_ptr<RHIShader> shader = std::make_shared<VulkanRHIShader>(info, *this);
+		RegisterResource(shader);
+
+		return shader;
+	}
+
 	void VulkanRHI::CreateInstance()
 	{
 		VK_CHECK(volkInitialize());

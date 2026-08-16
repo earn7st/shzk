@@ -31,6 +31,7 @@ add_library(
     "runtime/render/SceneRenderer.cpp"
     "runtime/render/resources/Buffer.cpp"
     "runtime/render/resources/RenderResourceManager.cpp"
+    "runtime/render/resources/VertexFactory.cpp"
     "runtime/render/passes/MeshPass.cpp"
     "runtime/render/passes/MeshPassProcessor.cpp"
     "runtime/render/passes/ForwardPass.cpp"

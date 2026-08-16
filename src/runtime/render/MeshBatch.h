@@ -7,7 +7,7 @@
 
 namespace shzk
 {
-	class VertexBuffer;
+	class VertexFactory;
 	class IndexBuffer;
 	class Material;
 
@@ -17,24 +17,23 @@ namespace shzk
 //		这必定会导致 Shader 不同（正经引擎中 Shader 是通过 Material 和 VertexFactory 信息生成的），那么 Pipeline 肯定不同
 //		至于 Material，一方面是 cullMode, fillMode, depthTest,blendState 这些都会影响 Pipeline，另外 Material 有可能包含用户自定义的 Shader
 
-//	目前的实现先抛弃 VertexFactory 的抽象，之后做动画的时候再加上，现在统一用 interleaved vertex buffer 的布局
-//	另外，其实如果不写用户自定义 Shader 的话，VertexFactory 也不一定要做 Key 的一部分，设计个通用的 layout 就可以(?)
 //	仿照 ToyRenderer 的做法，最后在 BuildDrawCommand 的时候直接拿 PipelineState(cache一下) 做分组
 
 	typedef struct MeshBatchElement
 	{
-		std::shared_ptr<VertexBuffer>	vertexBuffer;
+		std::shared_ptr<VertexFactory>	vertexFactory;
 		std::shared_ptr<IndexBuffer>	indexBuffer;
 		uint32_t firstIndex = 0;
-		uint32_t indexCount = 0;
+		uint32_t indexCount = 0;	
 		uint32_t baseVertexIndex = 0;
-		glm::mat4x4	modelMatrix;	// TODO: Object ID + Uniform Buffer
+
+		glm::mat4x4	modelMatrix;	// TODO
 	} MeshBatchElement;
 	
 // 目前只是固定有一个元素的 batch
+// 绝大多数情况，除非生产者决定若干个 instance？
 	typedef struct MeshBatch
 	{
-		// TODO: vertex factory?
 		// std::vector<MeshBatchElement>	elements;
 		MeshBatchElement			element;
 		std::shared_ptr<Material>	material;

@@ -8,14 +8,6 @@ namespace shzk
 	class RHIBuffer;
 	class Primitive;
 
-	// TODO: Check performance, padding if needed
-	typedef struct InterleavedVertex
-	{
-		glm::vec3 position;
-		glm::vec3 normal;
-		glm::vec2 texcoord;
-	} InterleavedVertex;
-
 	class VertexBuffer
 	{
 	public:
@@ -24,11 +16,12 @@ namespace shzk
 		~VertexBuffer() = default;
 
 		inline const uint32_t GetVertexNum() const { return m_vertexNum; }
+		inline const uint32_t GetStride() const { return m_stride; }
 	
 	private:
-		std::shared_ptr<RHIBuffer> m_interleavedBuffer;
-		uint32_t m_vertexNum = 0;
-		uint32_t m_interleavedStride = sizeof(InterleavedVertex);
+		std::shared_ptr<RHIBuffer> m_buffer;
+		uint32_t m_vertexNum	= 0;
+		uint32_t m_stride		= 0;
 	};
 
 	class IndexBuffer

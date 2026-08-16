@@ -13,7 +13,7 @@ namespace shzk
 		for (auto& submesh : submeshes)
 		{
 			MeshBatchElement element{
-				.vertexBuffer		= submesh.vertexBuffer,
+				.vertexFactory		= submesh.vertexFactory,
 				.indexBuffer		= submesh.indexBuffer,
 				.firstIndex			= 0,
 				.indexCount			= submesh.indexBuffer->GetIndexNum(),

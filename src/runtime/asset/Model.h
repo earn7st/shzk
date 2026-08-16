@@ -11,6 +11,7 @@ namespace shzk
 	class Primitive;
 	class VertexBuffer;
 	class IndexBuffer;
+	class VertexFactory;
 	class Material;
 
 	struct Submesh
@@ -19,9 +20,12 @@ namespace shzk
 
 		std::shared_ptr<Primitive>	primitive;	// cpu mesh data
 
-		std::shared_ptr<VertexBuffer> vertexBuffer;
+		std::shared_ptr<VertexBuffer> interleavedBuffer;
+
 		std::shared_ptr<IndexBuffer> indexBuffer;
 		std::shared_ptr<Material> material;
+
+		std::shared_ptr<VertexFactory> vertexFactory;
 	};
 
 	class Model : public Asset

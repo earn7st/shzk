@@ -15,10 +15,12 @@ namespace shzk
 		virtual void Init() override final;
 
 	protected:
-		Shader	m_vertexShader;
-		Shader	m_fragShader;
+		std::shared_ptr<Shader>	m_vertexShader;
+		std::shared_ptr<Shader> m_fragShader;
 
-		
+		std::shared_ptr<RHIRootSignature> m_rootSignature;
+			
+
 	};
 
 	class ForwardPassProcessor : public MeshPassProcessor
@@ -31,7 +33,7 @@ namespace shzk
 		virtual void Init() override final;
 		
 	protected:
-		virtual void AddMeshBatch() override final;
+		virtual void AddMeshBatch(const MeshBatch& batch) override final;
 
 	private:
 		ForwardPass* m_pass;

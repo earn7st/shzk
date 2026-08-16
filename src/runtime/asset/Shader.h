@@ -17,7 +17,7 @@ namespace shzk
 		std::string m_path;
 		std::string m_entry;
 
-		ShaderFrequency m_frequency;
+		ShaderFrequency m_frequency = SHADER_FREQUENCY_MAX_ENUM;
 		std::shared_ptr<RHIShader> m_shader;
 	};
 }

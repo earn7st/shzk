@@ -1,6 +1,10 @@
 #include "SceneRenderer.h"
 #include "MeshDrawCommand.h"
+#include "runtime/global/Engine.h"
 #include "runtime/render/MeshBatch.h"
+#include "runtime/render/RenderSystem.h"
+#include "runtime/render/passes/MeshPass.h"
+#include "runtime/render/passes/MeshPassProcessor.h"
 #include "runtime/framework/Scene.h"
 #include "runtime/framework/Node.h"
 #include "runtime/framework/components/MeshComponent.h"
@@ -17,6 +21,12 @@ namespace shzk
 
 		const auto& nodes = scene->GetNodes();
 		for (const auto& node : nodes)	CollectNodeMesh(node, batches, transformMat);
+
+		auto& passes = Engine::GetRenderSystem()->GetMeshPasses();
+		for (auto& pass : passes)
+		{
+			pass->GetMeshPassProcessor()->Process(batches);
+		}
 	}
 
 	void SceneRenderer::CollectNodeMesh(const std::shared_ptr<Node>& node, std::vector<MeshBatch>& batches, glm::mat4x4 accTransformMat)

@@ -1,22 +1,21 @@
 #pragma once
 
 #include "runtime/rhi/RHIDefinitions.h"
+#include "runtime/render/MeshBatch.h"
 
 #include <vector>
 
 namespace shzk
 {
-	struct MeshBatch;
-
 	typedef struct GraphicsMinimalPipelineState
 	{
-		// BoundShaderState
+		BoundShaderStateInput boundShaderStateInput{};
 		RHIBlendState blendState{};
 		RHIRasterizerState rasterizerState{};
 		RHIDepthStencilState depthStencilState{};
 		PrimitiveType primitiveType = PrimitiveType::TriangleList;
 
-		friend bool operator == (const GraphicsMinimalPipelineState& a, const GraphicsMinimalPipelineState& b)
+		friend bool operator==(const GraphicsMinimalPipelineState& a, const GraphicsMinimalPipelineState& b)
 		{
 			return	a.blendState == b.blendState &&
 				a.rasterizerState == b.rasterizerState &&
@@ -32,11 +31,14 @@ namespace shzk
 		MeshPassProcessor() = default;
 		~MeshPassProcessor() = default;
 
+		void Process(const std::vector<MeshBatch>& batches);
+
 		virtual void BuildMeshDrawCommand();
 
 	protected:
 		virtual void Init();
-		virtual void AddMeshBatch() = 0;
+
+		virtual void AddMeshBatch(const MeshBatch& batch) = 0;
 
 		friend class MeshPass;
 

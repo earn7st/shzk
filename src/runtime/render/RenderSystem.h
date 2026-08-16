@@ -40,6 +40,9 @@ namespace shzk
 
 		void Tick();
 
+		inline std::array<std::shared_ptr<RenderPass>, (size_t)PassType::Max>& GetPasses() { return m_passes; };
+		inline std::array<std::shared_ptr<MeshPass>, (size_t)MeshPassType::Max>& GetMeshPasses() { return m_meshPasses; }
+
 	private:
 		void InitRHIFundamentals();
 		void InitPerFrameRHIResources();

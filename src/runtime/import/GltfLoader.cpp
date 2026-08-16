@@ -5,6 +5,7 @@
 #include "runtime/core/Primitive.h"
 #include "runtime/log/Log.h"
 #include "runtime/render/resources/Buffer.h"
+#include "runtime/render/resources/VertexFactory.h"
 
 #include <fastgltf/core.hpp>
 #include <fastgltf/tools.hpp>
@@ -82,10 +83,21 @@ namespace shzk
                 prim->normal = ReadNormals(gltf, gltfPrimitive);
                 prim->texcoord = ReadTexcoords(gltf, gltfPrimitive);
                 submesh.primitive = prim;
-                // VertexBuffer, IndexBuffer
-                submesh.vertexBuffer = std::make_shared<VertexBuffer>(submesh.primitive);
+
+                // VertexBuffer, IndexBuffer, VertexFactory
+                submesh.interleavedBuffer = std::make_shared<VertexBuffer>(submesh.primitive);
                 auto indices = ReadIndices(gltf, gltfPrimitive);
                 submesh.indexBuffer = std::make_shared<IndexBuffer>(indices);
+
+                submesh.vertexFactory = std::make_shared<InterleavedVertexFactory>();
+                submesh.vertexFactory->InitRHIDeclaration();    // fixed RHIVertexDeclaration, check VertexFactory.cpp
+                                                                // TODO: RHIDeclaration Cache
+                VertexFactory::VertexStream stream{};
+                stream.vertexBuffer = submesh.interleavedBuffer;
+                stream.offset = 0;
+                stream.stride = submesh.interleavedBuffer->GetStride();
+                submesh.vertexFactory->AddVertexStream(stream);
+                
                 // Material
                 submesh.material = gltfPrimitive.materialIndex.has_value()
                     ? result.materials[gltfPrimitive.materialIndex.value()]
