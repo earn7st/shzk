@@ -162,6 +162,24 @@ namespace shzk
 		return view;
 	}
 
+	std::shared_ptr<RHIShader> VulkanRHI::CreateShader(const RHIShaderInfo& info)
+	{
+		std::shared_ptr<RHIShader> shader = std::make_shared<VulkanRHIShader>(info, *this);
+		assert(shader);
+		RegisterResource(shader);
+
+		return shader;
+	}
+
+	std::shared_ptr<RHIRootSignature> VulkanRHI::CreateRootSignature(const RHIRootSignatureInfo& info)
+	{
+		std::shared_ptr<RHIRootSignature> rs = std::make_shared<VulkanRHIRootSignature>(info, *this);
+		assert(rs);
+		RegisterResource(rs);
+
+		return rs;
+	}
+
 	std::shared_ptr<RHIGraphicsPipeline> VulkanRHI::CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info)
 	{
 		std::shared_ptr<RHIGraphicsPipeline> pipeline = std::make_shared<VulkanRHIGraphicsPipeline>(info, *this);
@@ -170,14 +188,7 @@ namespace shzk
 		return pipeline;
 	}
 
-	std::shared_ptr<RHIShader> VulkanRHI::CreateShader(const RHIShaderInfo& info)
-	{
-		std::shared_ptr<RHIShader> shader = std::make_shared<VulkanRHIShader>(info, *this);
-		RegisterResource(shader);
-
-		return shader;
-	}
-
+// private functions
 	void VulkanRHI::CreateInstance()
 	{
 		VK_CHECK(volkInitialize());

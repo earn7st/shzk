@@ -37,4 +37,7 @@ namespace shzk
 		std::shared_ptr<RHIBuffer> m_buffer;
 		uint32_t m_indexNum = 0;
 	};
+
+	// Uniform Buffer
+
 }

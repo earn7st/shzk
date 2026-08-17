@@ -13,7 +13,7 @@ namespace shzk
 
 	void RenderResourceManager::Init()
 	{
-		
+        InitGlobalResources();
 	}
 
 	std::shared_ptr<RHIShader> RenderResourceManager::GetOrCreateRHIShader(const std::string& path, ShaderFrequency frequency, const std::string& entry)
@@ -46,5 +46,14 @@ namespace shzk
         m_rhiShaderMap.emplace(path, shader);
         return shader;
 	}
+
+    void RenderResourceManager::InitGlobalResources()
+    {
+        // per frame RHIRootSignature
+        RHIRootSignatureInfo info{};
+        // TODO
+        // per frame resources
+
+    }
 
 }

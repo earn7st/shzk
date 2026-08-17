@@ -26,6 +26,7 @@ namespace shzk
 	class RHITexture;
 	class RHIGraphicsPipeline;
 	class RHIResource;
+	class RHIRootSignature;
 
 	class RHI
 	{
@@ -50,8 +51,9 @@ namespace shzk
 		virtual std::shared_ptr<RHIBuffer> CreateBuffer(const RHIBufferInfo& info) = 0;
 		virtual std::shared_ptr<RHITexture> CreateTexture(const RHITextureInfo& info) = 0;
 		virtual std::shared_ptr<RHITextureView> CreateTextureView(const RHITextureViewInfo& info) = 0;
-		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) = 0;
 		virtual std::shared_ptr<RHIShader>	CreateShader(const RHIShaderInfo& info) = 0;
+		virtual std::shared_ptr<RHIRootSignature> CreateRootSignature(const RHIRootSignatureInfo& info) = 0;
+		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) = 0;
 
 		std::shared_ptr<RHICommandContextImmediate> GetCommandContextImmediate() const { return m_cmdContextImmediate; }	// TODO: RHICommandListImmediate
 

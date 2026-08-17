@@ -19,16 +19,13 @@ namespace shzk
 		m_vertexShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "forward.vert.spv", SHADER_FREQUENCY_VERTEX, "main");
 		m_fragShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "forward.frag.spv", SHADER_FREQUENCY_FRAGMENT, "main");
 
-		// 0817 RHIRootSignature Init
+		// TODO
+		RHIRootSignatureInfo info{};
+		m_rootSignature = RHI::Get()->CreateRootSignature(info);
+		
 	}
 
-// ForwardPassProcessor
-	void ForwardPassProcessor::Init()
-	{
-		MeshPassProcessor::Init();
-
-		// nothing else (?)
-	}		
+// ForwardPassProcessor	
 
 	void ForwardPassProcessor::AddMeshBatch(const MeshBatch& batch)
 	{

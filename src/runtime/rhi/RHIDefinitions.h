@@ -1,5 +1,4 @@
 #pragma once
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -510,18 +509,18 @@ namespace shzk
 		}
 	} ShaderResourceEntry;
 
-	typedef struct PushConstantsInfo
+	typedef struct PushConstantInfo
 	{
 		uint32_t offset = 0;
 		uint32_t size = 128;
 		ShaderFrequency frequency = SHADER_FREQUENCY_ALL;
-		friend bool operator== (const PushConstantsInfo& a, const PushConstantsInfo& b)
+		friend bool operator== (const PushConstantInfo& a, const PushConstantInfo& b)
 		{
 			return  a.offset == b.offset &&
 				a.size == b.size &&
 				a.frequency == b.frequency;
 		}
-	} PushConstantsInfo;
+	} PushConstantInfo;
 
 // RHI
 	typedef struct RHIInfo
@@ -759,9 +758,18 @@ namespace shzk
 // PipelineState, Pipeline
 	typedef struct RHIRootSignatureInfo
 	{
-		std::vector<ShaderResourceEntry> entries;
-		std::vector<PushConstantsInfo> pushConstants;
 
+		RHIRootSignatureInfo& AddPushConstant(const PushConstantInfo& pushConstant) { pushConstants.push_back(pushConstant); return *this; }
+		RHIRootSignatureInfo& AddEntry(const ShaderResourceEntry& entry);
+		RHIRootSignatureInfo& AddEntry(const RHIRootSignatureInfo& other);
+		
+		// RHIRootSignatureInfo& AddEntryFromReflect(std::shared_ptr<RHIShader> shader);	// TODO: shader reflection
+		const std::vector<PushConstantInfo>& GetPushConstants() const { return pushConstants; }
+		const std::vector<ShaderResourceEntry>& GetEntries() const { return entries; }
+
+	private:
+		std::vector<ShaderResourceEntry> entries;
+		std::vector<PushConstantInfo> pushConstants;
 
 	} RHIRootSignatureInfo;
 

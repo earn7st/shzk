@@ -252,6 +252,26 @@ namespace shzk
             return usage;
         }
 
+        static VkDescriptorType ResourceTypeToVkDescriptorType(ResourceType resourceType)
+        {
+            VkDescriptorType descriptorType;
+            switch (resourceType) {
+            case RESOURCE_TYPE_SAMPLER:                 descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;                        break;
+            case RESOURCE_TYPE_TEXTURE_CUBE:            descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;                  break;
+            case RESOURCE_TYPE_TEXTURE:                 descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;                  break;
+            case RESOURCE_TYPE_RW_TEXTURE:              descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;                  break;
+            case RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER:  descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;         break;
+            case RESOURCE_TYPE_BUFFER:                  descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;                 break;
+            case RESOURCE_TYPE_RW_BUFFER:               descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;                 break;
+            case RESOURCE_TYPE_UNIFORM_BUFFER:          descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;                 break;
+            case RESOURCE_TYPE_TEXEL_BUFFER:            descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;           break;
+            case RESOURCE_TYPE_RW_TEXEL_BUFFER:         descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;           break;
+            // case RESOURCE_TYPE_RAY_TRACING:             descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;     break;
+            default:                                    SHZK_LOG_ERROR("Unsupported resource type!");
+            }
+            return descriptorType;
+        }
+
         static VkAccessFlags ResourceStateToVkAccessFlags(RHIResourceState state)
         {
             VkAccessFlags accessFlags = VK_ACCESS_NONE;

@@ -29,8 +29,6 @@ namespace shzk
 		ForwardPassProcessor() = delete;
 		ForwardPassProcessor(ForwardPass* pass) { m_pass = pass; }
 		~ForwardPassProcessor() = default;
-
-		virtual void Init() override final;
 		
 	protected:
 		virtual void AddMeshBatch(const MeshBatch& batch) override final;

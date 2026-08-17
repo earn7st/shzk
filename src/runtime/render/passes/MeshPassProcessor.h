@@ -31,14 +31,13 @@ namespace shzk
 		MeshPassProcessor() = default;
 		~MeshPassProcessor() = default;
 
+		void Init();
 		void Process(const std::vector<MeshBatch>& batches);
 
 		virtual void BuildMeshDrawCommand();
 
 	protected:
-		virtual void Init();
-
-		virtual void AddMeshBatch(const MeshBatch& batch) = 0;
+		virtual void AddMeshBatch(const MeshBatch& batch) = 0; 
 
 		friend class MeshPass;
 

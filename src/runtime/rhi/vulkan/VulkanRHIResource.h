@@ -95,7 +95,7 @@ namespace shzk
 	{
 	public:
 		VulkanRHIDescriptorSet() = delete;
-		VulkanRHIDescriptorSet(VulkanRHI& rhi, VkDescriptorSetLayout layout);
+		VulkanRHIDescriptorSet(VkDescriptorSetLayout layout, VulkanRHI& rhi);
 		~VulkanRHIDescriptorSet() = default;
 
 	protected:
@@ -107,7 +107,23 @@ namespace shzk
 
 	class VulkanRHIRootSignature : public RHIRootSignature
 	{
+	public:
+		struct Layout
+		{
+			std::vector<VkDescriptorSetLayoutBinding> bindings;
+			VkDescriptorSetLayout handle;
+		};
 
+		VulkanRHIRootSignature(const RHIRootSignatureInfo& info, VulkanRHI& rhi);
+
+		virtual std::shared_ptr<RHIDescriptorSet> CreateDescriptorSet(uint32_t set) override final;
+
+		const std::vector<Layout>& GetLayouts() { return m_layouts; }
+
+		virtual void Destroy() override final;
+
+	private:
+		std::vector<Layout> m_layouts;
 	};
 
 	class VulkanRHIGraphicsPipeline : public RHIGraphicsPipeline

@@ -121,7 +121,7 @@ namespace shzk
 		RHIRootSignature(const RHIRootSignatureInfo& info)
 			: RHIResource(RHIResourceType::RootSignature), m_info(info) {}
 
-		virtual std::shared_ptr<RHIDescriptorSet> CreateDescriptorSet() = 0;
+		virtual std::shared_ptr<RHIDescriptorSet> CreateDescriptorSet(uint32_t idx) = 0;
 
 		inline const RHIRootSignatureInfo& GetInfo() const { return m_info; }
 

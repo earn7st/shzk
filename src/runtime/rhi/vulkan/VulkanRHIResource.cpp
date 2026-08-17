@@ -191,18 +191,78 @@ namespace shzk
         vkDestroyShaderModule(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
     }
 
-    VulkanRHIDescriptorSet::VulkanRHIDescriptorSet(VulkanRHI& rhi, VkDescriptorSetLayout layout)
+    VulkanRHIDescriptorSet::VulkanRHIDescriptorSet(VkDescriptorSetLayout layout, VulkanRHI& rhi)
 		: RHIDescriptorSet()
     {
 		VkDescriptorSetAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        allocInfo.descriptorPool = rhi.GetDescriptorPool();
+        allocInfo.descriptorSetCount = 1;
         allocInfo.pSetLayouts = &layout;
-        // TODO
-        vkAllocateDescriptorSets(rhi.GetDevice(), &allocInfo, &m_handle);
+        
+        VK_CHECK(vkAllocateDescriptorSets(rhi.GetDevice(), &allocInfo, &m_handle));
     }
 
     void VulkanRHIDescriptorSet::Destroy()
     {
 		vkFreeDescriptorSets(VULKAN_RHI()->GetDevice(), VULKAN_RHI()->GetDescriptorPool(), 1, &m_handle);
+    }
+
+    VulkanRHIRootSignature::VulkanRHIRootSignature(const RHIRootSignatureInfo& info, VulkanRHI& rhi)
+        : RHIRootSignature(info)
+    {
+        const std::vector<ShaderResourceEntry>& entries = info.GetEntries();
+        for (const ShaderResourceEntry& entry : entries)
+        {
+            VkDescriptorSetLayoutBinding layoutBinding = {};
+            layoutBinding.binding = entry.binding;
+            layoutBinding.stageFlags = VulkanUtil::ShaderFrequencyToVkStageFlags(entry.frequency);
+            layoutBinding.descriptorType = VulkanUtil::ResourceTypeToVkDescriptorType(entry.type);
+            layoutBinding.descriptorCount = entry.size;     // TODO: Bindless ?  
+            layoutBinding.pImmutableSamplers = nullptr;
+
+            if (m_layouts.size() < entry.set + 1) m_layouts.resize(entry.set + 1);
+            m_layouts[entry.set].bindings.push_back(layoutBinding);
+        }
+
+        for (Layout& layout: m_layouts)
+        {
+            if (layout.bindings.size() > 0)
+            {
+                VkDescriptorSetLayoutCreateInfo layoutInfo;
+                layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                layoutInfo.bindingCount = (uint32_t)layout.bindings.size();
+                layoutInfo.pBindings = layout.bindings.data();
+                layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;  //TODO descriptor instant update ?
+                layoutInfo.pNext = nullptr;
+
+                // TODO: bindless 可变描述符大小扩展
+
+                VK_CHECK(vkCreateDescriptorSetLayout(rhi.GetDevice(), &layoutInfo, nullptr, &layout.handle));
+            }
+        }
+    }
+
+    std::shared_ptr<RHIDescriptorSet> VulkanRHIRootSignature::CreateDescriptorSet(uint32_t set)
+    {
+        if (m_layouts.size() > set && m_layouts[set].bindings.size() > 0)
+        {
+            std::shared_ptr<RHIDescriptorSet> descriptorSet = std::make_shared<VulkanRHIDescriptorSet>(m_layouts[set].handle, *VULKAN_RHI());
+            VULKAN_RHI()->RegisterResource(descriptorSet);
+
+            return descriptorSet;
+        }
+
+        SHZK_LOG_WARN("DescriptorSetLayouts are empty!");
+        return nullptr;
+    }
+
+    void VulkanRHIRootSignature::Destroy()
+    {
+        for (Layout& layout : m_layouts)
+        {
+            vkDestroyDescriptorSetLayout(VULKAN_RHI()->GetDevice(), layout.handle, nullptr);
+        }
     }
 
     VulkanRHIGraphicsPipeline::VulkanRHIGraphicsPipeline(const RHIGraphicsPipelineInfo& info, VulkanRHI& rhi)
@@ -242,7 +302,5 @@ namespace shzk
         vkDestroyPipeline(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
         vkDestroyPipelineLayout(VULKAN_RHI()->GetDevice(), m_layout, nullptr);
 	}
-
-    
 
 }
