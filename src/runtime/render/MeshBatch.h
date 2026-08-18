@@ -24,8 +24,7 @@ namespace shzk
 		std::shared_ptr<VertexFactory>	vertexFactory;
 		std::shared_ptr<IndexBuffer>	indexBuffer;
 		uint32_t firstIndex = 0;
-		uint32_t indexCount = 0;	
-		uint32_t baseVertexIndex = 0;
+		uint32_t indexCount = 0;
 
 		glm::mat4x4	modelMatrix;	// TODO
 	} MeshBatchElement;

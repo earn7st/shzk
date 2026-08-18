@@ -20,7 +20,6 @@ namespace shzk
 
 		std::shared_ptr<RHIRootSignature> m_rootSignature;
 			
-
 	};
 
 	class ForwardPassProcessor : public MeshPassProcessor
@@ -32,7 +31,7 @@ namespace shzk
 		
 	protected:
 		virtual void AddMeshBatch(const MeshBatch& batch) override final;
-
+		
 	private:
 		ForwardPass* m_pass;
 	};

@@ -17,7 +17,6 @@ namespace shzk
 				.indexBuffer		= submesh.indexBuffer,
 				.firstIndex			= 0,
 				.indexCount			= submesh.indexBuffer->GetIndexNum(),
-				.baseVertexIndex	= 0,
 				.modelMatrix		= accTransformMat,
 			};
 			batches.emplace_back(element, submesh.material);

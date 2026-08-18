@@ -5,6 +5,8 @@
 #include <array>
 #include <memory>
 
+#define MAX_VERTEX_STREAM_NUM 8
+
 namespace shzk
 {
 	class VertexBuffer;
@@ -30,7 +32,7 @@ namespace shzk
 					a.stride == b.stride;
 			}
 		};
-		typedef std::array<VertexStream, 8> VertexStreamList;
+		typedef std::array<VertexStream, MAX_VERTEX_STREAM_NUM> VertexStreamList;
 
 		virtual void InitRHIDeclaration() = 0;	// TODO: Cache
 

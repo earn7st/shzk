@@ -1,29 +1,20 @@
 #pragma once
 
-#include "runtime/rhi/RHIDefinitions.h"
 #include "runtime/render/MeshBatch.h"
+#include "runtime/render/MeshDrawCommand.h"
+#include "runtime/render/resources/VertexFactory.h"
+#include "runtime/rhi/RHIDefinitions.h"
 
 #include <vector>
 
 namespace shzk
 {
-	typedef struct GraphicsMinimalPipelineState
+	typedef struct MeshPassProcessorRenderState
 	{
-		BoundShaderStateInput boundShaderStateInput{};
-		RHIBlendState blendState{};
-		RHIRasterizerState rasterizerState{};
+		RHIBlendState	blendState{};
 		RHIDepthStencilState depthStencilState{};
-		PrimitiveType primitiveType = PrimitiveType::TriangleList;
-
-		friend bool operator==(const GraphicsMinimalPipelineState& a, const GraphicsMinimalPipelineState& b)
-		{
-			return	a.blendState == b.blendState &&
-				a.rasterizerState == b.rasterizerState &&
-				a.depthStencilState == b.depthStencilState &&
-				a.primitiveType == b.primitiveType;
-		}
-
-	} GraphicsMinimalPipelineState;
+		uint32_t             stencilRef = 0;
+	} MeshPassProcessorRenderState;
 
 	class MeshPassProcessor
 	{
@@ -33,16 +24,18 @@ namespace shzk
 
 		void Init();
 		void Process(const std::vector<MeshBatch>& batches);
-
-		virtual void BuildMeshDrawCommand();
+		void BuildMeshDrawCommands(
+			const MeshBatch& batch,
+			const MeshPassProcessorRenderState& renderState
+			// 0818
+			);
 
 	protected:
 		virtual void AddMeshBatch(const MeshBatch& batch) = 0; 
 
 		friend class MeshPass;
 
-	private:
-		std::vector<MeshBatch>	m_batches;
-		
+	protected:
+		std::vector<MeshDrawCommand> m_oneFrameMeshDrawCommands;
 	};
 }

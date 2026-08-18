@@ -3,6 +3,7 @@
 #include "MeshPassProcessor.h"
 
 #include "runtime/asset/Shader.h"
+#include "runtime/asset/Material.h"
 #include "runtime/rhi/RHI.h"
 #include "runtime/rhi/RHIDefinitions.h"
 
@@ -29,7 +30,11 @@ namespace shzk
 
 	void ForwardPassProcessor::AddMeshBatch(const MeshBatch& batch)
 	{
-		// TODO: RenderPass Mask
-
+		const std::shared_ptr<const Material> material = batch.material;
+		if (!material) return;
+		if (material->GetPassMask() & PASS_MASK_FORWARD_PASS)
+		{
+			BuildMeshDrawCommands(batch);
+		}
 	}
 }

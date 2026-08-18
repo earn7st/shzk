@@ -664,6 +664,14 @@ namespace shzk
 		std::shared_ptr<RHIVertexDeclaration> declaration;
 		std::shared_ptr<RHIShader> vertexShader;
 		std::shared_ptr<RHIShader> fragmentShader;
+
+		friend bool operator==(const BoundShaderStateInput& a, const BoundShaderStateInput& b)
+		{
+			return a.declaration == b.declaration &&
+				a.vertexShader == b.vertexShader &&
+				a.fragmentShader == b.fragmentShader;
+		}
+
 	} BoundShaderStateInput;
 
 	typedef struct RHIBlendState

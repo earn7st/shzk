@@ -241,20 +241,20 @@ namespace shzk
     {
         auto mat = std::make_shared<Material>();
 
-        mat->m_baseColor = glm::vec4(
+        mat->SetBaseColor(glm::vec4(
             material.pbrData.baseColorFactor.x(),
             material.pbrData.baseColorFactor.y(),
             material.pbrData.baseColorFactor.z(),
-            material.pbrData.baseColorFactor.w());
-        mat->m_metallic = material.pbrData.metallicFactor;
-        mat->m_roughness = material.pbrData.roughnessFactor;
+            material.pbrData.baseColorFactor.w()));
+        mat->SetMetallic(material.pbrData.metallicFactor);
+        mat->SetRoughness(material.pbrData.roughnessFactor);
 
-        mat->m_emission = glm::vec3(
+        mat->SetEmission(glm::vec3(
             material.emissiveFactor.x(),
             material.emissiveFactor.y(),
-            material.emissiveFactor.z());
+            material.emissiveFactor.z()));
 
-        mat->m_alphaCutoff = material.alphaCutoff;
+        mat->SetAlphaCutoff(material.alphaCutoff);
 
         auto getTexture = [&](const auto& optionalTexInfo) -> std::shared_ptr<Texture> {
             if (!optionalTexInfo.has_value())
@@ -265,24 +265,24 @@ namespace shzk
             return textures[idx];
             };
 
-        mat->m_textureDiffuse = getTexture(material.pbrData.baseColorTexture);
-        mat->m_textureNormal = getTexture(material.normalTexture);
-        mat->m_textureArm = getTexture(material.pbrData.metallicRoughnessTexture);
-        mat->m_textureSpecular = nullptr;   // KHR_materials_pbrSpecularGlossiness
+        mat->SetTextureDiffuse(getTexture(material.pbrData.baseColorTexture));
+        mat->SetTextureNormal(getTexture(material.normalTexture));
+        mat->SetTextureArm(getTexture(material.pbrData.metallicRoughnessTexture));
+        mat->SetTextureSpecular(nullptr);   // KHR_materials_pbrSpecularGlossiness
 
         // general slots
-        mat->m_texture2D[0] = getTexture(material.occlusionTexture);  // glTF occlusion ¡ú 2D[0]
-        mat->m_texture2D[1] = getTexture(material.emissiveTexture);   // glTF emissive ¡ú 2D[1]
+        mat->SetTexture2DSlot(0, getTexture(material.occlusionTexture));  // glTF occlusion ¡ú 2D[0]
+        mat->SetTexture2DSlot(1, getTexture(material.emissiveTexture));   // glTF emissive ¡ú 2D[1]
 
-        mat->m_ints[0] = static_cast<int32_t>(material.alphaMode);  // 0=Opaque, 1=Mask, 2=Blend
-        mat->m_ints[1] = material.doubleSided ? 1 : 0;
-        mat->m_ints[2] = material.unlit ? 1 : 0;
-        mat->m_floats[0] = (material.normalTexture.has_value())
+        mat->SetIntSlot(0, static_cast<int32_t>(material.alphaMode));  // 0=Opaque, 1=Mask, 2=Blend
+        mat->SetIntSlot(1, material.doubleSided ? 1 : 0);
+        mat->SetIntSlot(2, material.unlit ? 1 : 0);
+        mat->SetFloatSlot(0, (material.normalTexture.has_value())
             ? material.normalTexture->scale         // glTF normal scale
-            : 1.0f;
-        mat->m_floats[1] = (material.occlusionTexture.has_value())
+            : 1.0f);
+        mat->SetFloatSlot(1, (material.occlusionTexture.has_value())
             ? material.occlusionTexture->strength   // glTF occlusion strength
-            : 1.0f;
+            : 1.0f);
 
         return mat;
     }

@@ -92,7 +92,10 @@ namespace shzk
 	public:
 		RHIShader() = delete;
 		RHIShader(const RHIShaderInfo& info)
-			: RHIResource(RHIResourceType::Shader), m_info(info)  {}
+			: RHIResource(RHIResourceType::Shader), m_info(info)  
+		{
+			m_frequency = info.frequency;
+		}
 
 		inline const RHIShaderInfo& GetInfo() const { return m_info; }
 		inline ShaderFrequency GetFrequency() const { return m_frequency; }
