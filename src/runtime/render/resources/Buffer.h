@@ -15,8 +15,9 @@ namespace shzk
 		VertexBuffer(const std::shared_ptr<Primitive>& primitive);	// construct interleaved buffer from primitive
 		~VertexBuffer() = default;
 
-		inline const uint32_t GetVertexNum() const { return m_vertexNum; }
-		inline const uint32_t GetStride() const { return m_stride; }
+		inline uint32_t GetVertexNum() const { return m_vertexNum; }
+		inline uint32_t GetStride() const { return m_stride; }
+		inline std::shared_ptr<RHIBuffer> GetBuffer() const { return m_buffer; }
 	
 	private:
 		std::shared_ptr<RHIBuffer> m_buffer;
@@ -32,6 +33,7 @@ namespace shzk
 		~IndexBuffer() = default;
 
 		inline const uint32_t GetIndexNum() const { return m_indexNum; }
+		inline std::shared_ptr<RHIBuffer> GetBuffer() const{ return m_buffer; }
 
 	private:
 		std::shared_ptr<RHIBuffer> m_buffer;

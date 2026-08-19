@@ -389,7 +389,8 @@ namespace shzk
 		TriangleList	= 0,
 		TriangleStrip	= 1,
 		LineList		= 2,
-		PointList		= 3,
+		LineStrip		= 3,
+		PointList		= 4,
 
 		Max,
 	};
@@ -714,8 +715,8 @@ namespace shzk
 
 	typedef struct RHIRasterizerState
 	{
-		RasterizerFillMode fillMode = RasterizerFillMode::Point;
-		RasterizerCullMode cullMode = RasterizerCullMode::None;
+		RasterizerFillMode fillMode = RasterizerFillMode::Solid;
+		RasterizerCullMode cullMode = RasterizerCullMode::CW;
 
 		float depthBias				= 0.0f;
 		float slopeScaleDepthBias	= 0.0f;
@@ -738,13 +739,13 @@ namespace shzk
 	{
 		bool bEnableDepthWrite		= true;
 		bool bEnableDepthTest		= true;
-		CompareFunction DepthTest	= CompareFunction::LessEqual;
+		CompareFunction depthTest	= CompareFunction::LessEqual;
 
 		friend bool operator==(const RHIDepthStencilState& a, const  RHIDepthStencilState& b)
 		{
 			return	a.bEnableDepthTest == b.bEnableDepthTest &&
 				a.bEnableDepthWrite == b.bEnableDepthWrite &&
-				a.DepthTest == b.DepthTest;
+				a.depthTest == b.depthTest;
 		}
 
 		/*
@@ -766,7 +767,6 @@ namespace shzk
 // PipelineState, Pipeline
 	typedef struct RHIRootSignatureInfo
 	{
-
 		RHIRootSignatureInfo& AddPushConstant(const PushConstantInfo& pushConstant) { pushConstants.push_back(pushConstant); return *this; }
 		RHIRootSignatureInfo& AddEntry(const ShaderResourceEntry& entry);
 		RHIRootSignatureInfo& AddEntry(const RHIRootSignatureInfo& other);

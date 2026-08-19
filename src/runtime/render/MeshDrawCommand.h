@@ -26,7 +26,7 @@ namespace shzk
 	class MeshDrawCommand
 	{
 	public:
-		MeshDrawCommand() = delete;
+		MeshDrawCommand() = default;
 		~MeshDrawCommand() = default;
 
 		// Resources 

@@ -21,7 +21,6 @@ namespace shzk
 		std::shared_ptr<RHIShader> m_shader = nullptr;
 	
 	private:
-		// TODO user defined shaders
-		// void LoadFromFile();
+		// void LoadFromFile();	 // User Defined Shaders
 	};
 }

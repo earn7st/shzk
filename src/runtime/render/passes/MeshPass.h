@@ -14,13 +14,11 @@ namespace shzk
 		MeshPass(PassType type) : RenderPass(type) {}
 		~MeshPass() = default;
 
-		virtual void Init() override;
+		virtual void Init() = 0;
 
 		std::shared_ptr<MeshPassProcessor> GetMeshPassProcessor() const { return m_meshPassProcessor; }
 
 	protected:
 		std::shared_ptr<MeshPassProcessor> m_meshPassProcessor;
-
-		
 	};
 }

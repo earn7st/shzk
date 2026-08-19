@@ -110,13 +110,13 @@ namespace shzk
         inline float GetRoughness() { return m_roughness; }
         inline float GetAlphaCutoff() { return m_alphaCutoff; }
         inline bool UseVertexColor() { return m_bUseVertexColor; }
-        inline const std::shared_ptr<Texture> GetTextureDiffuse() const { return m_textureDiffuse; }
-        inline const std::shared_ptr<Texture> GetTextureNormal() const { return m_textureNormal; }
-        inline const std::shared_ptr<Texture> GetTextureArm() const { return m_textureArm; }
-        inline const std::shared_ptr<Texture> GetTextureSpecular() const { return m_textureSpecular; }
+        inline std::shared_ptr<Texture> GetTextureDiffuse() const { return m_textureDiffuse; }
+        inline std::shared_ptr<Texture> GetTextureNormal() const { return m_textureNormal; }
+        inline std::shared_ptr<Texture> GetTextureArm() const { return m_textureArm; }
+        inline std::shared_ptr<Texture> GetTextureSpecular() const { return m_textureSpecular; }
         // TODO: General Slots
-        inline const std::shared_ptr<Shader> GetVertexShader() const { return m_vertexShader; }
-        inline const std::shared_ptr<Shader> GetFragmentShader() const { return m_fragmentShader; }
+        inline std::shared_ptr<Shader> GetVertexShader() const { return m_vertexShader; }
+        inline std::shared_ptr<Shader> GetFragmentShader() const { return m_fragmentShader; }
 
         // Pipeline
         inline void SetPassMask(uint32_t mask) { m_passMask = mask; }
@@ -162,8 +162,11 @@ namespace shzk
     protected:
         PassMask m_passMask = PASS_MASK_FORWARD_PASS;   
 
+        // RasteriazerState
         RasterizerCullMode m_cullMode = RasterizerCullMode::CW;
         RasterizerFillMode m_fillMode = RasterizerFillMode::Solid;
+        
+        // DepthStencilState
         bool m_bDepthTest    = true;
         bool m_bDepthWrite   = true;
         CompareFunction m_depthCompare = CompareFunction::LessEqual;    

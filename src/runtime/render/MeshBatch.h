@@ -1,5 +1,7 @@
 #pragma once
 
+#include "runtime/rhi/RHIDefinitions.h"
+
 #include <memory>
 #include <vector>
 #include <glm/glm.hpp>
@@ -17,11 +19,9 @@ namespace shzk
 //		这必定会导致 Shader 不同（正经引擎中 Shader 是通过 Material 和 VertexFactory 信息生成的），那么 Pipeline 肯定不同
 //		至于 Material，一方面是 cullMode, fillMode, depthTest,blendState 这些都会影响 Pipeline，另外 Material 有可能包含用户自定义的 Shader
 
-//	仿照 ToyRenderer 的做法，最后在 BuildDrawCommand 的时候直接拿 PipelineState(cache一下) 做分组
-
 	typedef struct MeshBatchElement
 	{
-		std::shared_ptr<VertexFactory>	vertexFactory;
+		
 		std::shared_ptr<IndexBuffer>	indexBuffer;
 		uint32_t firstIndex = 0;
 		uint32_t indexCount = 0;
@@ -33,8 +33,10 @@ namespace shzk
 // 绝大多数情况，除非生产者决定若干个 instance？
 	typedef struct MeshBatch
 	{
-		// std::vector<MeshBatchElement>	elements;
-		MeshBatchElement			element;
+		std::vector<MeshBatchElement>	elements;
+		// MeshBatchElement			element;
+		std::shared_ptr<VertexFactory>	vertexFactory;
 		std::shared_ptr<Material>	material;
+		PrimitiveType primitiveType = PrimitiveType::TriangleList;
 	} MeshBatch;
 }

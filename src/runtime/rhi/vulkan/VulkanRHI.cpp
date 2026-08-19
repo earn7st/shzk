@@ -315,9 +315,14 @@ namespace shzk
 			queueDescs.push_back(vkb::CustomQueueDescription(familyIdx, priorities));
 		}
 
+		VkPhysicalDeviceVulkan13Features features13{};
+		features13.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+		features13.dynamicRendering = VK_TRUE;
+
 		vkb::DeviceBuilder builder(m_vkbPhysicalDevice);
 		auto result = builder
 			.custom_queue_setup(queueDescs)
+			.add_pNext(&features13)
 			.build();
 
 		if (!result) {

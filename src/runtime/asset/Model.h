@@ -1,6 +1,7 @@
 #pragma once
 #include "runtime/asset/Asset.h"
 #include "runtime/core/Transform.h"
+#include "runtime/rhi/RHIDefinitions.h"
 
 #include <vector>
 #include <memory>
@@ -19,13 +20,14 @@ namespace shzk
 		Transform localTransform;
 
 		std::shared_ptr<Primitive>	primitive;	// cpu mesh data
+		PrimitiveType primitiveType = PrimitiveType::TriangleList;
 
+		std::shared_ptr<VertexFactory> vertexFactory;
 		std::shared_ptr<VertexBuffer> interleavedBuffer;
 
 		std::shared_ptr<IndexBuffer> indexBuffer;
 		std::shared_ptr<Material> material;
 
-		std::shared_ptr<VertexFactory> vertexFactory;
 	};
 
 	class Model : public Asset

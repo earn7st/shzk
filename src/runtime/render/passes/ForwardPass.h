@@ -14,19 +14,21 @@ namespace shzk
 
 		virtual void Init() override final;
 
-	protected:
-		std::shared_ptr<Shader>	m_vertexShader;
-		std::shared_ptr<Shader> m_fragShader;
+		std::shared_ptr<Shader> GetVertexShader() const { return m_vertexShader; }
+		std::shared_ptr<Shader> GetFragmentShader() const { return m_fragmentShader; }
 
-		std::shared_ptr<RHIRootSignature> m_rootSignature;
-			
+	private:
+		std::shared_ptr<Shader>	m_vertexShader;
+		std::shared_ptr<Shader> m_fragmentShader;
+
+		std::shared_ptr<RHIRootSignature> m_rootSignature;			
 	};
 
 	class ForwardPassProcessor : public MeshPassProcessor
 	{
 	public:
 		ForwardPassProcessor() = delete;
-		ForwardPassProcessor(ForwardPass* pass) { m_pass = pass; }
+		ForwardPassProcessor(ForwardPass* pass);
 		~ForwardPassProcessor() = default;
 		
 	protected:

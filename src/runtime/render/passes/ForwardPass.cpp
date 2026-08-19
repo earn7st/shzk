@@ -15,10 +15,9 @@ namespace shzk
 	void ForwardPass::Init()
 	{
 		m_meshPassProcessor = std::make_shared<ForwardPassProcessor>(this);
-		MeshPass::Init();	// mesh pass processor init
 
 		m_vertexShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "forward.vert.spv", SHADER_FREQUENCY_VERTEX, "main");
-		m_fragShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "forward.frag.spv", SHADER_FREQUENCY_FRAGMENT, "main");
+		m_fragmentShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "forward.frag.spv", SHADER_FREQUENCY_FRAGMENT, "main");
 
 		// TODO
 		RHIRootSignatureInfo info{};
@@ -28,13 +27,50 @@ namespace shzk
 
 // ForwardPassProcessor	
 
+	ForwardPassProcessor::ForwardPassProcessor(ForwardPass* pass)
+		: MeshPassProcessor(), m_pass(pass)
+	{
+		for (auto& rt : m_renderState.blendState.renderTargets)
+		{
+			rt.bEnable = false;
+			rt.colorWriteMask = COLOR_WRITE_MASK_RGBA;
+			rt.colorBlendOp = BlendOperation::Add;
+			rt.alphaBlendOp = BlendOperation::Add;
+			rt.colorSrcBlend = BlendFactor::One;
+			rt.colorDstBlend = BlendFactor::Zero;
+			rt.alphaSrcBlend = BlendFactor::One;
+			rt.alphaDstBlend = BlendFactor::Zero;
+		}
+
+		m_renderState.depthStencilState.bEnableDepthTest = true;	// default value, could be override by material parameters
+		m_renderState.depthStencilState.bEnableDepthWrite = true;
+		m_renderState.depthStencilState.depthTest = CompareFunction::LessEqual;
+
+		// m_renderState.stencilRef = 0;
+	}
+
 	void ForwardPassProcessor::AddMeshBatch(const MeshBatch& batch)
 	{
-		const std::shared_ptr<const Material> material = batch.material;
+		std::shared_ptr<Material> material = batch.material;
 		if (!material) return;
 		if (material->GetPassMask() & PASS_MASK_FORWARD_PASS)
 		{
-			BuildMeshDrawCommands(batch);
+			std::shared_ptr<Shader> vertexShader = material->GetVertexShader();
+			std::shared_ptr<Shader> fragmentShader = material->GetFragmentShader();
+
+			MeshPassProcessorRenderState renderState = m_renderState;	// baseline
+			renderState.depthStencilState.bEnableDepthTest	= material->DepthTest();
+			renderState.depthStencilState.bEnableDepthWrite = material->DepthWrite();
+			renderState.depthStencilState.depthTest			= material->GetDepthCompare();
+
+			BuildMeshDrawCommands(
+				batch,
+				material,
+				renderState,
+				vertexShader != nullptr ? vertexShader->m_shader : m_pass->GetVertexShader()->m_shader,
+				fragmentShader != nullptr ? fragmentShader->m_shader : m_pass->GetFragmentShader()->m_shader,
+				material->GetRasterizerCullMode(),
+				material->GetRasterizerFillMode());
 		}
 	}
 }
