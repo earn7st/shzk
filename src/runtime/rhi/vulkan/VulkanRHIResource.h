@@ -142,6 +142,7 @@ namespace shzk
 		inline VkPipelineMultisampleStateCreateInfo GetMultisampleStateCreateInfo();
 		inline VkPipelineDepthStencilStateCreateInfo GetDepthStencilStateCreateInfo(const RHIDepthStencilState& state);
 		inline VkPipelineColorBlendStateCreateInfo GetColorBlendStateCreateInfo(const RHIBlendState& state, uint32_t attachmentCount);
+		inline VkPipelineDynamicStateCreateInfo GetDynamicStateCreateInfo();
 
 	protected:
 		void Destroy() override final;
@@ -154,13 +155,14 @@ namespace shzk
 		std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
 		std::vector<VkPipelineColorBlendAttachmentState> m_blendStates;
 		
-		std::vector<VkDynamicState> dynamicStates =
+		// TODO: More Dynamic State
+		std::vector<VkDynamicState> m_dynamicStates =
 		{
 			VK_DYNAMIC_STATE_VIEWPORT,
 			VK_DYNAMIC_STATE_SCISSOR,
-			VK_DYNAMIC_STATE_LINE_WIDTH,
-			VK_DYNAMIC_STATE_VERTEX_INPUT_EXT,
-			VK_DYNAMIC_STATE_DEPTH_BIAS,
+			// VK_DYNAMIC_STATE_LINE_WIDTH,
+			// VK_DYNAMIC_STATE_VERTEX_INPUT_EXT,
+			// VK_DYNAMIC_STATE_DEPTH_BIAS,
 			// VK_DYNAMIC_STATE_BLEND_CONSTANTS,
 			// VK_DYNAMIC_STATE_DEPTH_BOUNDS,
 			// VK_DYNAMIC_STATE_STENCIL_REFERENCE

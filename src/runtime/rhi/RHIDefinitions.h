@@ -823,10 +823,11 @@ namespace shzk
 		RHIBlendState			blendState = {};
 		RHIDepthStencilState	depthStencilState = {};
 
-		// RenderPass
+		// Output (RenderPass)
 		std::array<RHIFormat, MAX_RENDER_TARGETS>	colorAttachmentFormats = { FORMAT_UKNOWN };
 		RHIFormat									depthStencilAttachmentFormat = FORMAT_UKNOWN;	
 		uint32_t viewMask = 0b00000000;	// multiview: single view
+		// uint32_t numSamples = 1;		// TODO: MSAA
 
 		friend bool operator== (const RHIGraphicsPipelineInfo& a, const RHIGraphicsPipelineInfo& b)
 		{

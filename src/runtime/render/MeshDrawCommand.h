@@ -40,10 +40,6 @@ namespace shzk
 		// Draw command parameters
 		uint32_t m_firstIndex;
 		uint32_t m_numPrimitives;
-		// uint32_t m_numInstances;
-
-		// redundant
-		// PrimitiveType m_primitiveType;
 
 	public:
 		static void SubmitDraw();

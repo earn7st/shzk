@@ -320,7 +320,7 @@ namespace shzk
         VkPipelineMultisampleStateCreateInfo    multisampleStateCI      = GetMultisampleStateCreateInfo();
         VkPipelineDepthStencilStateCreateInfo   depthStencilStateCI     = GetDepthStencilStateCreateInfo(info.depthStencilState);
         VkPipelineColorBlendStateCreateInfo     colorBlendStateInfo     = GetColorBlendStateCreateInfo(info.blendState, attachmentCount);
-        VkPipelineDynamicStateCreateInfo        dynamicStateInfo;
+        VkPipelineDynamicStateCreateInfo        dynamicStateInfo        = GetDynamicStateCreateInfo();
 
 		VkGraphicsPipelineCreateInfo pipelineCI{};
         pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -443,15 +443,44 @@ namespace shzk
 
     inline VkPipelineColorBlendStateCreateInfo VulkanRHIGraphicsPipeline::GetColorBlendStateCreateInfo(const RHIBlendState& state, uint32_t attachmentCount)
     {
+        m_blendStates.clear();
+        m_blendStates.reserve(attachmentCount);
+
+        for (uint32_t i = 0; i < attachmentCount; ++i)
+        {
+            const RHIBlendState::RenderTarget& rt = state.renderTargets[i];
+
+            VkPipelineColorBlendAttachmentState attachment{};
+            attachment.blendEnable = rt.bEnable ? VK_TRUE : VK_FALSE;
+            attachment.srcColorBlendFactor = VulkanUtil::BlendFactorToVk(rt.colorSrcBlend);
+            attachment.dstColorBlendFactor = VulkanUtil::BlendFactorToVk(rt.colorDstBlend);
+            attachment.colorBlendOp = VulkanUtil::BlendOpToVk(rt.colorBlendOp);
+            attachment.srcAlphaBlendFactor = VulkanUtil::BlendFactorToVk(rt.alphaSrcBlend);
+            attachment.dstAlphaBlendFactor = VulkanUtil::BlendFactorToVk(rt.alphaDstBlend);
+            attachment.alphaBlendOp = VulkanUtil::BlendOpToVk(rt.alphaBlendOp);
+            attachment.colorWriteMask = rt.colorWriteMask;
+            m_blendStates.push_back(attachment);
+        }
+
         VkPipelineColorBlendStateCreateInfo info{};
-        info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        info.pNext = nullptr;
-        info.flags = 0;
-        info.logicOpEnable;
-        info.logicOp;
-        info.attachmentCount;
-        info.pAttachments;
+        info.sType              = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        info.pNext              = nullptr;
+        info.flags              = 0;
+        info.logicOpEnable      = VK_FALSE;
+        info.logicOp            = VK_LOGIC_OP_COPY;
+        info.attachmentCount    = attachmentCount;
+        info.pAttachments       = m_blendStates.data();
         info.blendConstants;
+
+        return info;
+    }
+
+    inline VkPipelineDynamicStateCreateInfo VulkanRHIGraphicsPipeline::GetDynamicStateCreateInfo()
+    {
+        VkPipelineDynamicStateCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        info.dynamicStateCount = (uint32_t)m_dynamicStates.size();
+        info.pDynamicStates = m_dynamicStates.data();
 
         return info;
     }

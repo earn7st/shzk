@@ -528,5 +528,43 @@ namespace shzk
             }
             return VK_COMPARE_OP_MAX_ENUM;
         }
+
+        static VkBlendFactor BlendFactorToVk(BlendFactor factor)
+        {
+            switch (factor)
+            {
+            case BlendFactor::Zero:                      return VK_BLEND_FACTOR_ZERO;
+            case BlendFactor::One:                       return VK_BLEND_FACTOR_ONE;
+            case BlendFactor::SourceColor:               return VK_BLEND_FACTOR_SRC_COLOR;
+            case BlendFactor::InverseSourceColor:        return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+            case BlendFactor::SourceAlpha:               return VK_BLEND_FACTOR_SRC_ALPHA;
+            case BlendFactor::InverseSourceAlpha:        return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            case BlendFactor::DestAlpha:                 return VK_BLEND_FACTOR_DST_ALPHA;
+            case BlendFactor::InverseDestAlpha:          return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+            case BlendFactor::DestColor:                 return VK_BLEND_FACTOR_DST_COLOR;
+            case BlendFactor::InverseDestColor:          return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+            case BlendFactor::ConstantBlendFactor:       return VK_BLEND_FACTOR_CONSTANT_COLOR;
+            case BlendFactor::InverseConstantBlendFactor:return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+            case BlendFactor::Source1Color:              return VK_BLEND_FACTOR_SRC1_COLOR;
+            case BlendFactor::InverseSource1Color:       return VK_BLEND_FACTOR_ONE_MINUS_SRC1_COLOR;
+            case BlendFactor::Source1Alpha:              return VK_BLEND_FACTOR_SRC1_ALPHA;
+            case BlendFactor::InverseSource1Alpha:       return VK_BLEND_FACTOR_ONE_MINUS_SRC1_ALPHA;
+            default:                                     return VK_BLEND_FACTOR_ONE;
+            }
+        }
+
+        static VkBlendOp BlendOpToVk(BlendOp op)
+        {
+            switch (op)
+            {
+            case BlendOp::Add:             return VK_BLEND_OP_ADD;
+            case BlendOp::Subtract:        return VK_BLEND_OP_SUBTRACT;
+            case BlendOp::ReverseSubtract: return VK_BLEND_OP_REVERSE_SUBTRACT;
+            case BlendOp::Min:             return VK_BLEND_OP_MIN;
+            case BlendOp::max:             return VK_BLEND_OP_MAX;
+            default:                       return VK_BLEND_OP_ADD;
+            }
+        }
+
     }
 }
