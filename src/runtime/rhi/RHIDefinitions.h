@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <glm/glm.hpp>
 
 namespace shzk
 {
@@ -309,7 +310,7 @@ namespace shzk
 		Max,
 	};
 
-	enum class BlendOperation : uint8_t
+	enum class BlendOp : uint8_t
 	{
 		Add,
 		Subtract, 
@@ -418,6 +419,23 @@ namespace shzk
 		UShort4N,		// 4 X 16 bit word unsigned, normalized 
 		URGB10A2N,		// 10 bit r, g, b and 2 bit a normalized to (value/1023.0f, value/1023.0f, value/1023.0f, value/3.0f)
 		UInt,
+
+		Max,
+	};
+
+	enum class AttachmentLoadOp : uint8_t
+	{
+		Load = 0,
+		Clear = 1,
+		DontCare = 2,
+
+		Max,
+	};
+
+	enum class AttachmentStoreOp : uint8_t
+	{
+		Store = 0,
+		DontCare = 0,
 
 		Max,
 	};
@@ -639,6 +657,8 @@ namespace shzk
 		uint8_t attributeIndex;
 		uint16_t stride;
 
+		bool bUseInstanceIndex = false;	// currently only support per vertex input rate
+
 		friend bool operator== (const VertexElement& a, const VertexElement& b)
 		{
 			return  a.streamIndex == b.streamIndex &&
@@ -679,11 +699,11 @@ namespace shzk
 	{
 		struct RenderTarget
 		{
-			BlendOperation colorBlendOp;
+			BlendOp colorBlendOp;
 			BlendFactor colorSrcBlend;
 			BlendFactor colorDstBlend;
 
-			BlendOperation alphaBlendOp;
+			BlendOp alphaBlendOp;
 			BlendFactor alphaSrcBlend;
 			BlendFactor alphaDstBlend;
 
@@ -722,8 +742,6 @@ namespace shzk
 		float slopeScaleDepthBias	= 0.0f;
 		RasterizerDepthClipMode depthClipMode = RasterizerDepthClipMode::DepthClip;
 
-		bool bAllowMSAA = false;
-
 		friend bool operator==(const RHIRasterizerState& a, const RHIRasterizerState& b)
 		{
 			return	a.fillMode == b.fillMode &&
@@ -747,22 +765,21 @@ namespace shzk
 				a.bEnableDepthWrite == b.bEnableDepthWrite &&
 				a.depthTest == b.depthTest;
 		}
-
-		/*
-		bool bEnableFrontFaceStencil			= false;
-		CompareFunction frontFaceStencilTest;
-		StencilOp frontFaceStencilFailStencilOp;
-		StencilOp frontFaceDepthFailStencilOp;
-		StencilOp frontFacePassStencilOp;
-		bool bEnableBackFaceStencil;
-		CompareFunction backFaceStencilTest;
-		StencilOp backFaceStencilFailStencilOp;
-		StencilOp backFaceDepthFailStencilOp;
-		StencilOp backFacePassStencilOp;
-		uint8_t stencilReadMask;
-		uint8_t stencilWriteMask;
-		*/
 	} RHIDepthStencilState;
+
+	typedef struct RHIRenderPassAttachment
+	{
+		std::shared_ptr<RHITextureView> view;
+
+		RHIResourceState layout = RHIResourceState::ColorAttachment;
+
+		AttachmentLoadOp  loadOp = AttachmentLoadOp::Clear;
+		AttachmentStoreOp storeOp = AttachmentStoreOp::Store;
+
+		glm::vec4	clearColor = { 0.0f, 0.0f, 0.0f, 0.0f };
+		float		clearDepth = 1.0f;
+		uint32_t	clearStencil = 0;
+	} RHIRenderPassAttachment;
 
 // PipelineState, Pipeline
 	typedef struct RHIRootSignatureInfo
@@ -781,14 +798,48 @@ namespace shzk
 
 	} RHIRootSignatureInfo;
 
+	// Since we use Dynamic Rendering, so no actual VkRenderPass or VkFramebuffer are created
+	// equals to RenderPass + Framebuffer abstraction
+	typedef struct RHIRenderPassInfo	
+	{
+		Extent2D renderArea;
+		uint32_t layerCount = 1;
+		uint32_t viewMask = 0;
+
+		std::array<RHIRenderPassAttachment, MAX_RENDER_TARGETS> colorAttachments;
+		RHIRenderPassAttachment	depthStencilAttachment;
+	} RHIRenderPassInfo;
+
 	typedef struct RHIGraphicsPipelineInfo
 	{
 		std::shared_ptr<RHIShader> vertexShader;
 		std::shared_ptr<RHIShader> fragmentShader;
 		
-		std::shared_ptr<RHIRootSignature> rootSignature;
+		std::shared_ptr<RHIRootSignature> rootSignature;	
 
+		RHIVertexDeclaration	vertexInputState = {};
+		PrimitiveType			primitiveType = PrimitiveType::TriangleList;
+		RHIRasterizerState		rasterizerState = {};
+		RHIBlendState			blendState = {};
+		RHIDepthStencilState	depthStencilState = {};
 
+		// RenderPass
+		std::array<RHIFormat, MAX_RENDER_TARGETS>	colorAttachmentFormats = { FORMAT_UKNOWN };
+		RHIFormat									depthStencilAttachmentFormat = FORMAT_UKNOWN;	
+		uint32_t viewMask = 0b00000000;	// multiview: single view
+
+		friend bool operator== (const RHIGraphicsPipelineInfo& a, const RHIGraphicsPipelineInfo& b)
+		{
+			return  a.vertexShader.get() == b.vertexShader.get() &&
+				a.fragmentShader.get() == b.fragmentShader.get() &&
+				a.rootSignature.get() == b.rootSignature.get() &&
+				a.vertexInputState == b.vertexInputState &&
+				a.primitiveType == b.primitiveType &&
+				a.rasterizerState == b.rasterizerState &&
+				a.blendState == b.blendState &&
+				a.depthStencilState == b.depthStencilState &&
+				a.viewMask == b.viewMask;
+		}
 
 	} RHIGraphicsPipelineInfo;
 

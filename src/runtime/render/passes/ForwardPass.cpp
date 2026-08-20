@@ -33,13 +33,13 @@ namespace shzk
 		for (auto& rt : m_renderState.blendState.renderTargets)
 		{
 			rt.bEnable = false;
-			rt.colorWriteMask = COLOR_WRITE_MASK_RGBA;
-			rt.colorBlendOp = BlendOperation::Add;
-			rt.alphaBlendOp = BlendOperation::Add;
-			rt.colorSrcBlend = BlendFactor::One;
-			rt.colorDstBlend = BlendFactor::Zero;
-			rt.alphaSrcBlend = BlendFactor::One;
-			rt.alphaDstBlend = BlendFactor::Zero;
+			rt.colorWriteMask	= COLOR_WRITE_MASK_RGBA;
+			rt.colorBlendOp		= BlendOp::Add;
+			rt.alphaBlendOp		= BlendOp::Add;
+			rt.colorSrcBlend	= BlendFactor::One;
+			rt.colorDstBlend	= BlendFactor::Zero;
+			rt.alphaSrcBlend	= BlendFactor::One;
+			rt.alphaDstBlend	= BlendFactor::Zero;
 		}
 
 		m_renderState.depthStencilState.bEnableDepthTest = true;	// default value, could be override by material parameters

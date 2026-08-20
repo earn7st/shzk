@@ -48,10 +48,10 @@ namespace shzk
 		resource.fence->Wait();
 		
 		
-		std::shared_ptr<RHITexture> currentSwapchainTexture = m_rhiSwapchain->AcquireNextTexture(nullptr, resource.startSemaphore);
 		cmd->SetContext(resource.cmdContext.get());
 		cmd->BeginCommand();
 
+		std::shared_ptr<RHITexture> currentSwapchainTexture = m_rhiSwapchain->AcquireNextTexture(nullptr, resource.startSemaphore);
 		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::Undefined, RHIResourceState::TransferDst });	//TransferDst: Clear Color Required
 		cmd->TextureClearColor(currentSwapchainTexture, { 0.1f, 0.2f, 0.4f, 1.0f });
 		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::TransferDst, RHIResourceState::Present });

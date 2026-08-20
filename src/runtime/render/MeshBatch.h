@@ -34,9 +34,9 @@ namespace shzk
 	typedef struct MeshBatch
 	{
 		std::vector<MeshBatchElement>	elements;
-		// MeshBatchElement			element;
 		std::shared_ptr<VertexFactory>	vertexFactory;
 		std::shared_ptr<Material>	material;
+
 		PrimitiveType primitiveType = PrimitiveType::TriangleList;
 	} MeshBatch;
 }

@@ -136,11 +136,35 @@ namespace shzk
 		inline const VkPipeline& GetHandle() { return m_handle; }
 		inline const VkPipelineLayout& GetLayout() { return m_layout; }
 
+		inline VkPipelineVertexInputStateCreateInfo GetVertexInputStateCreateInfo(const RHIVertexDeclaration& declaration);
+		inline VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyStateCreateInfo(PrimitiveType primitiveType);
+		inline VkPipelineRasterizationStateCreateInfo GetRasterizationStateCreateInfo(const RHIRasterizerState& state);
+		inline VkPipelineMultisampleStateCreateInfo GetMultisampleStateCreateInfo();
+		inline VkPipelineDepthStencilStateCreateInfo GetDepthStencilStateCreateInfo(const RHIDepthStencilState& state);
+		inline VkPipelineColorBlendStateCreateInfo GetColorBlendStateCreateInfo(const RHIBlendState& state, uint32_t attachmentCount);
+
 	protected:
 		void Destroy() override final;
 
 	private:
 		VkPipeline m_handle;
 		VkPipelineLayout m_layout;
+
+		std::vector<VkVertexInputBindingDescription> m_bindingDescriptions;
+		std::vector<VkVertexInputAttributeDescription> m_attributeDescriptions;
+		std::vector<VkPipelineColorBlendAttachmentState> m_blendStates;
+		
+		std::vector<VkDynamicState> dynamicStates =
+		{
+			VK_DYNAMIC_STATE_VIEWPORT,
+			VK_DYNAMIC_STATE_SCISSOR,
+			VK_DYNAMIC_STATE_LINE_WIDTH,
+			VK_DYNAMIC_STATE_VERTEX_INPUT_EXT,
+			VK_DYNAMIC_STATE_DEPTH_BIAS,
+			// VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+			// VK_DYNAMIC_STATE_DEPTH_BOUNDS,
+			// VK_DYNAMIC_STATE_STENCIL_REFERENCE
+		};
+
 	};
 }

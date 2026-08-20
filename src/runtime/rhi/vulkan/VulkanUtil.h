@@ -409,7 +409,7 @@ namespace shzk
 
         static VkShaderStageFlags ShaderFrequencyToVkStageFlags(ShaderFrequency frequency)
         {
-            VkShaderStageFlags stageFlags;
+            VkShaderStageFlags stageFlags = 0;
             if (frequency & SHADER_FREQUENCY_COMPUTE)        stageFlags |= VK_SHADER_STAGE_COMPUTE_BIT;
             if (frequency & SHADER_FREQUENCY_VERTEX)         stageFlags |= VK_SHADER_STAGE_VERTEX_BIT;
             if (frequency & SHADER_FREQUENCY_FRAGMENT)       stageFlags |= VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -435,6 +435,98 @@ namespace shzk
             default:                    filter = VK_FILTER_LINEAR;      break;
             }
             return  filter;
+        }
+
+        static VkPushConstantRange PushConstantInfoToVk(const PushConstantInfo& info)
+        {
+            VkPushConstantRange range{};
+            range.stageFlags = ShaderFrequencyToVkStageFlags(info.frequency);
+            range.offset = info.offset;
+            range.size = info.size;
+            return range;
+        }
+
+        static VkFormat VertexElementTypeToVkFormat(VertexElementType type)
+        {
+            switch (type)
+            {
+            case VertexElementType::Float1:       return VK_FORMAT_R32_SFLOAT;
+            case VertexElementType::Float2:       return VK_FORMAT_R32G32_SFLOAT;
+            case VertexElementType::Float3:       return VK_FORMAT_R32G32B32_SFLOAT;
+            case VertexElementType::Float4:       return VK_FORMAT_R32G32B32A32_SFLOAT;
+            case VertexElementType::PackedNormal: return VK_FORMAT_R8G8B8A8_SNORM;
+            case VertexElementType::UByte4:       return VK_FORMAT_R8G8B8A8_UINT;
+            case VertexElementType::UByte4N:      return VK_FORMAT_R8G8B8A8_UNORM;
+            case VertexElementType::Color:        return VK_FORMAT_R8G8B8A8_UNORM;
+            case VertexElementType::Short2:       return VK_FORMAT_R16G16_SINT;
+            case VertexElementType::Short4:       return VK_FORMAT_R16G16B16A16_SINT;
+            case VertexElementType::Short2N:      return VK_FORMAT_R16G16_SNORM;
+            case VertexElementType::Half2:        return VK_FORMAT_R16G16_SFLOAT;
+            case VertexElementType::Half4:        return VK_FORMAT_R16G16B16A16_SFLOAT;
+            case VertexElementType::Short4N:      return VK_FORMAT_R16G16B16A16_SNORM;
+            case VertexElementType::UShort2:      return VK_FORMAT_R16G16_UINT;
+            case VertexElementType::UShort4:      return VK_FORMAT_R16G16B16A16_UINT;
+            case VertexElementType::UShort2N:     return VK_FORMAT_R16G16_UNORM;
+            case VertexElementType::UShort4N:     return VK_FORMAT_R16G16B16A16_UNORM;
+            case VertexElementType::URGB10A2N:    return VK_FORMAT_A2R10G10B10_UNORM_PACK32;
+            case VertexElementType::UInt:         return VK_FORMAT_R32_UINT;
+            case VertexElementType::None:
+            default:                              return VK_FORMAT_UNDEFINED;
+            }
+        }
+
+        static VkPrimitiveTopology PrimitiveTypeToVkTopology(PrimitiveType type)
+        {
+            switch (type)
+            {
+            case PrimitiveType::TriangleList:       return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;    
+            case PrimitiveType::TriangleStrip:      return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;  
+            case PrimitiveType::LineList:           return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;       
+            case PrimitiveType::LineStrip:          return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;      
+            case PrimitiveType::PointList:          return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+            default:                                SHZK_LOG_ERROR("Unsupported primitive type!"); break;
+            }
+            return VK_PRIMITIVE_TOPOLOGY_MAX_ENUM;
+        }
+
+        static VkPolygonMode RasterizerFillModeToVkPolygonMode(RasterizerFillMode mode)
+        {
+            switch (mode)
+            {
+            case RasterizerFillMode::Point:         return VK_POLYGON_MODE_POINT;
+            case RasterizerFillMode::Wireframe:     return VK_POLYGON_MODE_LINE;
+            case RasterizerFillMode::Solid:         return VK_POLYGON_MODE_FILL;
+            default:                                SHZK_LOG_ERROR("Unsupported rasterizer fill mode!"); break;
+            }
+            return VK_POLYGON_MODE_MAX_ENUM;
+        }
+
+        static VkCullModeFlags RasterizerCullModeToVkCullMode(RasterizerCullMode mode)
+        {
+            switch (mode)
+            {
+            case RasterizerCullMode::CW:    return VK_CULL_MODE_BACK_BIT;
+            case RasterizerCullMode::CCW:   return VK_CULL_MODE_FRONT_BIT;
+            case RasterizerCullMode::None:  return VK_CULL_MODE_NONE;
+            default:                        return VK_CULL_MODE_NONE;
+            }
+        }
+
+        static VkCompareOp CompareOpToVk(CompareFunction op)
+        {
+            switch (op)
+            {
+            case CompareFunction::Less:             return VK_COMPARE_OP_LESS;
+            case CompareFunction::LessEqual:        return VK_COMPARE_OP_LESS_OR_EQUAL;
+            case CompareFunction::Greater:          return VK_COMPARE_OP_GREATER;
+            case CompareFunction::GreaterEqual:     return VK_COMPARE_OP_GREATER_OR_EQUAL;
+            case CompareFunction::Equal:            return VK_COMPARE_OP_EQUAL;
+            case CompareFunction::NotEqual:         return VK_COMPARE_OP_NOT_EQUAL;
+            case CompareFunction::Never:            return VK_COMPARE_OP_NEVER;
+            case CompareFunction::Always:           return VK_COMPARE_OP_ALWAYS;
+            default:                                SHZK_LOG_ERROR("Unsupported compare function!");
+            }
+            return VK_COMPARE_OP_MAX_ENUM;
         }
     }
 }

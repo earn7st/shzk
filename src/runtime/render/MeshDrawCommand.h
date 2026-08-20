@@ -44,6 +44,7 @@ namespace shzk
 
 		// redundant
 		// PrimitiveType m_primitiveType;
+
 	public:
 		static void SubmitDraw();
 

@@ -268,33 +268,192 @@ namespace shzk
     VulkanRHIGraphicsPipeline::VulkanRHIGraphicsPipeline(const RHIGraphicsPipelineInfo& info, VulkanRHI& rhi)
         : RHIGraphicsPipeline(info)
     {
-		VkGraphicsPipelineCreateInfo pipelineInfo{};
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        
-        /*
-        *
-    typedef struct VkGraphicsPipelineCreateInfo {
-    VkStructureType                                  sType;
-    const void*                                      pNext;
-    VkPipelineCreateFlags                            flags;
-    uint32_t                                         stageCount;
-    const VkPipelineShaderStageCreateInfo*           pStages;
-    const VkPipelineVertexInputStateCreateInfo*      pVertexInputState;
-    const VkPipelineInputAssemblyStateCreateInfo*    pInputAssemblyState;
-    const VkPipelineTessellationStateCreateInfo*     pTessellationState;
-    const VkPipelineViewportStateCreateInfo*         pViewportState;
-    const VkPipelineRasterizationStateCreateInfo*    pRasterizationState;
-    const VkPipelineMultisampleStateCreateInfo*      pMultisampleState;
-    const VkPipelineDepthStencilStateCreateInfo*     pDepthStencilState;
-    const VkPipelineColorBlendStateCreateInfo*       pColorBlendState;
-    const VkPipelineDynamicStateCreateInfo*          pDynamicState;
-    VkPipelineLayout                                 layout;
-    VkRenderPass                                     renderPass;
-    uint32_t                                         subpass;
-    VkPipeline                                       basePipelineHandle;
-    int32_t                                          basePipelineIndex;
-} VkGraphicsPipelineCreateInfo;
-        */
+        // Pipeline Layout
+        std::vector<VkPushConstantRange> pushConstantRanges;
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+        for (const auto& pushConstant : info.rootSignature->GetInfo().GetPushConstants())
+        {
+            pushConstantRanges.push_back(VulkanUtil::PushConstantInfoToVk(pushConstant));
+        }
+        for (const auto& layout : CastTo<VulkanRHIRootSignature>(info.rootSignature)->GetLayouts())
+        {
+            descriptorSetLayouts.push_back(layout.handle);
+        }
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorSetLayouts.size();
+        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+        pipelineLayoutInfo.pushConstantRangeCount = (uint32_t)pushConstantRanges.size();
+        pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
+        VK_CHECK(vkCreatePipelineLayout(VULKAN_RHI()->GetDevice(), &pipelineLayoutInfo, nullptr, &m_layout));
+
+        // Shaders
+        std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
+        if (info.vertexShader)   shaderStages.push_back(CastTo<VulkanRHIShader>(info.vertexShader)->GetShaderStageCreateInfo());
+        if (info.fragmentShader) shaderStages.push_back(CastTo<VulkanRHIShader>(info.fragmentShader)->GetShaderStageCreateInfo());
+        //if (info.geometryShader) shaderStages.push_back(ResourceCast(info.geometryShader)->GetShaderStageCreateInfo());   // TODO: GeometryShader
+
+        // Render Pass
+        uint32_t attachmentCount = 0;
+        std::vector<VkFormat> colorAttachmentFormats;
+        for (const RHIFormat& format : info.colorAttachmentFormats)
+        {
+            attachmentCount++;
+            if (format == FORMAT_UKNOWN) break;
+            colorAttachmentFormats.push_back(VulkanUtil::RHIFormatToVkFormat(format));
+        }
+
+        VkPipelineRenderingCreateInfo renderingInfo{};
+        renderingInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+        renderingInfo.viewMask = info.viewMask;
+        renderingInfo.colorAttachmentCount = attachmentCount;
+        renderingInfo.pColorAttachmentFormats = colorAttachmentFormats.data();
+        renderingInfo.depthAttachmentFormat = VulkanUtil::RHIFormatToVkFormat(info.depthStencilAttachmentFormat);
+        renderingInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+
+        // States
+        VkPipelineVertexInputStateCreateInfo    vertexInputStateCI      = GetVertexInputStateCreateInfo(info.vertexInputState);
+        VkPipelineInputAssemblyStateCreateInfo  inputAssemblyStateCI    = GetInputAssemblyStateCreateInfo(info.primitiveType);
+        // VkPipelineTessellationStateCreateInfo   tessellationStateCI;   
+        // VkPipelineViewportStateCreateInfo       viewportStateCI;  // Use Dynamic
+        VkPipelineRasterizationStateCreateInfo  rasterizationStateCI    = GetRasterizationStateCreateInfo(info.rasterizerState);
+        VkPipelineMultisampleStateCreateInfo    multisampleStateCI      = GetMultisampleStateCreateInfo();
+        VkPipelineDepthStencilStateCreateInfo   depthStencilStateCI     = GetDepthStencilStateCreateInfo(info.depthStencilState);
+        VkPipelineColorBlendStateCreateInfo     colorBlendStateInfo     = GetColorBlendStateCreateInfo(info.blendState, attachmentCount);
+        VkPipelineDynamicStateCreateInfo        dynamicStateInfo;
+
+		VkGraphicsPipelineCreateInfo pipelineCI{};
+        pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineCI.flags = 0;
+        pipelineCI.stageCount = (uint32_t)shaderStages.size();
+        pipelineCI.pStages = shaderStages.data();
+        pipelineCI.pVertexInputState = &vertexInputStateCI;
+        pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
+        pipelineCI.pTessellationState = nullptr;
+        pipelineCI.pViewportState = nullptr;    // use dynamic
+        pipelineCI.pRasterizationState = &rasterizationStateCI;
+        pipelineCI.pMultisampleState = &multisampleStateCI;
+        pipelineCI.pDepthStencilState = &depthStencilStateCI;
+        pipelineCI.pColorBlendState;
+        pipelineCI.pDynamicState;
+        pipelineCI.layout = m_layout;
+        pipelineCI.renderPass = VK_NULL_HANDLE;
+        pipelineCI.subpass = 0;     //?
+        pipelineCI.basePipelineHandle = VK_NULL_HANDLE; //?
+        pipelineCI.basePipelineIndex = 0; //?
+
+        VK_CHECK(vkCreateGraphicsPipelines(VULKAN_RHI()->GetDevice(), VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &m_handle));
+    }
+
+    inline VkPipelineVertexInputStateCreateInfo VulkanRHIGraphicsPipeline::GetVertexInputStateCreateInfo(const RHIVertexDeclaration& vertexInputState)
+    {
+        for (const VertexElement& element : vertexInputState.elements)
+        {
+            uint8_t binding = element.streamIndex;
+            VkVertexInputAttributeDescription attributeDescription = {};
+            attributeDescription.binding = binding;
+            attributeDescription.location = element.attributeIndex;
+            attributeDescription.format = VulkanUtil::VertexElementTypeToVkFormat(element.type);
+            attributeDescription.offset = element.offset;
+            m_attributeDescriptions.push_back(attributeDescription);
+
+            while (m_bindingDescriptions.size() < element.streamIndex + 1) m_bindingDescriptions.push_back({});
+            m_bindingDescriptions[binding].binding = binding;
+            m_bindingDescriptions[binding].stride = element.stride;
+            m_bindingDescriptions[binding].inputRate = element.bUseInstanceIndex ? VK_VERTEX_INPUT_RATE_INSTANCE : VK_VERTEX_INPUT_RATE_VERTEX;
+        }
+
+        VkPipelineVertexInputStateCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        info.vertexBindingDescriptionCount = (uint32_t)m_bindingDescriptions.size();
+        info.pVertexBindingDescriptions = m_bindingDescriptions.data();
+        info.vertexAttributeDescriptionCount = (uint32_t)m_attributeDescriptions.size();
+        info.pVertexAttributeDescriptions = m_attributeDescriptions.data();
+
+        return info;
+    }
+
+    inline VkPipelineInputAssemblyStateCreateInfo VulkanRHIGraphicsPipeline::GetInputAssemblyStateCreateInfo(PrimitiveType primitiveType)
+    {
+        VkPipelineInputAssemblyStateCreateInfo info{};
+        info.sType      = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        info.pNext      = nullptr;
+        info.flags      = 0;
+        info.topology   = VulkanUtil::PrimitiveTypeToVkTopology(primitiveType);
+        info.primitiveRestartEnable = VK_FALSE;
+
+        return info;
+    }
+
+    inline VkPipelineRasterizationStateCreateInfo VulkanRHIGraphicsPipeline::GetRasterizationStateCreateInfo(const RHIRasterizerState& state)
+    {
+        VkPipelineRasterizationStateCreateInfo info{};
+        info.sType                      = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        info.pNext                      = nullptr;
+        info.flags                      = 0;
+        info.depthClampEnable           = state.depthClipMode == RasterizerDepthClipMode::DepthClamp ? VK_TRUE : VK_FALSE;
+        info.rasterizerDiscardEnable    = VK_FALSE;
+        info.polygonMode                = VulkanUtil::RasterizerFillModeToVkPolygonMode(state.fillMode);
+        info.cullMode                   = VulkanUtil::RasterizerCullModeToVkCullMode(state.cullMode);
+        info.frontFace                  = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        info.depthBiasEnable            = VK_TRUE;
+        info.depthBiasConstantFactor    = state.depthBias;
+        info.depthBiasClamp             = 0.0f;
+        info.depthBiasSlopeFactor       = state.slopeScaleDepthBias;
+        info.lineWidth                  = 1.0f;
+
+        return info;
+    }
+    
+    inline VkPipelineMultisampleStateCreateInfo VulkanRHIGraphicsPipeline::GetMultisampleStateCreateInfo()
+    {
+        VkPipelineMultisampleStateCreateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        info.sampleShadingEnable = VK_FALSE;
+        info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;     // TODO: MSAA
+        info.minSampleShading = 1.0f;
+        info.pSampleMask = nullptr;
+        info.alphaToCoverageEnable = VK_FALSE;
+        info.alphaToOneEnable = VK_FALSE;
+        info.flags = 0;
+
+        return info;
+    }
+
+    inline VkPipelineDepthStencilStateCreateInfo VulkanRHIGraphicsPipeline::GetDepthStencilStateCreateInfo(const RHIDepthStencilState& state)
+    {
+        VkPipelineDepthStencilStateCreateInfo info{};
+        info.sType                  = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        info.pNext                  = nullptr;
+        info.flags                  = 0;
+        info.depthTestEnable        = state.bEnableDepthTest;
+        info.depthWriteEnable       = state.bEnableDepthWrite;
+        info.depthCompareOp         = VulkanUtil::CompareOpToVk(state.depthTest);
+
+        // not implemented
+        info.depthBoundsTestEnable  = VK_FALSE;
+        info.stencilTestEnable      = VK_FALSE;
+        info.front                  = {};
+        info.back                   = {};
+        info.minDepthBounds         = 0.f;
+        info.maxDepthBounds         = 1.f;
+
+        return info;
+    }
+
+    inline VkPipelineColorBlendStateCreateInfo VulkanRHIGraphicsPipeline::GetColorBlendStateCreateInfo(const RHIBlendState& state, uint32_t attachmentCount)
+    {
+        VkPipelineColorBlendStateCreateInfo info{};
+        info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        info.pNext = nullptr;
+        info.flags = 0;
+        info.logicOpEnable;
+        info.logicOp;
+        info.attachmentCount;
+        info.pAttachments;
+        info.blendConstants;
+
+        return info;
     }
 
     void VulkanRHIGraphicsPipeline::Destroy()
