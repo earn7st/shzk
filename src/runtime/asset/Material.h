@@ -2,6 +2,8 @@
 
 #include "Asset.h"
 #include "runtime/log/Log.h"
+#include "runtime/render/resources/Buffer.h"
+#include "runtime/render/resources/RenderStructs.h"
 #include "runtime/rhi/RHIDefinitions.h"
 
 #include <string>
@@ -13,6 +15,8 @@ namespace shzk
 {
     class Texture;
     class Shader;
+    class RHIRootSignature;
+    class RHIDescriptorSet;
 
     enum PassMaskBits : uint32_t
     {
@@ -33,18 +37,20 @@ namespace shzk
         Material() : Asset(AssetType::Material) {}
         ~Material() = default;
 
-        // Data
-        inline void SetName(const std::string& name) { m_name = name; }
-        inline void SetBaseColor(const glm::vec4& color) { m_baseColor = color; }
-        inline void SetEmission(const glm::vec3& emmision) { m_emission = emmision; }
-        inline void SetMetallic(float value) { m_metallic = value; }
-        inline void SetRoughness(float value) { m_roughness = value; }
-        inline void SetAlphaCutoff(float value) { m_alphaCutoff = value; }
-        inline void SetUseVertexColor(bool value) { m_bUseVertexColor = value; }
-        inline void SetTextureDiffuse(const std::shared_ptr<Texture>& texture) { m_textureDiffuse = texture; }
-        inline void SetTextureNormal(const std::shared_ptr<Texture>& texture) { m_textureNormal = texture; }
-        inline void SetTextureArm(const std::shared_ptr<Texture>& texture) { m_textureArm = texture; }
-        inline void SetTextureSpecular(const std::shared_ptr<Texture>& texture) { m_textureSpecular = texture; }
+        void InitRenderResources();
+
+        // Getter & Setters
+        inline void SetName(const std::string& name)        { m_name = name; }
+        inline void SetBaseColor(const glm::vec4& color)    { m_baseColor = color;      Update(); }
+        inline void SetEmission(const glm::vec3& emmision)  { m_emission = emmision;    Update(); }
+        inline void SetMetallic(float value)                { m_metallic = value;       Update();}
+        inline void SetRoughness(float value)               { m_roughness = value;      Update();}
+        inline void SetAlphaCutoff(float value)             { m_alphaCutoff = value;    Update(); }
+        inline void SetUseVertexColor(bool value)           { m_bUseVertexColor = value; Update(); }
+        inline void SetTextureDiffuse(const std::shared_ptr<Texture>& texture)  { m_textureDiffuse = texture; Update(); }
+        inline void SetTextureNormal(const std::shared_ptr<Texture>& texture)   { m_textureNormal = texture; Update(); }
+        inline void SetTextureArm(const std::shared_ptr<Texture>& texture)      { m_textureArm = texture; Update(); }
+        inline void SetTextureSpecular(const std::shared_ptr<Texture>& texture) { m_textureSpecular = texture; Update(); }
         inline void SetIntSlot(uint8_t idx, int32_t value)
         {
             if (idx >= m_ints.size())
@@ -53,6 +59,7 @@ namespace shzk
                 return;
             }   
             m_ints[idx] = value;
+            Update();
         }
         inline void SetFloatSlot(uint8_t idx, float value)
         {
@@ -62,6 +69,7 @@ namespace shzk
                 return;
             }
             m_floats[idx] = value;
+            Update();
         }
         inline void SetColorSlot(uint8_t idx, glm::vec4 color)
         {
@@ -71,6 +79,7 @@ namespace shzk
                 return;
             }
             m_colors[idx] = color;
+            Update();
         }
         inline void SetTexture2DSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
@@ -80,6 +89,7 @@ namespace shzk
                 return;
             }
             m_texture2D[idx] = texture;
+            Update();
         }
         inline void SetTextureCubeSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
@@ -89,6 +99,7 @@ namespace shzk
                 return;
             }
             m_textureCube[idx] = texture;
+            Update();
         }
         inline void SetTexture3DSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
@@ -98,6 +109,7 @@ namespace shzk
                 return;
             }
             m_texture3D[idx] = texture;
+            Update();
         }
 
         inline void SetVertexShader(const std::shared_ptr<Shader>& shader) { m_vertexShader = shader; };
@@ -131,8 +143,16 @@ namespace shzk
         inline CompareFunction GetDepthCompare() const{ return m_depthCompare; }
         inline bool CastShadow() const { return m_bCastShadow; }
 
+        // Update Data and upload to RHIBuffer and RHIDescriptorSet
+        void Update();
+    
+    // Plain datas and references to textures
     protected:
         std::string m_name;
+
+        std::shared_ptr<Shader> m_vertexShader = nullptr;  // use render passes's default shader
+        // TODO: user defined shaders
+        std::shared_ptr<Shader> m_fragmentShader = nullptr;
 
         // Parameters
         glm::vec4 m_baseColor = glm::vec4(1.f);
@@ -151,29 +171,34 @@ namespace shzk
         std::array<int32_t, 8> m_ints{};    // 0: alpha mode 1£ºdouble sided 2: unlit
         std::array<float, 8>   m_floats{};  // 0: normal scale 1: occlusion strength
         std::array<glm::vec4, 8> m_colors{};
-        std::array<std::shared_ptr<Texture>, 8> m_texture2D;    // 0: occlusion 1: emissive
-        std::array<std::shared_ptr<Texture>, 4> m_textureCube;
-        std::array<std::shared_ptr<Texture>, 4> m_texture3D;
+        std::array<std::shared_ptr<Texture>, 8> m_texture2D;    // 0: occlusion 1: emissive 2~7: not used
+        std::array<std::shared_ptr<Texture>, 4> m_textureCube;  // not used
+        std::array<std::shared_ptr<Texture>, 4> m_texture3D;    // not used 
 
-        std::shared_ptr<Shader> m_vertexShader      = nullptr;  // use render passes's default shader
-                                                                // TODO: user defined shaders
-        std::shared_ptr<Shader> m_fragmentShader    = nullptr;
-
+    // CPU side options
     protected:
-        PassMask m_passMask = PASS_MASK_FORWARD_PASS;   
+        PassMask m_passMask = PASS_MASK_FORWARD_PASS;
 
         // RasteriazerState
         RasterizerCullMode m_cullMode = RasterizerCullMode::CW;
         RasterizerFillMode m_fillMode = RasterizerFillMode::Solid;
-        
+
         // DepthStencilState
-        bool m_bDepthTest    = true;
-        bool m_bDepthWrite   = true;
-        CompareFunction m_depthCompare = CompareFunction::LessEqual;    
+        bool m_bDepthTest = true;
+        bool m_bDepthWrite = true;
+        CompareFunction m_depthCompare = CompareFunction::LessEqual;
 
         //bool m_bUseForDepthPass = true; 
         bool m_bCastShadow = true;
-		
-        // TODO: MaterialData data 
+
+    // GPU side resources and data for upload
+    protected:
+        // The default material set 1
+        // Layout should be retrived from RenderResourceManager.m_materialRootSignature
+        std::shared_ptr<RHIDescriptorSet> m_descriptorSet;
+        
+        MaterialUniformData m_data;
+        Buffer<MaterialUniformData> m_uniformBuffer;
+        
 	};
 }

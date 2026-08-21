@@ -2,35 +2,33 @@
 
 C++20 Vulkan 1.3 实时渲染器。参考 Unreal Engine 和 ToyRenderer (可在父目录/ToyRenderer下找到) 的架构。
 RHI 层设计参考 ToyRenderer（UE 风格：FDynamicRHI + IRHICommandContext + FRenderResource）。
-最后更新：2026-08-06
+最后更新：2026-08-21
 
 ---
 
-## ★ 当前阶段目标（2026-08-06）
+## ★ 当前阶段目标（2026-08-21）
 
-### 核心任务：glTF 导入 + Material/Texture 系统
+### 核心任务：Forward Pass —— 画出 glTF 模型
 
-RHI 层 bypass 模式已打通第一个三角形（Clear + Present）：
-- ✅ RHI 抽象工厂 + VulkanRHI 全局 VK 状态（Instance、Device、VMA、Queues、DescriptorPool）
-- ✅ RHICommandPool / VulkanRHICommandPool
-- ✅ RHICommandContext / VulkanRHICommandContext（RHIBeginCommand / RHIEndCommand / RHISubmit）
-- ✅ RHICommandList（bypass 模式，forward 到 Context）
-- ✅ RHICommandListImmediate（独立命令上下文胶水层）
-- ✅ RHISemaphore / RHIFence（同步原语）
-- ✅ RHISwapchain / VulkanRHISwapchain（AcquireNextTexture + Present）
-- ✅ RenderSystem 帧循环（Acquire → Begin → Clear → End → Submit → Present）
-- ✅ VulkanRHIResource（Buffer、Texture、TextureView、GraphicsPipeline、DescriptorSet）
-- ✅ VulkanUtil（完整的 RHI↔VK 枚举转换函数）
+已完成（RHI 层 + 资产管线打通）：
+- ✅ RHI 抽象工厂：Buffer/Texture/TextureView/Shader/RootSignature/GraphicsPipeline 全部可创建
+- ✅ `VulkanRHIGraphicsPipeline` 完整实现（dynamic rendering + dynamic state VIEWPORT/SCISSOR）
+- ✅ glTF 导入：`GltfLoader::Load()` → textures / materials / models
+- ✅ Texture：stb_image 加载 → RHI 创建 + staging 上传 + mip 生成
+- ✅ Material：PBR 参数 + 纹理引用 + shader/general slots + pass mask + 管线状态
+- ✅ VertexBuffer / IndexBuffer：CPU 数据 → staging → GPU buffer
+- ✅ Shader：SPIR-V 加载（RenderResourceManager 缓存）
+- ✅ SceneRenderer / MeshPassProcessor / MeshDrawCommand：MeshBatch → MeshDrawCommand
 
-### 当前 TODO
+### 当前 TODO（距离画出 ForwardPass 的步骤）
 
-1. **glTF 导入** — `GltfLoader::Load()` 填充 `GltfLoadResult`（models、textures、materials）
-2. **Texture 系统** — Texture 类：文件路径 → stb_image 加载 → RHI 创建 + 上传（ToyRenderer 模式）
-3. **Material 系统** — Material 类：PBR 参数 + shared_ptr\<Texture\> 引用
-4. **VertexBuffer / IndexBuffer** — RenderResource 层：CPU 数据 → RHI Buffer 创建 + 上传
-5. **Shader 系统** — RHIShader + SPIR-V 加载
-6. **Pipeline** — RHIGraphicsPipeline + RHIRenderPass
-7. **Forward Pass** — MeshPassProcessor 遍历场景 → Bind + Draw
+1. **补齐 RHI draw 命令** — `RHICommandContext` / `RHICommandList` 中 `BeginRenderPass / EndRenderPass / SetViewport / SetScissor / SetGraphicsPipeline / BindVertexBuffer / BindIndexBuffer / BindDescriptorSet / SetPushConstants / DrawIndexed` 目前全部注释着，需先打通（映射 dynamic rendering 的 `vkCmdBeginRendering` 等）
+2. **ForwardPass::Init() 填 RootSignature** — descriptor set layout（set 0 per-frame UBO + set 1 材质纹理）+ push constant range（model matrix + 材质标量）
+3. **FindOrCreateGraphicsPipelineState 缓存** — `GraphicsMinimalPipelineState`（缓存键）+ output 信息（color/depth format，由 Pass 持有）→ 合成完整 `RHIGraphicsPipelineInfo` → 创建 `RHIGraphicsPipeline`
+4. **MeshDrawShaderBindings** — per-draw 绑定（descriptor set + push constant 数据），在 `BuildMeshDrawCommands` 从 Material 填充
+5. **MeshDrawCommand::SubmitDraw / SubmitDrawBegin / SubmitDrawEnd** — 绑 PSO → 绑 VB/IB → 绑 descriptor set → push 常量 → DrawIndexed
+6. **per-frame UBO 上传** — viewProj 矩阵每帧更新（`RenderResourceManager::PerFrameResource` + `m_perFrameRootSignature`）
+7. **RenderSystem::Tick 接上真正的 render pass** — 替换当前 Clear-only，`BeginRenderPass → SubmitDraw → EndRenderPass`
 
 完成后目标：glTF 模型渲染到屏幕
 
@@ -53,29 +51,35 @@ SHZK/
         ├── global/         # Engine 入口
         │   └── Engine.h/.cpp
         ├── core/           # 基础类型
-        │   ├── Definitions.h    # Transform 等基础结构体
+        │   ├── Transform.h      # Transform 结构体（translation/rotation/scale）
         │   └── Primitive.h      # CPU 端网格数据（position, normal, texcoord）
         ├── log/            # 日志系统
         │   └── Log.h
         ├── WindowSystem.h/.cpp  # SDL3 窗口封装
-        ├── render/         # RenderSystem + RenderResource
-        │   ├── RenderSystem.h/.cpp         # 帧循环、Swapchain、PerFrameRHIResource
-        │   ├── MeshPassProcessor.h/.cpp    # Mesh Pass 处理器（骨架）
+        ├── render/         # RenderSystem + RenderResource + Pass
+        │   ├── RenderSystem.h/.cpp         # 帧循环、Swapchain、PerFrameRHIResource、Pass 注册
+        │   ├── SceneRenderer.h/.cpp        # 遍历 Scene → 收集 MeshBatch → 喂给 Pass
+        │   ├── MeshBatch.h                 # MeshBatch / MeshBatchElement（VertexFactory + Material + index）
+        │   ├── MeshDrawCommand.h/.cpp      # MeshDrawCommand + GraphicsMinimalPipelineState（PSO 缓存键）
+        │   ├── MeshPassProcessor.h/.cpp    # BuildMeshDrawCommands：MeshBatch → MeshDrawCommand
         │   ├── passes/
-        │   │   └── MeshPass.h             # Mesh Pass 定义
+        │   │   ├── RenderPass.h            # RenderPass 基类 + PassType/MeshPassType
+        │   │   ├── MeshPass.h/.cpp         # MeshPass（持有 MeshPassProcessor）
+        │   │   └── ForwardPass.h/.cpp      # ForwardPass + ForwardPassProcessor
         │   └── resources/
-        │       ├── Buffer.h      # VertexBuffer + IndexBuffer（RenderResource）
-        │       └── Drawable.h    # Drawable 接口
+        │       ├── Buffer.h/.cpp            # VertexBuffer + IndexBuffer（RenderResource）
+        │       ├── VertexFactory.h/.cpp     # VertexFactory / InterleavedVertexFactory（RHIVertexDeclaration）
+        │       ├── GraphicsPipelineState.h  # GraphicsPipelineState（持有 RHIGraphicsPipeline，待补）
+        │       └── RenderResourceManager.h/.cpp  # RHIShader 缓存 + per-frame UBO/descriptor
         ├── rhi/            # RHI 封装 — UE 风格平台无关抽象
         │   ├── RHI.h/.cpp                # 抽象工厂 + 全局单例（RHI）+ 所有 RHI 基类内联
         │   ├── RHIResource.h/.cpp        # RHI 资源基类 + GPU 资源类型声明
         │   ├── RHICommandList.h/.cpp      # 胶水层 — bypass 模式 forward 到 Context
-        │   ├── RHICommandListImmediate.h/.cpp  # Immediate 命令胶水层
-        │   ├── RHIDefinitions.h          # 所有 enum/struct/Info 类型 + 基础定义
+        │   ├── RHIDefinitions.h/.cpp     # 所有 enum/struct/Info 类型 + 基础定义
         │   ├── RHIUtil.h                 # RHI 通用工具函数（IsDepthFormat 等）
         │   └── vulkan/
         │       ├── VulkanRHI.h/.cpp              # 工厂实现 + 全局 VK 状态 + CommandContext + ImmediateContext
-        │       ├── VulkanRHIResource.h/.cpp      # Vulkan 资源实现（Buffer, Texture, TextureView, DescriptorSet, Pipeline）
+        │       ├── VulkanRHIResource.h/.cpp      # Vulkan 资源实现（Buffer, Texture, TextureView, Shader, DescriptorSet, RootSignature, GraphicsPipeline）
         │       ├── VulkanRHICommandPool.h/.cpp    # VkCommandPool 薄封装
         │       ├── VulkanRHISurface.h/.cpp        # Vulkan Surface 实现
         │       ├── VulkanRHISwapchain.h/.cpp      # Vulkan Swapchain 实现
@@ -86,19 +90,22 @@ SHZK/
         ├── asset/          # ★ Asset 层 — 引擎资产（身份、元数据）
         │   ├── Asset.h                  # AssetType, name
         │   ├── Model.h/.cpp             # SubMesh 列表 + 引用 VertexBuffer/IndexBuffer/Material
-        │   ├── Material.h/.cpp          # PBR 参数 + 纹理引用
-        │   ├── Texture.h/.cpp           # 文件路径 + GPU 资源（RHITexture/View/Sampler）
+        │   ├── Material.h/.cpp          # PBR 参数 + 纹理引用 + shader slots + pass mask + 管线状态
+        │   ├── Texture.h/.cpp           # 文件路径 + GPU 资源（RHITexture/View），stb_image 加载 + mip 生成
+        │   ├── Shader.h/.cpp            # Shader：path + frequency + entry → RHIShader
         │   └── AssetManager.h/.cpp      # 全局资产注册表（name → shared_ptr\<Asset\>）
         ├── import/         # glTF/glb 导入器
-        │   └── GltfLoader.h/.cpp
+        │   └── GltfLoader.h/.cpp       # Load() → GltfLoadResult（textures/materials/models）
         └── framework/      # ECS 骨架
             ├── Scene.h/.cpp
             ├── Node.h/.cpp
             └── components/
                 ├── Component.h              # Component 基类
+                ├── Drawable.h               # Drawable 接口（CollectMeshBatchWithTransform）
                 ├── TransformComponent.h/.cpp
                 ├── CameraComponent.h/.cpp
-                └── MeshComponent.h/.cpp     # 持有 Model，实现 Drawable
+                ├── MeshComponent.h/.cpp     # 持有 Model，实现 Drawable
+                └── DirectionalLightComponent.h/.cpp
 ```
 
 ---
@@ -117,7 +124,7 @@ SHZK/
 ### 成员变量
 
 - `m_` 前缀：`m_instance`, `m_device`, `m_allocator`, `m_rhiInfo`, `m_resourceType`
-- 静态单例：所有全局单例使用 `g_` 前缀（`RHI::g_rhi`、`RHICommandList::g_RhiCmdList`、`Engine::g_engine`、`AssetManager::g_assetManager`）
+- 静态单例：所有全局单例使用 `g_` 前缀（`RHI::g_rhi`、`RHICommandList::g_rhiCmdList`、`Engine::g_engine`、`AssetManager::g_assetManager`、`RenderResourceManager::g_renderResourceManager`）
 
 ### 命名空间
 
@@ -175,6 +182,9 @@ public:
     // Resources
     virtual std::shared_ptr<RHIBuffer> CreateBuffer(const RHIBufferInfo& info) = 0;
     virtual std::shared_ptr<RHITexture> CreateTexture(const RHITextureInfo& info) = 0;
+    virtual std::shared_ptr<RHITextureView> CreateTextureView(const RHITextureViewInfo& info) = 0;
+    virtual std::shared_ptr<RHIShader> CreateShader(const RHIShaderInfo& info) = 0;
+    virtual std::shared_ptr<RHIRootSignature> CreateRootSignature(const RHIRootSignatureInfo& info) = 0;
     virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(
         const RHIGraphicsPipelineInfo& info) = 0;
 
@@ -270,7 +280,8 @@ public:
 ```
 
 **RHICommandContextImmediate**：单独的命令上下文，用于非渲染循环的立即执行（如资产上传）。
-- 当前为最小骨架，具体 Barrier/Copy/GenerateMips 方法待激活
+- 已实现并投入使用：`RHISubmit` / `RHITextureBarrierCommand` / `RHIBufferBarrierCommand` / `RHICopyTextureToBuffer` / `RHICopyBufferToTexture` / `RHICopyBuffer` / `RHICopyTexture` / `RHIGenerateMips`
+- 通过 `RHI::Get()->GetCommandContextImmediate()` 直接访问（`Texture::LoadFromFile`、`VertexBuffer`/`IndexBuffer` 上传都用它）
 
 ### 4. RHICommandList（胶水层）
 
@@ -284,11 +295,11 @@ public:
 class RHICommandList
 {
 private:
-    static std::shared_ptr<RHICommandList> g_RhiCmdList;
+    static std::shared_ptr<RHICommandList> g_rhiCmdList;
 
 public:
     static void Init(bool bypass = true);
-    static std::shared_ptr<RHICommandList>& Get() { return g_RhiCmdList; }
+    static std::shared_ptr<RHICommandList>& Get() { return g_rhiCmdList; }
 
     inline void SetContext(RHICommandContext* context) { m_cmdContext = context; }
     inline RHICommandContext& GetContext() { return *m_cmdContext; }
@@ -307,26 +318,11 @@ private:
 };
 ```
 
-### 5. RHICommandListImmediate（Immediate 胶水层）
+### 5. Immediate 命令的访问方式
 
-包装 `RHICommandContextImmediate*`，用于资产上传等非帧循环命令。
-
-```cpp
-class RHICommandListImmediate
-{
-private:
-    static std::shared_ptr<RHICommandListImmediate> g_RhiCmdListImmediate;
-
-public:
-    static std::shared_ptr<RHICommandListImmediate>& Get() { return g_RhiCmdListImmediate; }
-    void SetCommandContext(RHICommandContextImmediate* cmdContext) { m_cmdContext = cmdContext; }
-
-private:
-    RHICommandContextImmediate* m_cmdContext = nullptr;
-};
-```
-
-在 `RenderSystem::Init()` 中初始化，绑定到 `RHI::Get()->GetCommandContextImmediate()`。
+Immediate 命令（资产上传）**不经过 RHICommandList 胶水层**，直接通过
+`RHI::Get()->GetCommandContextImmediate()` 拿 `RHICommandContextImmediate*` 调用。
+（旧版的 `RHICommandListImmediate` 胶水类已移除，`RHICommandContextImmediate` 定义在 `RHI.h` 内联。）
 
 ### 6. PerFrameRHIResource — 帧资源管理
 
@@ -401,8 +397,8 @@ VkPipelineStageFlags VkAccessFlagsToVkPipelineStageFlags(VkAccessFlags accessFla
 Source Art         Asset              RenderResource (GPU)   RHI
 ─────────         ─────              ────────────────────   ───
 DamagedHelmet     Model              VertexBuffer           RHIBuffer
-  .gltf        →  ├─ SubMeshes[0] → ├─ SetPositions() →   VkBuffer + VmaAllocation
-                  │                 └─ SetIndices()   →   VkBuffer + VmaAllocation
+  .gltf        →  ├─ SubMeshes[0] → ├─ VertexBuffer(prim) → VkBuffer + VmaAllocation
+                  │                 └─ IndexBuffer(idx)   → VkBuffer + VmaAllocation
                   │
                   Material            （无独立 RenderResource）
                   ├─ baseColor=0.8     Material 持有 PBR 参数 +
@@ -426,55 +422,56 @@ DamagedHelmet     Model              VertexBuffer           RHIBuffer
 
 ---
 
-## 当前实现状态（2026-08-06）
+## 当前实现状态（2026-08-21）
 
-### RHI 层 — ✅ 核心功能完整
+### RHI 层 — ✅ 完整
 
 | 组件 | 状态 |
 |---|---|
-| `RHI` 抽象工厂 | ✅ Init + Destroy + CreateBuffer + CreateTexture + CreateGraphicsPipeline + 全部基础资源 |
+| `RHI` 抽象工厂 | ✅ Init + Destroy + GetQueue/CreateSurface/CreateSwapchain/CreateCommandPool/CreateSemaphore/CreateFence + CreateBuffer/CreateTexture/CreateTextureView/CreateShader/CreateRootSignature/CreateGraphicsPipeline |
+| `RHI::Tick` / 资源生命周期 | ✅ RegisterResource + DeferredResourceDeletes（`m_resourceMap` 每帧延后销毁） |
 | `RHIDefinitions.h` | ✅ 全部 enum/struct/Info 类型 |
 | `RHIResource` 基类 | ✅ GetType + Destroy |
-| `RHICommandContext` | ✅ RHIBeginCommand / RHIEndCommand / RHISubmit / RHITextureClearColor / RHITextureBarrierCommand |
-| `RHICommandList` | ✅ bypass 模式 BeginCommand / EndCommand / Submit / TextureClearColor / TextureBarrier |
-| `RHICommandListImmediate` | ✅ 骨架完成，SetCommandContext |
-| `RHICommandContextImmediate` | ✅ 骨架完成，具体方法注释中 |
+| `RHICommandContext` | ✅ Begin/End/Submit/ClearColor/Barrier；draw 命令（BeginRenderPass/Draw 等）全部注释待补 |
+| `RHICommandContextImmediate` | ✅ RHISubmit + Barrier/CopyBuffer/CopyBufferToTexture/CopyTexture/GenerateMips（资产上传用） |
+| `RHICommandList` | ✅ bypass 模式 BeginCommand/EndCommand/Submit/TextureClearColor/TextureBarrier；draw 命令注释待补 |
 | `RHISemaphore` / `RHIFence` | ✅ 创建 + Destroy + Wait |
 | `RHISwapchain` / `VulkanRHISwapchain` | ✅ AcquireNextTexture + Present |
 | `RHIQueue` / `VulkanRHIQueue` | ✅ GetQueue + WaitIdle |
 | `VulkanRHI` | ✅ 完整 VK 初始化 + Destroy（逆序销毁） |
-| `VulkanRHIResource` | ✅ Buffer, Texture, TextureView, DescriptorSet, GraphicsPipeline（部分） |
-| `VulkanRHICommandPool` | ✅ CreateCommandContext |
-| `VulkanRHICommandContext` | ✅ Begin/End/Submit/ClearColor/Barrier 全部实现 |
+| `VulkanRHIResource` | ✅ Buffer, Texture, TextureView, Shader, DescriptorSet, RootSignature, GraphicsPipeline 全部实现 |
+| `VulkanRHIGraphicsPipeline` | ✅ 完整实现（dynamic rendering + dynamic state VIEWPORT/SCISSOR） |
 | `VulkanRHIFence` | ✅ Wait = vkWaitForFences + vkResetFences |
-| `VulkanUtil.h` | ✅ 完整 RHI↔VK 转换（Format, ResourceState, MemoryUsage, BufferUsage, ImageUsage, ImageLayout, Subresource） |
-| `RHIUtil.h` | ✅ IsDepthFormat / IsStencilFormat / IsColorFormat |
+| `VulkanUtil.h` / `RHIUtil.h` | ✅ 完整 RHI↔VK 转换 + 格式工具 |
 
-### RenderSystem 层 — ✅ 第一个三角形已画出
+### RenderSystem 层 — ✅ 帧循环（仍 Clear-only）
 
 | 组件 | 状态 |
 |---|---|
-| `RenderSystem::Init()` | ✅ Surface → Swapchain → CommandPool → PerFrameResources |
-| `RenderSystem::Tick()` | ✅ AcquireNextImage → Begin → Clear → End → Submit → Present |
+| `RenderSystem::Init()` | ✅ Surface → Swapchain → CommandPool → PerFrameResources → Passes → SceneRenderer |
+| `RenderSystem::Tick()` | 🔶 仍 Clear + Present（Clear-only），已接 `SceneRenderer::Process` 但尚未提交 draw |
 | `PerFrameRHIResource` | ✅ FRAMES_IN_FLIGHT = 2，cmdContext + startSemaphore + endSemaphore + fence |
 | `RenderSystem::Shutdown()` | ✅ 等待 Idle → 销毁 PerFrameResources → Swapchain → Surface |
 
-### Asset / RenderResource / Framework 层 — 🔶 进行中
+### Asset / RenderResource / Framework 层 — ✅ 完成
 
 | 组件 | 状态 |
 |---|---|
-| `Asset` | ✅ AssetType + name（TODO: AssetId, sourcePath, loadState） |
-| `Model` | ✅ Submesh 列表；Submesh 含 Primitive(CPU) + VertexBuffer/IndexBuffer(GPU) + Material 引用 |
-| `Texture` | ⚠ 空壳，待实现构造(path) → LoadFromFile → RHI 创建 + 上传 |
-| `Material` | ⚠ 空壳，待添加 PBR 参数 + Texture 引用 |
-| `AssetManager` | ✅ 骨架，name → shared_ptr\<Asset\> 注册表 |
-| `GltfLoader` | 🔶 进行中：ReadPositions/Normals/Texcoords 已实现，CreateTexture/CreateMaterial 空壳 |
-| `VertexBuffer` / `IndexBuffer` | ⚠ 空壳，待添加 SetPositions/SetIndices 等方法 |
-| `Scene` / `Node` | ✅ ECS 骨架 |
-| `TransformComponent` | ✅ |
-| `CameraComponent` | ✅ |
-| `MeshComponent` | ✅ 持有 Model，实现 Drawable |
-| `MeshPassProcessor` | 🔶 骨架 |
+| `Asset` / `AssetManager` | ✅ AssetType + name；name → shared_ptr\<Asset\> 注册表 + ProcessGltfLoadResult |
+| `Model` | ✅ SubMesh 列表；Submesh 含 localTransform + Primitive + VertexFactory + VertexBuffer/IndexBuffer + Material |
+| `Texture` | ✅ stb_image 加载 → RHI 创建 + staging 上传 + mip 生成 |
+| `Material` | ✅ PBR 参数 + 纹理引用 + shader/general slots + pass mask + cull/fill/depth 状态 |
+| `Shader` | ✅ SPIR-V 加载（RenderResourceManager::GetOrCreateRHIShader 缓存） |
+| `VertexBuffer` / `IndexBuffer` | ✅ CPU 数据 → staging → GPU buffer（interleaved 32B 顶点） |
+| `VertexFactory` | ✅ InterleavedVertexFactory + InitRHIDeclaration（position/normal/texcoord） |
+| `RenderResourceManager` | ✅ RHIShader 缓存 + per-frame 资源 + m_perFrameRootSignature（待填 UBO） |
+| `GltfLoader::Load()` | ✅ 完整：textures → materials → models（position/normal/texcoord/index → interleaved buffer → material 引用） |
+| `Scene` / `Node` / Components | ✅ ECS（Transform/Camera/Mesh/DirectionalLight） |
+| `SceneRenderer` | ✅ 遍历 Scene → MeshBatch → Pass Processor |
+| `MeshPassProcessor` | ✅ Process/BuildMeshDrawCommands：MeshBatch → MeshDrawCommand |
+| `MeshDrawCommand` | 🔶 结构完整（streams/indexBuffer/state/firstIndex/numPrimitives），SubmitDraw* 空、m_shaderBindings TODO |
+| `ForwardPass` | 🔶 Init 创建 shader + 空 RootSignature（TODO）；Processor 填默认 blend/depth 状态 |
+| `GraphicsPipelineState` | ⚠ 空壳（仅持有 m_rhiPipeline），待接 FindOrCreate 缓存 |
 
 ---
 
@@ -483,28 +480,20 @@ DamagedHelmet     Model              VertexBuffer           RHIBuffer
 ### 整体路线
 
 ```
-✅ RHI 层 bypass 模式打通第一个三角形（Clear + Present）
+✅ RHI 层 + glTF 导入 + Material/Texture/VertexBuffer/Shader 系统（全部完成）
+✅ VulkanRHIGraphicsPipeline 创建（dynamic rendering）
 
-🔶 glTF 导入 + Material/Texture 系统（当前）
-  ├─ Texture 系统（文件路径 → 加载 → RHI 创建 + 上传）
-  ├─ Material 系统（PBR 参数 + Texture 引用）
-  ├─ VertexBuffer / IndexBuffer（CPU 数据 → RHI Buffer）
-  └─ GltfLoader::Load() 完整实现
+🔶 Forward Pass（当前）—— 见「当前阶段目标」的 7 步
+  1. 补齐 RHI draw 命令（BeginRenderPass → DrawIndexed）
+  2. ForwardPass RootSignature + output 信息
+  3. FindOrCreateGraphicsPipelineState 缓存
+  4. MeshDrawShaderBindings
+  5. MeshDrawCommand::SubmitDraw*
+  6. per-frame UBO 上传
+  7. RenderSystem::Tick 接 render pass
 
-Shader 系统 → Pipeline → MeshPass → Forward Pass → glTF 模型渲染
+Forward Pass → glTF 模型渲染到屏幕
 ```
-
-### 近期任务
-
-1. **Texture 系统** — `Texture(path)` 构造 → stb_image 加载 → `RHI::CreateTexture` → staging buffer 上传 → 生成 mips（ToyRenderer 模式，不持久化 pixel data）
-2. **Material 系统** — PBR 参数（baseColorFactor, metallicFactor, roughnessFactor）+ `shared_ptr<Texture>` 引用（baseColorTexture, normalTexture, metallicRoughnessTexture）
-3. **VertexBuffer / IndexBuffer** — 添加 `SetPositions`/`SetNormals`/`SetTexcoords`/`SetIndices` 方法（内部调 RHI::CreateBuffer + memcpy）
-4. **GltfLoader::Load()** — 按依赖顺序填充 GltfLoadResult：
-   - Step 1: Textures（从 glTF image 获取路径 → `Texture(path)`）
-   - Step 2: Materials（PBR 参数 + 从 `result.textures` 按 index 取 `shared_ptr`）
-   - Step 3: Models（Primitive CPU 数据 → VertexBuffer/IndexBuffer 上传 → Material 引用）
-5. **Shader 系统** — `RHIShader` + SPIR-V 二进制加载 + `VkShaderModule` 创建
-6. **Pipeline** — `RHIGraphicsPipeline` 完整实现（Shader 阶段、VertexInput、Rasterizer、Blend、PipelineLayout）
 
 ---
 
@@ -554,9 +543,9 @@ public:
 
 ```cpp
 class RHICommandList {
-    static std::shared_ptr<RHICommandList> g_RhiCmdList;
+    static std::shared_ptr<RHICommandList> g_rhiCmdList;
 public:
-    static std::shared_ptr<RHICommandList>& Get() { return g_RhiCmdList; }
+    static std::shared_ptr<RHICommandList>& Get() { return g_rhiCmdList; }
 };
 ```
 
@@ -587,6 +576,8 @@ public:
 | `RHICommandPool` | 模式 3 | RAII，封装 `VkCommandPool`，构造参数即全部依赖 |
 | `VulkanRHISwapchain` | 模式 3 | RAII，构造参数足够，构造中完成 VK Swapchain 创建 |
 | `Texture` | 模式 3 | RAII，`Texture(path)` 构造即加载并上传 GPU |
+| `RenderResourceManager` | 模式 4 | 全局单例（`g_renderResourceManager`），`Init()` 初始化（类似 AssetManager） |
+| `SceneRenderer` | 模式 3 | RAII，无外部依赖，`Process(scene)` 逐帧调用 |
 
 ---
 
@@ -641,10 +632,10 @@ Present 后 → 下一帧 Acquire 返回 PRESENT_SRC_KHR layout 的 image
 | 单例 | 变量名 | 定义位置 |
 |---|---|---|
 | `RHI` | `RHI::g_rhi` | `RHI.cpp` |
-| `RHICommandList` | `RHICommandList::g_RhiCmdList` | `RHICommandList.cpp` |
-| `RHICommandListImmediate` | `RHICommandListImmediate::g_RhiCmdListImmediate` | `RHICommandListImmediate.cpp` |
+| `RHICommandList` | `RHICommandList::g_rhiCmdList` | `RHICommandList.cpp` |
 | `Engine` | `Engine::g_engine` | `Engine.cpp` |
 | `AssetManager` | `AssetManager::g_assetManager` | `AssetManager.cpp` |
+| `RenderResourceManager` | `RenderResourceManager::g_renderResourceManager` | `RenderResourceManager.cpp` |
 
 ### VULKAN_RHI() 宏
 

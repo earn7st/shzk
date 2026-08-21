@@ -240,6 +240,7 @@ namespace shzk
     std::shared_ptr<Material> GltfLoader::CreateMaterial(const fastgltf::Asset& gltf, const fastgltf::Material& material, const std::vector<std::shared_ptr<Texture>>& textures)
     {
         auto mat = std::make_shared<Material>();
+        mat->InitRenderResources();
 
         mat->SetBaseColor(glm::vec4(
             material.pbrData.baseColorFactor.x(),

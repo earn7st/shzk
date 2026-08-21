@@ -24,7 +24,7 @@ namespace shzk
         bufferInfo.usage = usage;
         bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         bufferInfo.queueFamilyIndexCount = 0,
-            bufferInfo.pQueueFamilyIndices = NULL;
+        bufferInfo.pQueueFamilyIndices = NULL;
 
         VmaAllocationCreateInfo allocationCreateInfo = {};
         allocationCreateInfo.usage = VulkanUtil::MemoryUsageToVma(info.memoryUsage);
@@ -236,7 +236,7 @@ namespace shzk
                 layoutInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT_EXT;  //TODO descriptor instant update ?
                 layoutInfo.pNext = nullptr;
 
-                // TODO: bindless 可变描述符大小扩展
+                // TODO: bindless 可变 descriptor 大小扩展
 
                 VK_CHECK(vkCreateDescriptorSetLayout(rhi.GetDevice(), &layoutInfo, nullptr, &layout.handle));
             }

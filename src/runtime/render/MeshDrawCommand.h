@@ -5,6 +5,11 @@
 
 namespace shzk
 {
+	typedef struct MeshDrawShaderBindings
+	{
+
+	} MeshDrawShaderBindings;
+
 	typedef struct GraphicsMinimalPipelineState
 	{
 		BoundShaderStateInput boundShaderStateInput{};
@@ -30,7 +35,7 @@ namespace shzk
 		~MeshDrawCommand() = default;
 
 		// Resources 
-		// MeshDrawShaderBindings m_shaderBindings;	// TODO
+		MeshDrawShaderBindings m_shaderBindings;	// TODO
 		std::array<VertexFactory::VertexStream, MAX_VERTEX_STREAM_NUM> m_streams;
 		std::shared_ptr<RHIBuffer>	m_indexBuffer;
 
@@ -38,8 +43,9 @@ namespace shzk
 		GraphicsMinimalPipelineState m_state;
 
 		// Draw command parameters
-		uint32_t m_firstIndex;
-		uint32_t m_numPrimitives;
+		uint32_t m_firstIndex		= 0;
+		uint32_t m_numPrimitives	= 0;
+		// TODO: numInstance
 
 	public:
 		static void SubmitDraw();

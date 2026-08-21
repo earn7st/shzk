@@ -1,5 +1,8 @@
 #pragma once
 
+#include "runtime/rhi/RHI.h"
+#include "runtime/rhi/RHIDefinitions.h"
+
 #include <memory>
 #include <glm/glm.hpp>
 
@@ -41,5 +44,31 @@ namespace shzk
 	};
 
 	// Uniform Buffer
+	template<typename T>
+	class Buffer
+	{
+	public:
+		Buffer(MemoryUsage usage = MemoryUsage::CPUToGPU, ResourceType resourceType = RESOURCE_TYPE_RW_BUFFER | RESOURCE_TYPE_UNIFORM_BUFFER)
+		{
+			RHIBufferInfo info{};
+			info.size			= sizeof(T);
+			info.memoryUsage	= usage;
+			info.type			= resourceType;
+			info.creationFlag	= BUFFER_CREATION_PERSISTENT_MAP;
+			m_buffer = RHI::Get()->CreateBuffer(info);
+		}
 
+		void SetData(const T& data)
+		{
+			memcpy(m_buffer->Map(), &data, sizeof(T));
+		}
+
+		void GetData(T* data)
+		{
+			memcpy(data, m_buffer->Map(), sizeof(T));
+		}
+
+	private:
+		std::shared_ptr<RHIBuffer> m_buffer;
+	};
 }

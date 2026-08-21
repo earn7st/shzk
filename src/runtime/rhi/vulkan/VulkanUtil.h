@@ -231,7 +231,7 @@ namespace shzk
 
         static VkBufferUsageFlags ResourceTypeToVkBufferUsage(ResourceType type)
         {
-            VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT /*| VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT*/;    // bindless
+            VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT /* | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT*/;
             if (type & RESOURCE_TYPE_UNIFORM_BUFFER)        usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
             if (type & RESOURCE_TYPE_RW_BUFFER)             usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
             if (type & RESOURCE_TYPE_BUFFER)                usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;

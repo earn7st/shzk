@@ -40,12 +40,11 @@ add_library(
     "runtime/rhi/RHI.cpp"
     "runtime/rhi/RHICommandList.cpp"
     "runtime/rhi/RHIResource.cpp"
+    "runtime/rhi/RHIDefinitions.cpp"
 
     # vulkan rhi
     "runtime/rhi/vulkan/VulkanRHI.cpp"
     "runtime/rhi/vulkan/VulkanRHICommandPool.cpp"
-    
-    
     "runtime/rhi/vulkan/VulkanRHIFence.cpp"
     "runtime/rhi/vulkan/VulkanRHISemaphore.cpp"
     "runtime/rhi/vulkan/VulkanRHISurface.cpp"
