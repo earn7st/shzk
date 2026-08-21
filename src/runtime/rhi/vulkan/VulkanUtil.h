@@ -566,5 +566,29 @@ namespace shzk
             }
         }
 
+        static VkSamplerMipmapMode SamplerMipmapModeToVk(SamplerMipmapMode mode)
+        {
+            switch (mode)
+            {
+            case SamplerMipmapMode::Nearest:        return VK_SAMPLER_MIPMAP_MODE_NEAREST;
+            case SamplerMipmapMode::Linear:         return VK_SAMPLER_MIPMAP_MODE_LINEAR;
+            default:                                SHZK_LOG_ERROR("Unsupported sampler mipmap mode!"); 
+            }
+            return VK_SAMPLER_MIPMAP_MODE_MAX_ENUM;
+        }
+
+        static VkSamplerAddressMode SamplerAddressModeToVk(SamplerAddressMode mode)
+        {
+            switch (mode)
+            {
+            case SamplerAddressMode::Repeat:                return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+            case SamplerAddressMode::MirroredRepeat:        return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+            case SamplerAddressMode::ClampToEdge:           return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+            case SamplerAddressMode::ClampToBorder:         return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+            case SamplerAddressMode::MirrorClampToEdge:     return VK_SAMPLER_ADDRESS_MODE_MIRROR_CLAMP_TO_EDGE;
+            default:                                        SHZK_LOG_ERROR("Unsupported sampler address mode!");
+            }
+            return VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
+        }
     }
 }

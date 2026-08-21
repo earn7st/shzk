@@ -139,5 +139,15 @@ namespace shzk
 				return 0;
 			}
 		}
+
+		static VkSamplerMipMapMode SamplerMipMapMode(SamplerMipMapMode mode)
+		{
+
+		}
+
+		static VkSamplerAddressMode SamplerAddressModeToVk(SamplerAddressMode mode)
+		{
+
+		}
 	}
 }

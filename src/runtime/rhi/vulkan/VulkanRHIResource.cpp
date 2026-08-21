@@ -163,6 +163,16 @@ namespace shzk
 		vkDestroyImageView(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
     }
 
+    VulkanRHISampler::VulkanRHISampler(const RHISamplerInfo& info, VulkanRHI& rhi)
+    {
+
+    }
+
+    void VulkanRHISampler::Destroy()
+    {
+
+    }
+
     VulkanRHIShader::VulkanRHIShader(const RHIShaderInfo& info, VulkanRHI& rhi)
         : RHIShader(info)
     {
@@ -201,6 +211,30 @@ namespace shzk
         allocInfo.pSetLayouts = &layout;
         
         VK_CHECK(vkAllocateDescriptorSets(rhi.GetDevice(), &allocInfo, &m_handle));
+    }
+
+    void VulkanRHIDescriptorSet::UpdateBuffer(uint32_t binding, std::shared_ptr<RHIBuffer> buffer)
+    {
+
+    }
+
+    void VulkanRHIDescriptorSet::UpdateTexture(uint32_t binding, std::shared_ptr<RHITextureView> view, std::shared_ptr<RHISampler> sampler)
+    {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageView = CastTo<VulkanRHITextureView>(view)->GetHandle();
+        imageInfo.sampler = CastTo<VulkanRHISampler>(sampler)->GetHandle();
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+        VkWriteDescriptorSet write{};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet = m_handle;
+        write.dstBinding = binding;
+        write.dstArrayElement = 0;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        write.pImageInfo = &imageInfo;
+
+        vkUpdateDescriptorSets(VULKAN_RHI()->GetDevice(), 1, &write, 0, nullptr);
     }
 
     void VulkanRHIDescriptorSet::Destroy()
@@ -490,5 +524,7 @@ namespace shzk
         vkDestroyPipeline(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
         vkDestroyPipelineLayout(VULKAN_RHI()->GetDevice(), m_layout, nullptr);
 	}
+
+    
 
 }

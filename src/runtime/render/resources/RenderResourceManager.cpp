@@ -48,6 +48,11 @@ namespace shzk
         return shader;
 	}
 
+    std::shared_ptr<RHIDescriptorSet> RenderResourceManager::CreateMaterialDescriptorSet()
+    {
+        return m_materialRootSignature->CreateDescriptorSet(DESCRIPTORSET_INDEX_MATERIAL);
+    }
+
     void RenderResourceManager::InitGlobalResources()
     {
         // per frame root signature
@@ -56,17 +61,17 @@ namespace shzk
 
         // material root signature
         RHIRootSignatureInfo matInfo{};
-        matInfo.AddEntry({ .set = 1, .binding = MATERIAL_BINDING_UNIFORM, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_UNIFORM_BUFFER })
-            .AddEntry({ .set = 1, .binding = MATERIAL_BINDING_DIFFUSE, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
-            .AddEntry({ .set = 1, .binding = MATERIAL_BINDING_NORMAL, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
-            .AddEntry({ .set = 1, .binding = MATERIAL_BINDING_ARM, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
-            .AddEntry({ .set = 1, .binding = MATERIAL_BINDING_SPECULAR, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
+        matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_UNIFORM, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_UNIFORM_BUFFER })
+            .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_DIFFUSE, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
+            .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_NORMAL, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
+            .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_ARM, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
+            .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_SPECULAR, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
         for (int i = 0; i < 8; ++i)
-            matInfo.AddEntry({ .set = 1, .binding = MATERIAL_BINDING_TEXTURE2D + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
+            matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURE2D + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
         for (int i = 0; i < 4; ++i)
-            matInfo.AddEntry({ .set = 1, .binding = MATERIAL_BINDING_TEXTURECUBE + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
+            matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURECUBE + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
         for (int i = 0; i < 4; ++i)
-            matInfo.AddEntry({ .set = 1, .binding = MATERIAL_BINDING_TEXTURE3D + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
+            matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURE3D + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
         m_materialRootSignature = RHI::Get()->CreateRootSignature(matInfo);
     }
 

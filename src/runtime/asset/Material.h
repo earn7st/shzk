@@ -3,7 +3,7 @@
 #include "Asset.h"
 #include "runtime/log/Log.h"
 #include "runtime/render/resources/Buffer.h"
-#include "runtime/render/resources/RenderStructs.h"
+#include "runtime/render/resources/RenderResourceDefinitions.h"
 #include "runtime/rhi/RHIDefinitions.h"
 
 #include <string>
@@ -38,19 +38,21 @@ namespace shzk
         ~Material() = default;
 
         void InitRenderResources();
+        void UpdateUniformData();
+        void UpdateTexture(uint32_t binding);
 
         // Getter & Setters
         inline void SetName(const std::string& name)        { m_name = name; }
-        inline void SetBaseColor(const glm::vec4& color)    { m_baseColor = color;      Update(); }
-        inline void SetEmission(const glm::vec3& emmision)  { m_emission = emmision;    Update(); }
-        inline void SetMetallic(float value)                { m_metallic = value;       Update();}
-        inline void SetRoughness(float value)               { m_roughness = value;      Update();}
-        inline void SetAlphaCutoff(float value)             { m_alphaCutoff = value;    Update(); }
-        inline void SetUseVertexColor(bool value)           { m_bUseVertexColor = value; Update(); }
-        inline void SetTextureDiffuse(const std::shared_ptr<Texture>& texture)  { m_textureDiffuse = texture; Update(); }
-        inline void SetTextureNormal(const std::shared_ptr<Texture>& texture)   { m_textureNormal = texture; Update(); }
-        inline void SetTextureArm(const std::shared_ptr<Texture>& texture)      { m_textureArm = texture; Update(); }
-        inline void SetTextureSpecular(const std::shared_ptr<Texture>& texture) { m_textureSpecular = texture; Update(); }
+        inline void SetBaseColor(const glm::vec4& color)    { m_baseColor = color;      UpdateUniformData(); }
+        inline void SetEmission(const glm::vec3& emmision)  { m_emission = emmision;    UpdateUniformData(); }
+        inline void SetMetallic(float value)                { m_metallic = value;       UpdateUniformData();}
+        inline void SetRoughness(float value)               { m_roughness = value;      UpdateUniformData();}
+        inline void SetAlphaCutoff(float value)             { m_alphaCutoff = value;    UpdateUniformData(); }
+        inline void SetUseVertexColor(bool value)           { m_bUseVertexColor = value; UpdateUniformData(); }
+        inline void SetTextureDiffuse(const std::shared_ptr<Texture>& texture)  { m_textureDiffuse = texture; UpdateUniformData(); }
+        inline void SetTextureNormal(const std::shared_ptr<Texture>& texture)   { m_textureNormal = texture; UpdateUniformData(); }
+        inline void SetTextureArm(const std::shared_ptr<Texture>& texture)      { m_textureArm = texture; UpdateUniformData(); }
+        inline void SetTextureSpecular(const std::shared_ptr<Texture>& texture) { m_textureSpecular = texture; UpdateUniformData(); }
         inline void SetIntSlot(uint8_t idx, int32_t value)
         {
             if (idx >= m_ints.size())
@@ -59,7 +61,7 @@ namespace shzk
                 return;
             }   
             m_ints[idx] = value;
-            Update();
+            UpdateUniformData();
         }
         inline void SetFloatSlot(uint8_t idx, float value)
         {
@@ -69,7 +71,7 @@ namespace shzk
                 return;
             }
             m_floats[idx] = value;
-            Update();
+            UpdateUniformData();
         }
         inline void SetColorSlot(uint8_t idx, glm::vec4 color)
         {
@@ -79,7 +81,7 @@ namespace shzk
                 return;
             }
             m_colors[idx] = color;
-            Update();
+            UpdateUniformData();
         }
         inline void SetTexture2DSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
@@ -89,7 +91,7 @@ namespace shzk
                 return;
             }
             m_texture2D[idx] = texture;
-            Update();
+            UpdateTexture(MATERIAL_BINDING_TEXTURE2D + idx);
         }
         inline void SetTextureCubeSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
@@ -99,7 +101,7 @@ namespace shzk
                 return;
             }
             m_textureCube[idx] = texture;
-            Update();
+            UpdateTexture(MATERIAL_BINDING_TEXTURECUBE + idx);
         }
         inline void SetTexture3DSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
@@ -109,7 +111,7 @@ namespace shzk
                 return;
             }
             m_texture3D[idx] = texture;
-            Update();
+            UpdateTexture(MATERIAL_BINDING_TEXTURE3D + idx);
         }
 
         inline void SetVertexShader(const std::shared_ptr<Shader>& shader) { m_vertexShader = shader; };
@@ -142,9 +144,6 @@ namespace shzk
         inline bool DepthWrite() const { return m_bDepthWrite; }
         inline CompareFunction GetDepthCompare() const{ return m_depthCompare; }
         inline bool CastShadow() const { return m_bCastShadow; }
-
-        // Update Data and upload to RHIBuffer and RHIDescriptorSet
-        void Update();
     
     // Plain datas and references to textures
     protected:
@@ -196,9 +195,23 @@ namespace shzk
         // The default material set 1
         // Layout should be retrived from RenderResourceManager.m_materialRootSignature
         std::shared_ptr<RHIDescriptorSet> m_descriptorSet;
-        
-        MaterialUniformData m_data;
-        Buffer<MaterialUniformData> m_uniformBuffer;
+
+        typedef struct MaterialUniformData
+        {
+            glm::vec4 baseColor;
+            glm::vec3 emission;
+
+            float metallic;
+            float roughness;
+            float alphaCutoff;
+            uint32_t bUseVertexColor;
+
+            // General slots
+            std::array<int32_t, 8> ints{};    // 0: alpha mode 1£ºdouble sided 2: unlit
+            std::array<float, 8>   floats{};  // 0: normal scale 1: occlusion strength
+            std::array<glm::vec4, 8> colors{};
+        };
+        Buffer<MaterialUniformData> m_buffer;
         
 	};
 }

@@ -72,6 +72,18 @@ namespace shzk
 
 	class VulkanRHISampler : public RHISampler
 	{
+	public:
+		VulkanRHISampler() = delete;
+		VulkanRHISampler(const RHISamplerInfo& info, VulkanRHI& rhi);
+		~VulkanRHISampler() = default;
+
+		inline const VkSampler& GetHandle() { return m_handle; }
+	
+	protected:
+		virtual void Destroy() override final;
+
+	private:
+		VkSampler m_handle;
 	};
 
 	class VulkanRHIShader : public RHIShader
@@ -98,6 +110,9 @@ namespace shzk
 		VulkanRHIDescriptorSet(VkDescriptorSetLayout layout, VulkanRHI& rhi);
 		~VulkanRHIDescriptorSet() = default;
 
+		virtual void UpdateBuffer(uint32_t binding, std::shared_ptr<RHIBuffer> buffer) override final;
+		virtual void UpdateTexture(uint32_t binding, std::shared_ptr<RHITextureView> view, std::shared_ptr<RHISampler> sampler) override final;
+			 
 	protected:
 		virtual void Destroy() override final;
 

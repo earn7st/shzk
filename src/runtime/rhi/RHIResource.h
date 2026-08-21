@@ -113,8 +113,9 @@ namespace shzk
 	public:
 		RHIDescriptorSet() : RHIResource(RHIResourceType::DescriptorSet) {}
 
-	protected:
-		virtual void Destroy() = 0;
+		virtual void UpdateBuffer(uint32_t binding, std::shared_ptr<RHIBuffer> buffer) = 0;
+		virtual void UpdateTexture(uint32_t binding, std::shared_ptr<RHITextureView> view, std::shared_ptr<RHISampler> sampler) = 0;
+
 	};
 
 	class RHIRootSignature : public RHIResource
