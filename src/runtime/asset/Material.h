@@ -3,6 +3,7 @@
 #include "Asset.h"
 #include "runtime/log/Log.h"
 #include "runtime/render/resources/Buffer.h"
+#include "runtime/asset/Texture.h"
 #include "runtime/render/resources/RenderResourceDefinitions.h"
 #include "runtime/rhi/RHIDefinitions.h"
 
@@ -39,7 +40,7 @@ namespace shzk
 
         void InitRenderResources();
         void UpdateUniformData();
-        void UpdateTexture(uint32_t binding);
+        void UpdateTexture(uint32_t binding, std::shared_ptr<Texture> texture);
 
         // Getter & Setters
         inline void SetName(const std::string& name)        { m_name = name; }
@@ -49,10 +50,10 @@ namespace shzk
         inline void SetRoughness(float value)               { m_roughness = value;      UpdateUniformData();}
         inline void SetAlphaCutoff(float value)             { m_alphaCutoff = value;    UpdateUniformData(); }
         inline void SetUseVertexColor(bool value)           { m_bUseVertexColor = value; UpdateUniformData(); }
-        inline void SetTextureDiffuse(const std::shared_ptr<Texture>& texture)  { m_textureDiffuse = texture; UpdateUniformData(); }
-        inline void SetTextureNormal(const std::shared_ptr<Texture>& texture)   { m_textureNormal = texture; UpdateUniformData(); }
-        inline void SetTextureArm(const std::shared_ptr<Texture>& texture)      { m_textureArm = texture; UpdateUniformData(); }
-        inline void SetTextureSpecular(const std::shared_ptr<Texture>& texture) { m_textureSpecular = texture; UpdateUniformData(); }
+        inline void SetTextureDiffuse(const std::shared_ptr<Texture>& texture)  { m_textureDiffuse = texture;   UpdateTexture(MATERIAL_BINDING_DIFFUSE, m_textureDiffuse); }
+        inline void SetTextureNormal(const std::shared_ptr<Texture>& texture)   { m_textureNormal = texture;    UpdateTexture(MATERIAL_BINDING_NORMAL, m_textureNormal); }
+        inline void SetTextureArm(const std::shared_ptr<Texture>& texture)      { m_textureArm = texture;       UpdateTexture(MATERIAL_BINDING_ARM, m_textureArm); }
+        inline void SetTextureSpecular(const std::shared_ptr<Texture>& texture) { m_textureSpecular = texture;  UpdateTexture(MATERIAL_BINDING_SPECULAR, m_textureSpecular); }
         inline void SetIntSlot(uint8_t idx, int32_t value)
         {
             if (idx >= m_ints.size())
@@ -91,7 +92,7 @@ namespace shzk
                 return;
             }
             m_texture2D[idx] = texture;
-            UpdateTexture(MATERIAL_BINDING_TEXTURE2D + idx);
+            UpdateTexture(MATERIAL_BINDING_TEXTURE2D + idx, m_texture2D[idx]);
         }
         inline void SetTextureCubeSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
@@ -101,7 +102,7 @@ namespace shzk
                 return;
             }
             m_textureCube[idx] = texture;
-            UpdateTexture(MATERIAL_BINDING_TEXTURECUBE + idx);
+            UpdateTexture(MATERIAL_BINDING_TEXTURECUBE + idx, m_textureCube[idx]);
         }
         inline void SetTexture3DSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
@@ -111,7 +112,7 @@ namespace shzk
                 return;
             }
             m_texture3D[idx] = texture;
-            UpdateTexture(MATERIAL_BINDING_TEXTURE3D + idx);
+            UpdateTexture(MATERIAL_BINDING_TEXTURE3D + idx, m_texture3D[idx]);
         }
 
         inline void SetVertexShader(const std::shared_ptr<Shader>& shader) { m_vertexShader = shader; };
@@ -144,6 +145,8 @@ namespace shzk
         inline bool DepthWrite() const { return m_bDepthWrite; }
         inline CompareFunction GetDepthCompare() const{ return m_depthCompare; }
         inline bool CastShadow() const { return m_bCastShadow; }
+
+        std::shared_ptr<RHIDescriptorSet> GetDescriptorSet() const { return m_descriptorSet; }
     
     // Plain datas and references to textures
     protected:
@@ -196,7 +199,7 @@ namespace shzk
         // Layout should be retrived from RenderResourceManager.m_materialRootSignature
         std::shared_ptr<RHIDescriptorSet> m_descriptorSet;
 
-        typedef struct MaterialUniformData
+        struct MaterialUniformData
         {
             glm::vec4 baseColor;
             glm::vec3 emission;

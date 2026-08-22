@@ -77,7 +77,6 @@ namespace shzk
             std::shared_ptr<RHIBuffer> src, uint64_t srcOffset,
             uint64_t size);
 
-        void SetContext(RHICommandContext* context);
         */
 
 	private:

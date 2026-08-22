@@ -41,6 +41,7 @@ namespace shzk
 		virtual std::shared_ptr<RHIShader> CreateShader(const RHIShaderInfo& info) override final;
 		virtual std::shared_ptr<RHIRootSignature> CreateRootSignature(const RHIRootSignatureInfo& info) override final;
 		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) override final;
+		virtual std::shared_ptr<RHISampler> CreateSampler(const RHISamplerInfo& info) override final;
 
 		inline const VkInstance& GetInstance() { return m_instance; }
 		inline const VkPhysicalDevice& GetPhysicalDevice() { return m_physicalDevice; }

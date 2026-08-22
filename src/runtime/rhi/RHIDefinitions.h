@@ -657,39 +657,23 @@ namespace shzk
 
 	typedef struct RHISamplerInfo
 	{
-		/*typedef struct VkSamplerCreateInfo {
-			VkStructureType         sType;
-			const void* pNext;
-			VkSamplerCreateFlags    flags;
-			VkFilter                magFilter;
-			VkFilter                minFilter;
-			VkSamplerMipmapMode     mipmapMode;
-			VkSamplerAddressMode    addressModeU;
-			VkSamplerAddressMode    addressModeV;
-			VkSamplerAddressMode    addressModeW;
-			float                   mipLodBias;
-			VkBool32                anisotropyEnable;
-			float                   maxAnisotropy;
-			VkBool32                compareEnable;
-			VkCompareOp             compareOp;
-			float                   minLod;
-			float                   maxLod;
-			VkBorderColor           borderColor;
-			VkBool32                unnormalizedCoordinates;
-		} VkSamplerCreateInfo;*/
-
 		FilterType magFilter = FilterType::Linear;
 		FilterType minFilter = FilterType::Linear;
 		SamplerMipmapMode mipmapMode = SamplerMipmapMode::Linear;
 		SamplerAddressMode addressModeU = SamplerAddressMode::Repeat;
 		SamplerAddressMode addressModeV = SamplerAddressMode::Repeat;
 		SamplerAddressMode addressModeW = SamplerAddressMode::Repeat;
-		float mipLodBias = 0.0f;
-		float maxAnisotropy = 0.0f;
-		CompareFunction compareFunction = CompareFunction::Never;
-		//SamplerReductionMode reductionMode = SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
 
-		
+		float mipLodBias = 0.0f;
+		bool bAnisotropyEnable = false;
+		float maxAnisotropy = 0.0f;
+
+		bool bCompareEnable = false;
+		CompareFunction compareFunction = CompareFunction::Never;
+
+		float minLod = 0.f;
+		float maxLod = 1000.f;
+		//SamplerReductionMode reductionMode = SAMPLER_REDUCTION_MODE_WEIGHTED_AVERAGE;
 	} RHISamplerInfo;
 
 	typedef struct RHIShaderInfo
@@ -890,6 +874,8 @@ namespace shzk
 				a.rasterizerState == b.rasterizerState &&
 				a.blendState == b.blendState &&
 				a.depthStencilState == b.depthStencilState &&
+				a.colorAttachmentFormats == b.colorAttachmentFormats &&
+				a.depthStencilAttachmentFormat == b.depthStencilAttachmentFormat &&
 				a.viewMask == b.viewMask;
 		}
 

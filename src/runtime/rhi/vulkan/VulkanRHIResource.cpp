@@ -164,13 +164,34 @@ namespace shzk
     }
 
     VulkanRHISampler::VulkanRHISampler(const RHISamplerInfo& info, VulkanRHI& rhi)
+        : RHISampler(info)
     {
+        VkSamplerCreateInfo samplerInfo{};
+        samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerInfo.pNext = nullptr;
+        samplerInfo.flags = 0;
+        samplerInfo.magFilter = VulkanUtil::FilterTypeToVk(info.magFilter);
+        samplerInfo.minFilter = VulkanUtil::FilterTypeToVk(info.minFilter);
+        samplerInfo.mipmapMode = VulkanUtil::SamplerMipmapModeToVk(info.mipmapMode);
+        samplerInfo.addressModeU = VulkanUtil::SamplerAddressModeToVk(info.addressModeU);
+        samplerInfo.addressModeV = VulkanUtil::SamplerAddressModeToVk(info.addressModeV);
+        samplerInfo.addressModeW = VulkanUtil::SamplerAddressModeToVk(info.addressModeW);
+        samplerInfo.mipLodBias = 0.f;
+        samplerInfo.anisotropyEnable = info.bAnisotropyEnable;
+        samplerInfo.maxAnisotropy = info.maxAnisotropy;
+        samplerInfo.compareEnable = info.bCompareEnable;
+        samplerInfo.compareOp = VulkanUtil::CompareOpToVk(info.compareFunction);
+        samplerInfo.maxLod = info.maxLod;
+        samplerInfo.minLod = info.minLod;
+        samplerInfo.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
+        samplerInfo.unnormalizedCoordinates = VK_FALSE;
 
+        VK_CHECK(vkCreateSampler(rhi.GetDevice(), &samplerInfo, nullptr, &m_handle));
     }
 
     void VulkanRHISampler::Destroy()
     {
-
+        vkDestroySampler(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
     }
 
     VulkanRHIShader::VulkanRHIShader(const RHIShaderInfo& info, VulkanRHI& rhi)
@@ -215,11 +236,37 @@ namespace shzk
 
     void VulkanRHIDescriptorSet::UpdateBuffer(uint32_t binding, std::shared_ptr<RHIBuffer> buffer)
     {
+        if (!buffer)
+        {
+            SHZK_LOG_WARN("null RHIBuffer!");
+            return;
+        }
 
+        VkDescriptorBufferInfo bufferInfo{};
+        bufferInfo.buffer = CastTo<VulkanRHIBuffer>(buffer)->GetHandle();
+        bufferInfo.offset = 0;
+        bufferInfo.range = VK_WHOLE_SIZE;
+
+        VkWriteDescriptorSet write{};
+        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write.dstSet = m_handle;
+        write.dstBinding = binding;
+        write.dstArrayElement = 0;
+        write.descriptorCount = 1;
+        write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        write.pBufferInfo = &bufferInfo;
+
+        vkUpdateDescriptorSets(VULKAN_RHI()->GetDevice(), 1, &write, 0, nullptr);
     }
 
     void VulkanRHIDescriptorSet::UpdateTexture(uint32_t binding, std::shared_ptr<RHITextureView> view, std::shared_ptr<RHISampler> sampler)
     {
+        if (!view || !sampler)
+        {
+            SHZK_LOG_WARN("null RHITextureView or RHISampler!");
+            return;
+        }
+
         VkDescriptorImageInfo imageInfo{};
         imageInfo.imageView = CastTo<VulkanRHITextureView>(view)->GetHandle();
         imageInfo.sampler = CastTo<VulkanRHISampler>(sampler)->GetHandle();

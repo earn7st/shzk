@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime/rhi/RHI.h"
+#include "runtime/rhi/RHIResource.h"
 #include "runtime/rhi/RHIDefinitions.h"
 
 #include <memory>
@@ -57,6 +58,8 @@ namespace shzk
 			info.creationFlag	= BUFFER_CREATION_PERSISTENT_MAP;
 			m_buffer = RHI::Get()->CreateBuffer(info);
 		}
+
+		std::shared_ptr<RHIBuffer> GetBuffer() const { return m_buffer; }
 
 		void SetData(const T& data)
 		{

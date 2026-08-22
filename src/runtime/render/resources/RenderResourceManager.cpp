@@ -1,5 +1,6 @@
 #include "RenderResourceManager.h"
 #include "runtime/log/Log.h"
+#include "runtime/render/resources/Sampler.h"
 #include "runtime/rhi/RHI.h"
 #include "runtime/rhi/RHIResource.h"
 #include "runtime/rhi/RHIDefinitions.h"
@@ -58,7 +59,6 @@ namespace shzk
         // per frame root signature
         RHIRootSignatureInfo perFrameInfo{};
 
-
         // material root signature
         RHIRootSignatureInfo matInfo{};
         matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_UNIFORM, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_UNIFORM_BUFFER })
@@ -73,6 +73,16 @@ namespace shzk
         for (int i = 0; i < 4; ++i)
             matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURE3D + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
         m_materialRootSignature = RHI::Get()->CreateRootSignature(matInfo);
-    }
 
+        // multiframe resources
+        {
+            // default sampler
+            m_samplers.push_back(std::make_shared<Sampler>(
+                FilterType::Linear,
+                SamplerMipmapMode::Linear,
+                SamplerAddressMode::Repeat,
+                0.f));
+        }
+        
+    }
 }

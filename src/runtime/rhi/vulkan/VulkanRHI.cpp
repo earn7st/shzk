@@ -188,6 +188,14 @@ namespace shzk
 		return pipeline;
 	}
 
+	std::shared_ptr<RHISampler> VulkanRHI::CreateSampler(const RHISamplerInfo& info)
+	{
+		std::shared_ptr<RHISampler> sampler = std::make_shared<VulkanRHISampler>(info, *this);
+		assert(sampler);
+		RegisterResource(sampler);
+		return sampler;
+	}
+
 // private functions
 	void VulkanRHI::CreateInstance()
 	{
@@ -409,7 +417,9 @@ namespace shzk
 		poolInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
 		poolInfo.pPoolSizes = descriptorPoolSizes.data();
 		poolInfo.maxSets = 8192;
-		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;   //Enable Bind then Update, Bindless
+		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT |
+						VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+							
 
 		VK_CHECK(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool));
 	}

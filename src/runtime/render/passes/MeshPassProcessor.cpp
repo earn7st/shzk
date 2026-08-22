@@ -42,11 +42,18 @@ namespace shzk
 		RasterizerFillMode fillMode)
 	{
 
-		VertexFactory::VertexStreamList streams = batch.vertexFactory->GetVertexStreams();
+		const VertexFactory::VertexStreamList& streams = batch.vertexFactory->GetVertexStreams();
+		std::shared_ptr<RHIDescriptorSet> materialDescriptorSet = material->GetDescriptorSet();
 		for (auto& element : batch.elements)
 		{
 			MeshDrawCommand command{};
 
+			MeshPushConstantData pushConstants{
+				element.modelMatrix,
+			};
+			command.m_shaderBindings.pushConstants = pushConstants;
+			command.m_shaderBindings.materialSet = materialDescriptorSet;
+			
 			command.m_streams = streams;
 			command.m_indexBuffer = element.indexBuffer->GetBuffer();
 
@@ -67,9 +74,10 @@ namespace shzk
 			command.m_state = miniPSO;
 
 			command.m_firstIndex = element.firstIndex;
-			command.m_numPrimitives = GetNumPrimitives(batch.primitiveType, element.indexCount);
+			command.m_indexCount = element.indexCount;
+			// command.m_numPrimitives = GetNumPrimitives(batch.primitiveType, element.indexCount);
 
-			m_oneFrameMeshDrawCommands.push_back(command);
+			m_oneFrameMeshDrawCommands.emplace_back(std::move(command));
 		}
 	}
 
