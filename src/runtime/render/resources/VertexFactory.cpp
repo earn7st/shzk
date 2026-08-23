@@ -13,9 +13,8 @@ namespace shzk
 		{
 			if (m_streams[i] == stream) return i;
 		}
-		m_streamCount++;
-		assert(m_streamCount <= m_streams.max_size());
-		m_streams[m_streamCount] = stream;
+		assert(m_streamCount + 1 <= m_streams.max_size());
+		m_streams[m_streamCount++] = stream;
 		return m_streamCount;
 	}
 

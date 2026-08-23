@@ -176,82 +176,35 @@ namespace shzk
 			std::shared_ptr<RHIFence> fence,
 			std::shared_ptr<RHISemaphore> waitSemaphore,
 			std::shared_ptr<RHISemaphore> signalSemaphore) = 0;
+
 		virtual void RHITextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba) = 0;
 		virtual void RHITextureBarrierCommand(const RHITextureBarrier& barrier) = 0;	// Add "Command" because conflict with struct "RHITextureBarrier"
-		/*
-		virtual void Execute(RHIFenceRef waitFence, RHISemaphoreRef waitSemaphore, RHISemaphoreRef signalSemaphore) = 0;     // ʵ���ύ������ӳ�¼��Ҳ���ڶ�Ӧ�̵߳��øú������¼���ύ
+		virtual void RHIBufferBarrierCommand(const RHIBufferBarrier& barrier) = 0;
+		virtual void RHICopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset) = 0;
+		virtual void RHICopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) = 0;
+		virtual void RHICopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size) = 0;
+		virtual void RHICopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) = 0;
+		virtual void RHIGenerateMips(std::shared_ptr<RHITexture> src) = 0;
 
-		virtual void TextureBarrier(const RHITextureBarrier& barrier) = 0;
+		virtual void RHISetViewport(Offset2D min, Offset2D max) = 0;
+		virtual void RHISetScissor(Offset2D min, Offset2D max) = 0;
+		virtual void RHIClearScissors(const std::vector<ClearAttachment>& attachments, const std::vector<Rect2D>& scissors, uint32_t baseArrayLayer = 0, uint32_t layerCount = 1) = 0;
+		virtual void RHISetDepthBias(float constantBias, float slopeBias, float clampBias) = 0;
+		virtual void RHISetLineWidth(float width) = 0;
 
-		virtual void BufferBarrier(const RHIBufferBarrier& barrier) = 0;
+		virtual void RHISetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline) = 0;
+		// virtual void RHISetComputePipeline(RHIComputePipelineRef computePipeline) = 0;
 
-		virtual void CopyTextureToBuffer(RHITextureRef src, TextureSubresourceLayers srcSubresource, RHIBufferRef dst, uint64_t dstOffset) = 0;
+		virtual void RHIBeginRendering() = 0;
+		virtual void RHIEndRendering() = 0;
 
-		virtual void CopyBufferToTexture(RHIBufferRef src, uint64_t srcOffset, RHITextureRef dst, TextureSubresourceLayers dstSubresource) = 0;
+		virtual void RHIPushConstants(void* data, uint16_t size, ShaderFrequency frequency) = 0;
+		virtual void RHIBindDescriptorSet(std::shared_ptr<RHIDescriptorSet> descriptor, uint32_t set = 0) = 0;
+		virtual void RHIBindVertexBuffer(std::shared_ptr<RHIBuffer> vertexBuffer, uint32_t streamIndex = 0, uint32_t offset = 0) = 0;
+		virtual void RHIBindIndexBuffer(std::shared_ptr<RHIBuffer> indexBuffer, uint32_t offset = 0) = 0;
 
-		virtual void CopyBuffer(RHIBufferRef src, uint64_t srcOffset, RHIBufferRef dst, uint64_t dstOffset, uint64_t size) = 0;
-
-		virtual void CopyTexture(RHITextureRef src, TextureSubresourceLayers srcSubresource, RHITextureRef dst, TextureSubresourceLayers dstSubresource) = 0;
-
-		virtual void GenerateMips(RHITextureRef src) = 0;
-
-		virtual void PushEvent(const std::string& name, Color3 color) = 0;   //Label?
-
-		virtual void PopEvent() = 0;
-
-		virtual void BeginRenderPass(RHIRenderPassRef renderPass) = 0;   //Ҳ��������ʱFindOrCreate��Ӧ��renderpass��framebuffer�ȣ��ܶණ�����������Ļ��Ĳ��ұ�ͳһ����״̬
-
-		virtual void EndRenderPass() = 0;
-
-		virtual void SetViewport(Offset2D min, Offset2D max) = 0;
-
-		virtual void SetScissor(Offset2D min, Offset2D max) = 0;
-
-		virtual void ClearScissors(const std::vector<ClearAttachment>& attachments, const std::vector<Rect2D>& scissors, uint32_t baseArrayLayer, uint32_t layerCount) = 0;
-
-		virtual void SetDepthBias(float constantBias, float slopeBias, float clampBias) = 0;
-
-		virtual void SetLineWidth(float width) = 0;
-
-		virtual void SetGraphicsPipeline(RHIGraphicsPipelineRef graphicsPipeline) = 0;
-
-		virtual void SetComputePipeline(RHIComputePipelineRef computePipeline) = 0;
-
-		virtual void SetRayTracingPipeline(RHIRayTracingPipelineRef rayTracingPipeline) = 0;
-
-		virtual void PushConstants(void* data, uint16_t size, ShaderFrequency frequency) = 0;
-
-		virtual void BindDescriptorSet(RHIDescriptorSetRef descriptor, uint32_t set) = 0;
-
-		virtual void BindVertexBuffer(RHIBufferRef vertexBuffer, uint32_t streamIndex, uint32_t offset) = 0;
-
-		virtual void BindIndexBuffer(RHIBufferRef indexBuffer, uint32_t offset) = 0;
-
-		virtual void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
-
-		virtual void DispatchIndirect(RHIBufferRef argumentBuffer, uint32_t argumentOffset) = 0;
-
-		virtual void TraceRays(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) = 0;
-
-		virtual void Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) = 0;
-
-		virtual void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) = 0;
-
-		virtual void DrawIndirect(RHIBufferRef argumentBuffer, uint32_t offset, uint32_t drawCount) = 0;
-
-		virtual void DrawIndexedIndirect(RHIBufferRef argumentBuffer, uint32_t offset, uint32_t drawCount) = 0;
-
-		// TODO 
-		// virtual void BeginRenderQuery(RHIRenderQuery* RenderQuery) = 0;
-
-		// virtual void EndRenderQuery(RHIRenderQuery* RenderQuery) = 0;
-
-		//ImGui /////////////////////////////////////////////////////////////////////////////////////
-
-		virtual void ImGuiCreateFontsTexture() = 0;
-
-		virtual void ImGuiRenderDrawData(ImGuiDrawFunc func) = 0;
-		*/
+		virtual void RHIDraw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
+		virtual void RHIDrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;
 	};
 
 	class RHICommandContextImmediate

@@ -26,8 +26,7 @@ namespace shzk
 		~RenderResourceManager() = default;
 
 		static std::shared_ptr<RenderResourceManager>& Get() { return g_renderResourceManager; }
-
-		std::shared_ptr<GraphicsPipelineCache> GetGraphicsPipelineCache() const { return m_graphicsPipelineCache; }
+		static std::shared_ptr<GraphicsPipelineCache>& GetGraphicsPipelineCache() { return g_renderResourceManager->m_graphicsPipelineCache; }
 
 		void Init();
 

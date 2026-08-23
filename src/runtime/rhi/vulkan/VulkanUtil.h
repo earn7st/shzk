@@ -561,7 +561,7 @@ namespace shzk
             case BlendOp::Subtract:        return VK_BLEND_OP_SUBTRACT;
             case BlendOp::ReverseSubtract: return VK_BLEND_OP_REVERSE_SUBTRACT;
             case BlendOp::Min:             return VK_BLEND_OP_MIN;
-            case BlendOp::max:             return VK_BLEND_OP_MAX;
+            case BlendOp::Max:             return VK_BLEND_OP_MAX;
             default:                       return VK_BLEND_OP_ADD;
             }
         }

@@ -432,6 +432,20 @@ namespace shzk
 		//SHZK_LOG_INFO("VulkanRHICommandContext destroyed");
 	}
 
+	inline VkPipelineLayout VulkanRHICommandContext::GetCurrentPipelineLayout()
+	{
+		if (m_currentGraphicsPipeline) return m_currentGraphicsPipeline->GetLayout();
+		// TODO: Compute, RayTracing ..
+		return {};
+	}
+
+	inline VkPipelineBindPoint VulkanRHICommandContext::GetCurrentPipelineBindPoint()
+	{
+		if (m_currentGraphicsPipeline) return VK_PIPELINE_BIND_POINT_GRAPHICS;
+		// TODO: Compute, RayTracing ..
+		return VK_PIPELINE_BIND_POINT_GRAPHICS;
+	}
+
 	void VulkanRHICommandContext::RHIBeginCommand()
 	{
 		vkResetCommandBuffer(m_cmdBuffer, 0);
@@ -491,6 +505,158 @@ namespace shzk
 	void VulkanRHICommandContext::RHITextureBarrierCommand(const RHITextureBarrier& barrier)	
 	{
 		RHITextureBarrierImpl(m_cmdBuffer, barrier);
+	}
+
+	void VulkanRHICommandContext::RHIBufferBarrierCommand(const RHIBufferBarrier& barrier)
+	{
+		RHIBufferBarrierImpl(m_cmdBuffer, barrier);
+	}
+
+	void VulkanRHICommandContext::RHICopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset)
+	{
+		RHICopyTextureToBufferImpl(m_cmdBuffer, src, srcSubresource, dst, dstOffset);
+	}
+
+	void VulkanRHICommandContext::RHICopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource)
+	{
+		RHICopyBufferToTextureImpl(m_cmdBuffer, src, srcOffset, dst, dstSubresource);
+	}
+
+	void VulkanRHICommandContext::RHICopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size)
+	{
+		RHICopyBufferImpl(m_cmdBuffer, src, srcOffset, dst, dstOffset, size);
+	}
+
+	void VulkanRHICommandContext::RHICopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource)
+	{
+		RHICopyTextureImpl(m_cmdBuffer, src, srcSubresource, dst, dstSubresource);
+	}
+
+	void VulkanRHICommandContext::RHIGenerateMips(std::shared_ptr<RHITexture> src)
+	{
+		RHIGenerateMipsImpl(m_cmdBuffer, src);
+	}
+
+	void VulkanRHICommandContext::RHISetViewport(Offset2D min, Offset2D max)
+	{
+		VkViewport viewport{};
+		viewport.x = (float)min.x;
+		viewport.y = (float)min.y;
+		viewport.width = (float)(max.x - min.x);
+		viewport.height = (float)(max.y - min.y);
+		viewport.minDepth = 0.0f;
+		viewport.maxDepth = 1.0f;
+		vkCmdSetViewport(m_cmdBuffer, 0, 1, &viewport);
+	}
+
+	void VulkanRHICommandContext::RHISetScissor(Offset2D min, Offset2D max)
+	{
+		VkRect2D scissor{};
+		scissor.offset = { (int32_t)min.x, (int32_t)min.y };
+		scissor.extent = { (uint32_t)(max.x - min.x), (uint32_t)(max.y - min.y) };
+		vkCmdSetScissor(m_cmdBuffer, 0, 1, &scissor);
+	}
+
+	void VulkanRHICommandContext::RHIClearScissors(const std::vector<ClearAttachment>& attachments, const std::vector<Rect2D>& scissors, uint32_t baseArrayLayer, uint32_t layerCount)
+	{
+		std::vector<VkClearAttachment> clearAttachments;
+		for (auto& attachment : attachments)
+		{
+			VkClearAttachment clearAttachment = {};
+			clearAttachment.colorAttachment = attachment.binding;
+			clearAttachment.clearValue.color.float32[0] = attachment.clearColor.r;
+			clearAttachment.clearValue.color.float32[1] = attachment.clearColor.g;
+			clearAttachment.clearValue.color.float32[2] = attachment.clearColor.b;
+			clearAttachment.clearValue.color.float32[3] = attachment.clearColor.a;
+			clearAttachment.aspectMask = VulkanUtil::TextureAspectToVk(attachment.aspect);
+			clearAttachments.emplace_back(clearAttachment);
+		}
+		std::vector<VkClearRect> clearRects;
+		for (auto& scissor : scissors)
+		{
+			if (scissor.extent.width == 0 || scissor.extent.height == 0)
+				continue;
+
+			VkClearRect rect = {};
+			rect.baseArrayLayer = baseArrayLayer;
+			rect.layerCount = layerCount;
+			rect.rect.offset = VkOffset2D(scissor.offset.x, scissor.offset.y);
+			rect.rect.extent = VkExtent2D(scissor.extent.width, scissor.extent.height);
+			clearRects.emplace_back(rect);
+		}
+		if (clearRects.size() > 0)
+			vkCmdClearAttachments(m_cmdBuffer,
+				clearAttachments.size(), clearAttachments.data(),
+				clearRects.size(), clearRects.data());
+	}
+
+	void VulkanRHICommandContext::RHISetDepthBias(float constantBias, float slopeBias, float clampBias)
+	{
+		vkCmdSetDepthBias(m_cmdBuffer, constantBias, clampBias, slopeBias);
+	}
+
+	void VulkanRHICommandContext::RHISetLineWidth(float width)
+	{
+		vkCmdSetLineWidth(m_cmdBuffer, width);
+	}
+
+	void VulkanRHICommandContext::RHISetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline)
+	{
+		m_currentGraphicsPipeline = CastTo<VulkanRHIGraphicsPipeline>(graphicsPipeline);
+		m_currentGraphicsPipeline->Bind(m_cmdBuffer);
+	}
+
+	void VulkanRHICommandContext::RHIBeginRendering()
+	{
+		// TODO
+		VkRenderingInfo info{};
+		vkCmdBeginRendering(m_cmdBuffer, &info);
+	}
+
+	void VulkanRHICommandContext::RHIEndRendering()
+	{
+		vkCmdEndRendering(m_cmdBuffer);
+	}
+
+	void VulkanRHICommandContext::RHIPushConstants(void* data, uint16_t size, ShaderFrequency frequency)
+	{
+		vkCmdPushConstants(m_cmdBuffer,
+			GetCurrentPipelineLayout(),
+			VulkanUtil::ShaderFrequencyToVkStageFlags(frequency),
+			0, size, data);
+	}
+
+	void VulkanRHICommandContext::RHIBindDescriptorSet(std::shared_ptr<RHIDescriptorSet> descriptorSet, uint32_t set)
+	{
+		vkCmdBindDescriptorSets(m_cmdBuffer,
+			GetCurrentPipelineBindPoint(),
+			GetCurrentPipelineLayout(),
+			set, 1,
+			&CastTo<VulkanRHIDescriptorSet>(descriptorSet)->GetHandle(),
+			0, nullptr);
+	}
+
+	void VulkanRHICommandContext::RHIBindVertexBuffer(std::shared_ptr<RHIBuffer> vertexBuffer, uint32_t streamIndex, uint32_t offset)
+	{
+		vkCmdBindVertexBuffers(m_cmdBuffer,
+			streamIndex, 1,
+			&CastTo<VulkanRHIBuffer>(vertexBuffer)->GetHandle(), 0);
+	}
+
+	void VulkanRHICommandContext::RHIBindIndexBuffer(std::shared_ptr<RHIBuffer> indexBuffer, uint32_t offset)
+	{
+		vkCmdBindIndexBuffer(m_cmdBuffer,
+			CastTo<VulkanRHIBuffer>(indexBuffer)->GetHandle(), 0, VK_INDEX_TYPE_UINT32);	// Use fixed uint32
+	}
+
+	void VulkanRHICommandContext::RHIDraw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
+	{
+		vkCmdDraw(m_cmdBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+	}
+
+	void VulkanRHICommandContext::RHIDrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance)
+	{
+		vkCmdDrawIndexed(m_cmdBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
 // Immediate Command Context

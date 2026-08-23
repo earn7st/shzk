@@ -379,8 +379,8 @@ namespace shzk
         std::vector<VkFormat> colorAttachmentFormats;
         for (const RHIFormat& format : info.colorAttachmentFormats)
         {
-            attachmentCount++;
             if (format == FORMAT_UKNOWN) break;
+            attachmentCount++;
             colorAttachmentFormats.push_back(VulkanUtil::RHIFormatToVkFormat(format));
         }
 
@@ -400,11 +400,12 @@ namespace shzk
         VkPipelineRasterizationStateCreateInfo  rasterizationStateCI    = GetRasterizationStateCreateInfo(info.rasterizerState);
         VkPipelineMultisampleStateCreateInfo    multisampleStateCI      = GetMultisampleStateCreateInfo();
         VkPipelineDepthStencilStateCreateInfo   depthStencilStateCI     = GetDepthStencilStateCreateInfo(info.depthStencilState);
-        VkPipelineColorBlendStateCreateInfo     colorBlendStateInfo     = GetColorBlendStateCreateInfo(info.blendState, attachmentCount);
-        VkPipelineDynamicStateCreateInfo        dynamicStateInfo        = GetDynamicStateCreateInfo();
+        VkPipelineColorBlendStateCreateInfo     colorBlendStateCI     = GetColorBlendStateCreateInfo(info.blendState, attachmentCount);
+        VkPipelineDynamicStateCreateInfo        dynamicStateCI        = GetDynamicStateCreateInfo();
 
 		VkGraphicsPipelineCreateInfo pipelineCI{};
         pipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipelineCI.pNext = &renderingInfo;
         pipelineCI.flags = 0;
         pipelineCI.stageCount = (uint32_t)shaderStages.size();
         pipelineCI.pStages = shaderStages.data();
@@ -415,8 +416,8 @@ namespace shzk
         pipelineCI.pRasterizationState = &rasterizationStateCI;
         pipelineCI.pMultisampleState = &multisampleStateCI;
         pipelineCI.pDepthStencilState = &depthStencilStateCI;
-        pipelineCI.pColorBlendState;
-        pipelineCI.pDynamicState;
+        pipelineCI.pColorBlendState = &colorBlendStateCI;
+        pipelineCI.pDynamicState = &dynamicStateCI;
         pipelineCI.layout = m_layout;
         pipelineCI.renderPass = VK_NULL_HANDLE;
         pipelineCI.subpass = 0;     //?
@@ -426,10 +427,16 @@ namespace shzk
         VK_CHECK(vkCreateGraphicsPipelines(VULKAN_RHI()->GetDevice(), VK_NULL_HANDLE, 1, &pipelineCI, nullptr, &m_handle));
     }
 
-    inline VkPipelineVertexInputStateCreateInfo VulkanRHIGraphicsPipeline::GetVertexInputStateCreateInfo(const RHIVertexDeclaration& vertexInputState)
+    void VulkanRHIGraphicsPipeline::Bind(VkCommandBuffer cmdBuffer)
     {
-        for (const VertexElement& element : vertexInputState.elements)
+        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_handle);
+    }
+
+    inline VkPipelineVertexInputStateCreateInfo VulkanRHIGraphicsPipeline::GetVertexInputStateCreateInfo(std::shared_ptr<const RHIVertexDeclaration> vertexInputState)
+    {
+        for (const VertexElement& element : vertexInputState->elements)
         {
+            if (element.IsEmpty()) continue;
             uint8_t binding = element.streamIndex;
             VkVertexInputAttributeDescription attributeDescription = {};
             attributeDescription.binding = binding;

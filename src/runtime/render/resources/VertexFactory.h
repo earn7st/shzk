@@ -46,7 +46,8 @@ namespace shzk
 		uint8_t m_streamCount = 0;
 
 		/** The RHI vertex declaration used to render the factory normally. */
-		std::shared_ptr<RHIVertexDeclaration>	m_declaration;		
+		std::shared_ptr<RHIVertexDeclaration>	m_declaration;	
+
 		// TODO?
 		//std::shared_ptr <RHIVertexDeclaration>	m_positionDeclaration;
 		//std::shared_ptr <RHIVertexDeclaration>	m_positionAndNormalDeclaration;

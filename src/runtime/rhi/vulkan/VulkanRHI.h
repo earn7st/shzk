@@ -86,6 +86,8 @@ namespace shzk
 		VkDescriptorPool m_descriptorPool;
 	};
 
+	class VulkanRHIGraphicsPipeline;
+
 	class VulkanRHICommandContext : public RHICommandContext
 	{
 	public:
@@ -98,6 +100,8 @@ namespace shzk
 		virtual void Destroy() override final;
 
 		inline VkCommandBuffer& GetHandle() { return m_cmdBuffer; }
+		inline VkPipelineLayout GetCurrentPipelineLayout();
+		inline VkPipelineBindPoint GetCurrentPipelineBindPoint();
 
 		// RHI Commands
 		virtual void RHIBeginCommand() override final;
@@ -106,13 +110,41 @@ namespace shzk
 			std::shared_ptr<RHIFence> waitFence,
 			std::shared_ptr<RHISemaphore> waitSemaphore,
 			std::shared_ptr<RHISemaphore> signalSemaphore) override final;
+
 		virtual void RHITextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba) override final;
 		virtual void RHITextureBarrierCommand(const RHITextureBarrier& barrier) override final;
+		virtual void RHIBufferBarrierCommand(const RHIBufferBarrier& barrier) override final;
+		virtual void RHICopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset) override final;
+		virtual void RHICopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) override final;
+		virtual void RHICopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size) override final;
+		virtual void RHICopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource) override final;
+		virtual void RHIGenerateMips(std::shared_ptr<RHITexture> src) override final;
+
+		virtual void RHISetViewport(Offset2D min, Offset2D max) override final;
+		virtual void RHISetScissor(Offset2D min, Offset2D max) override final;
+		virtual void RHIClearScissors(const std::vector<ClearAttachment>& attachments, const std::vector<Rect2D>& scissors, uint32_t baseArrayLayer = 0, uint32_t layerCount = 1) override final;
+		virtual void RHISetDepthBias(float constantBias, float slopeBias, float clampBias) override final;
+		virtual void RHISetLineWidth(float width) override final;
+
+		virtual void RHISetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline) override final;
+		// virtual void RHISetComputePipeline(RHIComputePipelineRef computePipeline) override final;
+
+		virtual void RHIBeginRendering() override final;
+		virtual void RHIEndRendering() override final;
+
+		virtual void RHIPushConstants(void* data, uint16_t size, ShaderFrequency frequency) override final;
+		virtual void RHIBindDescriptorSet(std::shared_ptr<RHIDescriptorSet> descriptorSet, uint32_t set = 0) override final;
+		virtual void RHIBindVertexBuffer(std::shared_ptr<RHIBuffer> vertexBuffer, uint32_t streamIndex = 0, uint32_t offset = 0) override final;
+		virtual void RHIBindIndexBuffer(std::shared_ptr<RHIBuffer> indexBuffer, uint32_t offset = 0) override final;
+
+		virtual void RHIDraw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) override final;
+		virtual void RHIDrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) override final;
 
 	private:
 		std::shared_ptr<RHICommandPool> m_cmdPool = nullptr;
-
 		VkCommandBuffer m_cmdBuffer;
+
+		std::shared_ptr<VulkanRHIGraphicsPipeline> m_currentGraphicsPipeline = nullptr;
 	};
 
 	class VulkanRHICommandContextImmediate : public RHICommandContextImmediate

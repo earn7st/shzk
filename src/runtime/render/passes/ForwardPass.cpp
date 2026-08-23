@@ -73,4 +73,21 @@ namespace shzk
 				material->GetRasterizerFillMode());
 		}
 	}
+	RHIGraphicsPipelineInfo ForwardPassProcessor::BuildRHIGraphicsPipelineInfo(const GraphicsMinimalPipelineState& minimal)
+	{
+		RHIGraphicsPipelineInfo info{};
+		info.vertexShader = minimal.boundShaderStateInput.vertexShader;
+		info.fragmentShader = minimal.boundShaderStateInput.fragmentShader;
+		info.rootSignature = m_pass->GetRHIRootSignature();
+		info.vertexInputState = minimal.boundShaderStateInput.declaration;
+		info.primitiveType = minimal.primitiveType;
+		info.rasterizerState = minimal.rasterizerState;
+		info.blendState = minimal.blendState;
+		info.depthStencilState = minimal.depthStencilState;
+		info.colorAttachmentFormats = m_pass->GetColorAttachmentFormats();
+		info.depthStencilAttachmentFormat = m_pass->GetDepthStencilAttachmentFormat();
+		info.viewMask = m_pass->GetViewMask();
+
+		return info;
+	}
 }

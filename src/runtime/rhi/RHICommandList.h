@@ -11,6 +11,9 @@ namespace shzk
 	class RHICommandContext;
     class RHIFence;
     class RHISemaphore;
+    class RHIGraphicsPipeline;
+    class RHIBuffer;
+    class RHIDescriptorSet;
 
 	class RHICommandList
 	{
@@ -33,54 +36,42 @@ namespace shzk
             std::shared_ptr<RHIFence> fence,
             std::shared_ptr<RHISemaphore> waitSemaphore,
             std::shared_ptr<RHISemaphore> signalSemaphore);
+
         void TextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba);
         void TextureBarrier(const RHITextureBarrier& barrier);
-        // void BeginRenderPass();
-        // void EndRenderPass();
-
-
-        /*
-        void Execute(std::shared_ptr<RHIFence> waitFence,
-            std::shared_ptr<RHISemaphore> waitSemaphore,
-            std::shared_ptr<RHISemaphore> signalSemaphore);
-
-        void BeginRenderPass(const RHIRenderPassInfo& info, const char* name);
-        void EndRenderPass();
-
-        void SetViewport(float minX, float minY, float minZ,
-            float maxX, float maxY, float maxZ);
-        void SetScissorRect(bool enable, uint32_t minX, uint32_t minY,
-            uint32_t maxX, uint32_t maxY);
-        void SetGraphicsPipelineState(std::shared_ptr<RHIGraphicsPipeline> pipeline);
-
-        void SetStreamSource(uint32_t streamIndex, std::shared_ptr<RHIBuffer> vb,
-            uint32_t offset);
-        void BindDescriptorSet(std::shared_ptr<RHIDescriptorSet> descriptor,
-            uint32_t set);
-
-        void DrawPrimitive(uint32_t baseVertexIndex, uint32_t numPrimitives,
-            uint32_t numInstances);
-        void DrawIndexedPrimitive(std::shared_ptr<RHIBuffer> indexBuffer,
-            int32_t baseVertexIndex, uint32_t firstInstance,
-            uint32_t numVertices, uint32_t startIndex,
-            uint32_t numPrimitives, uint32_t numInstances);
-
-        void SetShaderRootConstants(void* data, uint16_t size, ShaderFrequency frequency);
-
-        void TextureBarrier(const RHITextureBarrier& barrier);
         void BufferBarrier(const RHIBufferBarrier& barrier);
+        void CopyTextureToBuffer(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset);
+        void CopyBufferToTexture(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource);
+        void CopyBuffer(std::shared_ptr<RHIBuffer> src, uint64_t srcOffset, std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset, uint64_t size);
+        void CopyTexture(std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource);
+        void GenerateMips(std::shared_ptr<RHITexture> src);
 
-        void CopyBufferToTexture(std::shared_ptr<RHIBuffer> src,
-            std::shared_ptr<RHITexture> dst,
-            const RHICopyBufferToTextureInfo& info);
-        void CopyBuffer(std::shared_ptr<RHIBuffer> dst, uint64_t dstOffset,
-            std::shared_ptr<RHIBuffer> src, uint64_t srcOffset,
-            uint64_t size);
+        void SetViewport(Offset2D min, Offset2D max);
+        void SetScissor(Offset2D min, Offset2D max);
+        void ClearScissors(const std::vector<ClearAttachment>& attachments, const std::vector<Rect2D>& scissors, uint32_t baseArrayLayer = 0, uint32_t layerCount = 1);
+        void SetDepthBias(float constantBias, float slopeBias, float clampBias);
+        void SetLineWidth(float width);
 
-        */
+        void SetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline);
+        // void SetComputePipeline(RHIComputePipelineRef computePipeline);
+
+        void BeginRendering();
+        void EndRendering();
+
+        void PushConstants(void* data, uint16_t size, ShaderFrequency frequency);
+        void BindDescriptorSet(std::shared_ptr<RHIDescriptorSet> descriptorSet, uint32_t set = 0);
+        void BindVertexBuffer(std::shared_ptr<RHIBuffer> vertexBuffer, uint32_t streamIndex = 0, uint32_t offset = 0);
+        void BindIndexBuffer(std::shared_ptr<RHIBuffer> indexBuffer, uint32_t offset = 0);
+
+        void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
+        void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
+
+        // Debug
+        // void PushEvent(const std::string& name, glm::vec3 color = { 0.0f, 0.0f, 0.0f });
+        // void PopEvent();
 
 	private:
-		RHICommandContext* m_cmdContext;
-		bool m_bypass;
+		RHICommandContext* m_cmdContext = nullptr;
+        bool m_bypass = true;
 	};
 }

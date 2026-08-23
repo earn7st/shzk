@@ -315,10 +315,10 @@ namespace shzk
 		Add,
 		Subtract, 
 		Min,
-		max,
+		Max,
 		ReverseSubtract,
 
-		Max,
+		MaxEnum,
 	};
 
 	enum class BlendFactor : uint8_t
@@ -435,7 +435,7 @@ namespace shzk
 	enum class AttachmentStoreOp : uint8_t
 	{
 		Store = 0,
-		DontCare = 0,
+		DontCare = 1,
 
 		Max,
 	};
@@ -462,16 +462,55 @@ namespace shzk
 // structs
 	typedef struct Extent2D
 	{
-		uint32_t width;
-		uint32_t height;
+		uint32_t width	= 0;
+		uint32_t height = 0;
 	} Extent2D;
 
 	typedef struct Extent3D
 	{
-		uint32_t width;
-		uint32_t height;
-		uint32_t depth;
+		uint32_t width	= 0;
+		uint32_t height = 0;
+		uint32_t depth	= 0;
 	} Extent3D;
+
+	typedef struct Offset2D
+	{
+		uint32_t x = 0;
+		uint32_t y = 0;
+
+		friend Offset2D operator+(const Offset2D& a, const Offset2D& b)
+		{
+			return { .x = a.x + b.x, .y = a.y + b.y };
+		}
+
+		friend Offset2D operator-(const Offset2D& a, const Offset2D& b)
+		{
+			return { .x = a.x - b.x, .y = a.y - b.y };
+		}
+	} Offset2D;
+
+	typedef struct Offset3D
+	{
+		uint32_t x = 0;
+		uint32_t y = 0;
+		uint32_t z = 0;
+
+		friend Offset3D operator+(const Offset3D& a, const Offset3D& b)
+		{
+			return { .x = a.x + b.x, .y = a.y + b.y, .z = a.z + b.z };
+		}
+
+		friend Offset3D operator-(const Offset3D& a, const Offset3D& b)
+		{
+			return { .x = a.x - b.x, .y = a.y - b.y, .z = a.z - b.z };
+		}
+	} Offset3D;
+
+	typedef struct Rect2D
+	{
+		Offset2D    offset = {};
+		Extent2D    extent = {};
+	} Rect2D;
 
 	typedef struct TextureSubresourceRange
 	{
@@ -559,6 +598,13 @@ namespace shzk
 				a.frequency == b.frequency;
 		}
 	} PushConstantInfo;
+
+	typedef struct ClearAttachment
+	{
+		uint32_t binding = 0;
+		TextureAspectFlags aspect = TEXTURE_ASPECT_NONE;
+		glm::vec4 clearColor = {};
+	} ClearAttachment;
 
 // RHI
 	typedef struct RHIInfo
@@ -686,13 +732,22 @@ namespace shzk
 
 	typedef struct VertexElement
 	{
-		uint8_t streamIndex;
-		uint8_t offset;
-		VertexElementType type;
-		uint8_t attributeIndex;
-		uint16_t stride;
+		uint8_t streamIndex = 0;
+		uint8_t offset = 0;
+		VertexElementType type = VertexElementType::None;
+		uint8_t attributeIndex = 0;
+		uint16_t stride = 0;
 
 		bool bUseInstanceIndex = false;	// currently only support per vertex input rate
+
+		bool IsEmpty() const 
+		{
+			return streamIndex == 0 &&
+				offset == 0 &&
+				type == VertexElementType::None &&
+				attributeIndex == 0 &&
+				stride == 0;
+		}
 
 		friend bool operator== (const VertexElement& a, const VertexElement& b)
 		{
@@ -852,7 +907,7 @@ namespace shzk
 		
 		std::shared_ptr<RHIRootSignature> rootSignature;	
 
-		RHIVertexDeclaration	vertexInputState = {};
+		std::shared_ptr<RHIVertexDeclaration>	vertexInputState = {};
 		PrimitiveType			primitiveType = PrimitiveType::TriangleList;
 		RHIRasterizerState		rasterizerState = {};
 		RHIBlendState			blendState = {};

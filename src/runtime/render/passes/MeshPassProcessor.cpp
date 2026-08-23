@@ -2,6 +2,8 @@
 #include "runtime/asset/Material.h"
 #include "runtime/render/MeshDrawCommand.h"
 #include "runtime/render/resources/Buffer.h"
+#include "runtime/render/resources/RenderResourceManager.h"
+#include "runtime/rhi/RHICommandList.h"
 
 #include <iostream>
 
@@ -30,6 +32,9 @@ namespace shzk
 		{
 			AddMeshBatch(batch);
 		}
+
+		// TODO
+		// 3. Sort
  	}
 
 	void MeshPassProcessor::BuildMeshDrawCommands(
@@ -78,6 +83,16 @@ namespace shzk
 			// command.m_numPrimitives = GetNumPrimitives(batch.primitiveType, element.indexCount);
 
 			m_oneFrameMeshDrawCommands.emplace_back(std::move(command));
+		}
+	}
+
+	void MeshPassProcessor::Draw()
+	{
+		for (auto& meshDrawCommand : m_oneFrameMeshDrawCommands)
+		{
+			RHIGraphicsPipelineInfo pipelineInfo = BuildRHIGraphicsPipelineInfo(meshDrawCommand.m_state);
+			std::shared_ptr<RHIGraphicsPipeline> pipeline = RenderResourceManager::GetGraphicsPipelineCache()->GetOrCreateGraphicsPipeline(pipelineInfo);
+			meshDrawCommand.SubmitDraw(RHICommandList::Get(), pipeline);
 		}
 	}
 

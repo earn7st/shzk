@@ -37,6 +37,6 @@ namespace shzk
 		//};
 
 	private:
-		std::vector<std::pair<RHIGraphicsPipelineInfo, std::shared_ptr<RHIGraphicsPipeline>> > m_cache;
+		std::vector<std::pair<RHIGraphicsPipelineInfo, std::shared_ptr<RHIGraphicsPipeline>>> m_cache;
 	};
 }

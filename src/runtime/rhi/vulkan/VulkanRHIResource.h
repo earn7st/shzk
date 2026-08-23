@@ -110,6 +110,8 @@ namespace shzk
 		VulkanRHIDescriptorSet(VkDescriptorSetLayout layout, VulkanRHI& rhi);
 		~VulkanRHIDescriptorSet() = default;
 
+		inline VkDescriptorSet& GetHandle() { return m_handle; }
+
 		virtual void UpdateBuffer(uint32_t binding, std::shared_ptr<RHIBuffer> buffer) override final;
 		virtual void UpdateTexture(uint32_t binding, std::shared_ptr<RHITextureView> view, std::shared_ptr<RHISampler> sampler) override final;
 			 
@@ -151,7 +153,9 @@ namespace shzk
 		inline const VkPipeline& GetHandle() { return m_handle; }
 		inline const VkPipelineLayout& GetLayout() { return m_layout; }
 
-		inline VkPipelineVertexInputStateCreateInfo GetVertexInputStateCreateInfo(const RHIVertexDeclaration& declaration);
+		void Bind(VkCommandBuffer cmBuffer);
+
+		inline VkPipelineVertexInputStateCreateInfo GetVertexInputStateCreateInfo(std::shared_ptr<const RHIVertexDeclaration> declaration);
 		inline VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyStateCreateInfo(PrimitiveType primitiveType);
 		inline VkPipelineRasterizationStateCreateInfo GetRasterizationStateCreateInfo(const RHIRasterizerState& state);
 		inline VkPipelineMultisampleStateCreateInfo GetMultisampleStateCreateInfo();

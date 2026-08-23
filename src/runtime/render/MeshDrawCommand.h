@@ -4,6 +4,8 @@
 #include "runtime/render/resources/RenderResourceDefinitions.h"
 #include "runtime/rhi/RHIDefinitions.h"
 
+#include <glm/glm.hpp>
+
 namespace shzk
 {
 	// per primitive constant data
@@ -12,7 +14,7 @@ namespace shzk
 		glm::mat4x4 modelMat;
 		// TODO
 		// ...
-	}MeshPushConstantData;
+	} MeshPushConstantData;
 
 	typedef struct MeshDrawShaderBindings
 	{
@@ -39,6 +41,10 @@ namespace shzk
 		}
 	} GraphicsMinimalPipelineState;
 
+	class RHIBuffer;
+	class RHICommandList;
+	class RHIGraphicsPipeline;
+
 	class MeshDrawCommand
 	{
 	public:
@@ -59,10 +65,10 @@ namespace shzk
 		// TODO: numInstance
 
 	public:
-		static bool SubmitDraw();
+		bool SubmitDraw(std::shared_ptr<RHICommandList> cmdList, std::shared_ptr<RHIGraphicsPipeline> pipeline);
 
 	private:
-		static bool SubmitDrawBegin();
-		static void SubmitDrawEnd();
+		bool SubmitDrawBegin(std::shared_ptr<RHICommandList> cmdList, std::shared_ptr<RHIGraphicsPipeline> pipeline);
+		void SubmitDrawEnd(std::shared_ptr<RHICommandList> cmdList);
 	};
 }
