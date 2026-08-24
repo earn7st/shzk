@@ -157,6 +157,7 @@ namespace shzk
 
 		inline VkPipelineVertexInputStateCreateInfo GetVertexInputStateCreateInfo(std::shared_ptr<const RHIVertexDeclaration> declaration);
 		inline VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyStateCreateInfo(PrimitiveType primitiveType);
+		inline VkPipelineViewportStateCreateInfo GetViewportStateCreateInfo();
 		inline VkPipelineRasterizationStateCreateInfo GetRasterizationStateCreateInfo(const RHIRasterizerState& state);
 		inline VkPipelineMultisampleStateCreateInfo GetMultisampleStateCreateInfo();
 		inline VkPipelineDepthStencilStateCreateInfo GetDepthStencilStateCreateInfo(const RHIDepthStencilState& state);

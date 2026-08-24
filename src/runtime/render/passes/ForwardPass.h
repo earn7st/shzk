@@ -13,6 +13,8 @@ namespace shzk
 		~ForwardPass() = default;
 
 		virtual void Init() override final;
+		virtual void Prepare() override final;
+		virtual void Execute(std::shared_ptr<RHICommandList> cmd) override final;
 
 		std::shared_ptr<Shader> GetVertexShader() const { return m_vertexShader; }
 		std::shared_ptr<Shader> GetFragmentShader() const { return m_fragmentShader; }
@@ -32,6 +34,7 @@ namespace shzk
 		RHIFormat									m_depthStencilAttachmentFormat = FORMAT_UKNOWN;
 		uint32_t m_viewMask = 0b00000000;
 
+		RHIRenderPassInfo m_renderPassInfo{};
 	};
 
 	class ForwardPassProcessor : public MeshPassProcessor

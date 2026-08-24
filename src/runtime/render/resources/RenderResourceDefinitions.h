@@ -14,7 +14,9 @@ namespace shzk
 
 	enum PerFrameBinding : uint32_t
 	{
+		PER_FRAME_BINDING_VIEW = 0,
 
+		PER_FRAME_BINDING_MAX,
 	};
 
 	enum MaterialBinding : uint32_t

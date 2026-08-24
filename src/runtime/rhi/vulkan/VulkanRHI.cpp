@@ -9,6 +9,7 @@
 #include "VulkanRHIResource.h"
 #include "runtime/rhi/RHIDefinitions.h"
 #include "runtime/rhi/RHIResource.h"
+#include "runtime/rhi/RHIUtil.h"
 
 #define  VOLK_IMPLEMENTATION
 #include <volk/volk.h>
@@ -490,6 +491,14 @@ namespace shzk
 		VK_CHECK((vkQueueSubmit(CastTo<VulkanRHIQueue>(m_cmdPool->GetQueue())->GetHandle(), 1, &submitInfo, signalFence)));
 	}
 
+	void VulkanRHICommandContext::RHIBlitTexture(
+		std::shared_ptr<RHITexture> src, std::shared_ptr<RHITexture> dst, 
+		TextureSubresourceLayers srcSubresource, TextureSubresourceLayers dstSubresource, 
+		FilterType filter)
+	{
+		RHIBlitTextureImpl(m_cmdBuffer, src, dst, srcSubresource, dstSubresource, filter);
+	}
+
 	void VulkanRHICommandContext::RHITextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba)
 	{
 		VkClearColorValue clear = { rgba.x, rgba.y, rgba.z, rgba.a };
@@ -606,11 +615,57 @@ namespace shzk
 		m_currentGraphicsPipeline->Bind(m_cmdBuffer);
 	}
 
-	void VulkanRHICommandContext::RHIBeginRendering()
+	void VulkanRHICommandContext::RHIBeginRendering(const RHIRenderPassInfo& renderPass)
 	{
-		// TODO
-		VkRenderingInfo info{};
-		vkCmdBeginRendering(m_cmdBuffer, &info);
+		std::vector<VkRenderingAttachmentInfo> colorAttachments;
+		colorAttachments.reserve(MAX_RENDER_TARGETS);
+
+		for (const RHIRenderPassAttachment& attachment : renderPass.colorAttachments)
+		{
+			if (!attachment.view) break;
+
+			VkRenderingAttachmentInfo& colorAttachment = colorAttachments.emplace_back();
+			colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+			colorAttachment.imageView = CastTo<VulkanRHITextureView>(attachment.view)->GetHandle();
+			colorAttachment.imageLayout = VulkanUtil::ResourceStateToVkImageLayout(attachment.layout);
+			colorAttachment.loadOp = VulkanUtil::AttachmentLoadOpToVk(attachment.loadOp);
+			colorAttachment.storeOp = VulkanUtil::AttachmentStoreOpToVk(attachment.storeOp);
+			colorAttachment.clearValue.color.float32[0] = attachment.clearColor.r;
+			colorAttachment.clearValue.color.float32[1] = attachment.clearColor.g;
+			colorAttachment.clearValue.color.float32[2] = attachment.clearColor.b;
+			colorAttachment.clearValue.color.float32[3] = attachment.clearColor.a;
+		}
+
+		const RHIRenderPassAttachment& ds = renderPass.depthStencilAttachment;
+		bool hasDepth = false, hasStencil = false;
+		VkRenderingAttachmentInfo depthAttachment{};
+		if (ds.view)
+		{
+			RHIFormat format = ds.view->GetInfo().format;
+			hasDepth = RHIUtil::IsDepthFormat(format);
+			hasStencil = RHIUtil::IsStencilFormat(format);
+
+			depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+			depthAttachment.imageView = CastTo<VulkanRHITextureView>(ds.view)->GetHandle();
+			depthAttachment.imageLayout = VulkanUtil::ResourceStateToVkImageLayout(ds.layout);
+			depthAttachment.loadOp = VulkanUtil::AttachmentLoadOpToVk(ds.loadOp);
+			depthAttachment.storeOp = VulkanUtil::AttachmentStoreOpToVk(ds.storeOp);
+			depthAttachment.clearValue.depthStencil.depth = ds.clearDepth;
+			depthAttachment.clearValue.depthStencil.stencil = ds.clearStencil;
+		}
+
+		VkRenderingInfo renderingInfo{};
+		renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+		renderingInfo.renderArea.offset = { 0, 0 };
+		renderingInfo.renderArea.extent = { renderPass.renderArea.width, renderPass.renderArea.height };
+		renderingInfo.layerCount = renderPass.layerCount;
+		renderingInfo.viewMask = renderPass.viewMask;
+		renderingInfo.colorAttachmentCount = (uint32_t)colorAttachments.size();
+		renderingInfo.pColorAttachments = colorAttachments.empty() ? nullptr : colorAttachments.data();
+		renderingInfo.pDepthAttachment = hasDepth ? &depthAttachment : nullptr;
+		renderingInfo.pStencilAttachment = hasStencil ? &depthAttachment : nullptr;
+
+		vkCmdBeginRendering(m_cmdBuffer, &renderingInfo);
 	}
 
 	void VulkanRHICommandContext::RHIEndRendering()
@@ -638,9 +693,10 @@ namespace shzk
 
 	void VulkanRHICommandContext::RHIBindVertexBuffer(std::shared_ptr<RHIBuffer> vertexBuffer, uint32_t streamIndex, uint32_t offset)
 	{
+		VkDeviceSize offsetDeviceSize = offset;
 		vkCmdBindVertexBuffers(m_cmdBuffer,
 			streamIndex, 1,
-			&CastTo<VulkanRHIBuffer>(vertexBuffer)->GetHandle(), 0);
+			&CastTo<VulkanRHIBuffer>(vertexBuffer)->GetHandle(), &offsetDeviceSize);
 	}
 
 	void VulkanRHICommandContext::RHIBindIndexBuffer(std::shared_ptr<RHIBuffer> indexBuffer, uint32_t offset)
@@ -909,7 +965,7 @@ namespace shzk
 				uint32_t              mipLevel = 0;
 				uint32_t              baseArrayLayer = 0;
 				uint32_t              layerCount = 0;
-				RHIBlitTexture(
+				RHIBlitTextureImpl(
 					cmdBuffer,
 					src, src,
 					{TEXTURE_ASPECT_COLOR, baseMipLevel + j, baseArrayLayer, 1}, 
@@ -930,7 +986,7 @@ namespace shzk
 		}
 
 	}
-	void RHIBlitTexture(VkCommandBuffer& cmdBuffer, 
+	void RHIBlitTextureImpl(VkCommandBuffer& cmdBuffer, 
 		std::shared_ptr<RHITexture> src, std::shared_ptr<RHITexture> dst, 
 		TextureSubresourceLayers srcSubresource, TextureSubresourceLayers dstSubresource, 
 		FilterType filter)

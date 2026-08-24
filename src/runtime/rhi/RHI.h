@@ -177,6 +177,9 @@ namespace shzk
 			std::shared_ptr<RHISemaphore> waitSemaphore,
 			std::shared_ptr<RHISemaphore> signalSemaphore) = 0;
 
+		virtual void RHIBlitTexture(std::shared_ptr<RHITexture> src, std::shared_ptr<RHITexture> dst,
+			TextureSubresourceLayers srcSubresource, TextureSubresourceLayers dstSubresource,
+			FilterType filter) = 0;
 		virtual void RHITextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba) = 0;
 		virtual void RHITextureBarrierCommand(const RHITextureBarrier& barrier) = 0;	// Add "Command" because conflict with struct "RHITextureBarrier"
 		virtual void RHIBufferBarrierCommand(const RHIBufferBarrier& barrier) = 0;
@@ -195,7 +198,7 @@ namespace shzk
 		virtual void RHISetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline) = 0;
 		// virtual void RHISetComputePipeline(RHIComputePipelineRef computePipeline) = 0;
 
-		virtual void RHIBeginRendering() = 0;
+		virtual void RHIBeginRendering(const RHIRenderPassInfo& info) = 0;
 		virtual void RHIEndRendering() = 0;
 
 		virtual void RHIPushConstants(void* data, uint16_t size, ShaderFrequency frequency) = 0;

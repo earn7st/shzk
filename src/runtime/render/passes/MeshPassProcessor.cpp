@@ -86,13 +86,14 @@ namespace shzk
 		}
 	}
 
-	void MeshPassProcessor::Draw()
+	void MeshPassProcessor::ExecuteDrawCommands(std::shared_ptr<RHICommandList> cmd)
 	{
 		for (auto& meshDrawCommand : m_oneFrameMeshDrawCommands)
 		{
 			RHIGraphicsPipelineInfo pipelineInfo = BuildRHIGraphicsPipelineInfo(meshDrawCommand.m_state);
 			std::shared_ptr<RHIGraphicsPipeline> pipeline = RenderResourceManager::GetGraphicsPipelineCache()->GetOrCreateGraphicsPipeline(pipelineInfo);
-			meshDrawCommand.SubmitDraw(RHICommandList::Get(), pipeline);
+
+			meshDrawCommand.SubmitDraw(cmd, pipeline);
 		}
 	}
 

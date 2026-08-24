@@ -35,7 +35,7 @@ namespace shzk
 			std::shared_ptr<RHIShader> fragmentShader,
 			RasterizerCullMode cullMode,	// RasterizerCullMode & RasterizerFillMode could be overrided by pass
 			RasterizerFillMode fillMode);	// currently is a copy from material	
-		void Draw();
+		void ExecuteDrawCommands(std::shared_ptr<RHICommandList> cmd);
 
 		MeshPassProcessorRenderState GetRenderState() const { return m_renderState; }
 

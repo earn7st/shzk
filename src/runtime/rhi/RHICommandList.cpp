@@ -46,6 +46,15 @@ namespace shzk
 		}
 	}
 
+	void RHICommandList::BlitTexture(std::shared_ptr<RHITexture> src, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers srcSubresource, TextureSubresourceLayers dstSubresource, FilterType filter)
+	{
+		if (m_bypass)
+		{
+			assert(m_cmdContext);
+			m_cmdContext->RHIBlitTexture(src, dst, srcSubresource, dstSubresource, filter);
+		}
+	}
+
 	void RHICommandList::TextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba)
 	{
 		if (m_bypass)
@@ -169,6 +178,25 @@ namespace shzk
 		{
 			assert(m_cmdContext);
 			m_cmdContext->RHISetGraphicsPipeline(graphicsPipeline);
+		}
+	}
+
+	void RHICommandList::BeginRendering(const RHIRenderPassInfo& info)
+	{
+		if (m_bypass)
+		{
+			assert(m_cmdContext);
+			m_cmdContext->RHIBeginRendering(info);
+		}
+	}
+	
+
+	void RHICommandList::EndRendering()
+	{
+		if (m_bypass)
+		{
+			assert(m_cmdContext);
+			m_cmdContext->RHIEndRendering();
 		}
 	}
 

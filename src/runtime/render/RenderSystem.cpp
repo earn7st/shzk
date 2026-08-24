@@ -6,11 +6,12 @@
 #include "runtime/rhi/RHI.h"
 #include "runtime/rhi/RHICommandList.h"
 #include "runtime/render/SceneRenderer.h"
+#include "runtime/render/resources/RenderResourceManager.h"
 
 #include "runtime/render/passes/RenderPass.h"
 #include "runtime/render/passes/MeshPass.h"
 #include "runtime/render/passes/ForwardPass.h"
-
+#include "RenderConfig.h"
 #include <cassert>
 
 namespace shzk
@@ -43,25 +44,43 @@ namespace shzk
 
 	void RenderSystem::Tick()
 	{
-		auto& cmd = RHICommandList::Get();
+		RenderResourceManager::Get()->BeginFrame(m_currentFrameIndex);	// update frame index in RenderResourceManager
+
+		// 1. get current frame's RHI resources
 		PerFrameRHIResource& resource = m_perFrameResources[m_currentFrameIndex];
 		resource.fence->Wait();
-		
-		
+
+		// 2. SceneRenderer: collect render scene, build mesh draw commands
+		m_sceneRenderer->Process(Engine::Get()->GetActiveScene());
+
+		// 3. execute passes
+		auto& cmd = RHICommandList::Get();
 		cmd->SetContext(resource.cmdContext.get());
 		cmd->BeginCommand();
+		for (auto& pass : m_passes)
+		{
+			if (!pass) continue;
+			pass->Prepare();
+			pass->Execute(cmd);
+		}
 
+		// 4. Texture Barrier & blit color attachment to swapchain image
 		std::shared_ptr<RHITexture> currentSwapchainTexture = m_rhiSwapchain->AcquireNextTexture(nullptr, resource.startSemaphore);
-		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::Undefined, RHIResourceState::TransferDst });	//TransferDst: Clear Color Required
-		cmd->TextureClearColor(currentSwapchainTexture, { 0.1f, 0.2f, 0.4f, 1.0f });
+		std::shared_ptr<RHITexture> sceneColorTexture = RenderResourceManager::Get()->GetCurrentSceneColorTexture();
+		std::shared_ptr<RHITextureView> sceneColorTextureView = RenderResourceManager::Get()->GetCurrentSceneColorTextureView();
+
+		cmd->TextureBarrier({ sceneColorTexture, RHIResourceState::ColorAttachment, RHIResourceState::TransferSrc });
+		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::Undefined, RHIResourceState::TransferDst });
+		cmd->BlitTexture(sceneColorTexture, currentSwapchainTexture, sceneColorTexture->GetDefaultSubresourceLayers(), sceneColorTexture->GetDefaultSubresourceLayers(), FilterType::Linear);
 		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::TransferDst, RHIResourceState::Present });
 
 		cmd->EndCommand();
+
+		// 5. Queue Submit & Present
 		cmd->Submit(resource.fence, resource.startSemaphore, resource.endSemaphore);
 		m_rhiSwapchain->Present(resource.endSemaphore);
 
-		m_sceneRenderer->Process(Engine::Get()->GetActiveScene());
-
+		// 6. Update Frame Index
 		m_currentFrameIndex = (m_currentFrameIndex + 1) % FRAMES_IN_FLIGHT;
 	}
 
@@ -90,6 +109,8 @@ namespace shzk
 		swapchainInfo.format = COLOR_FORMAT;
 		m_rhiSwapchain = RHI::Get()->CreateSwapchain(swapchainInfo);
 
+		RenderResourceManager::Get()->SetRenderExtent(swapchainInfo.extent);
+
 		RHICommandPoolInfo cmdPoolInfo{};
 		cmdPoolInfo.queue = m_rhiGraphicsQueue;
 		m_rhiCmdPool = RHI::Get()->CreateCommandPool(cmdPoolInfo);
@@ -112,7 +133,8 @@ namespace shzk
 	void RenderSystem::InitPasses()
 	{
 		m_meshPasses[(size_t)PassType::Forward] = std::make_shared<ForwardPass>();
-
+	
 		m_meshPasses[(size_t)PassType::Forward]->Init();
+		m_passes[(size_t)PassType::Forward] = m_meshPasses[(size_t)PassType::Forward];
 	}
 }

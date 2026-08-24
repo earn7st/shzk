@@ -37,6 +37,9 @@ namespace shzk
             std::shared_ptr<RHISemaphore> waitSemaphore,
             std::shared_ptr<RHISemaphore> signalSemaphore);
 
+        void BlitTexture(std::shared_ptr<RHITexture> src, std::shared_ptr<RHITexture> dst,
+            TextureSubresourceLayers srcSubresource, TextureSubresourceLayers dstSubresource,
+            FilterType filter);
         void TextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba);
         void TextureBarrier(const RHITextureBarrier& barrier);
         void BufferBarrier(const RHIBufferBarrier& barrier);
@@ -55,7 +58,7 @@ namespace shzk
         void SetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline);
         // void SetComputePipeline(RHIComputePipelineRef computePipeline);
 
-        void BeginRendering();
+        void BeginRendering(const RHIRenderPassInfo& info);
         void EndRendering();
 
         void PushConstants(void* data, uint16_t size, ShaderFrequency frequency);

@@ -22,14 +22,14 @@ namespace shzk
 
 		g_engine->m_rhi = RHI::Init({ .type = RHIBackendType::Vulkan, .debug = true});
 
+		g_engine->m_renderResourceManager = RenderResourceManager::Get();
+		g_engine->m_renderResourceManager->Init();
+
 		g_engine->m_renderSystem = std::make_shared<RenderSystem>();
 		g_engine->m_renderSystem->Init();
 
 		g_engine->m_assetManager = AssetManager::Get();
 		g_engine->m_assetManager->Init();
-
-		g_engine->m_renderResourceManager = RenderResourceManager::Get();
-		g_engine->m_renderResourceManager->Init();
 
 	}
 

@@ -590,5 +590,26 @@ namespace shzk
             }
             return VK_SAMPLER_ADDRESS_MODE_MAX_ENUM;
         }
+
+        static VkAttachmentLoadOp AttachmentLoadOpToVk(AttachmentLoadOp op)
+        {
+            switch (op)
+            {
+            case AttachmentLoadOp::Load:     return VK_ATTACHMENT_LOAD_OP_LOAD;
+            case AttachmentLoadOp::Clear:    return VK_ATTACHMENT_LOAD_OP_CLEAR;
+            case AttachmentLoadOp::DontCare: return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            default:                         return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            }
+        }
+
+        static VkAttachmentStoreOp AttachmentStoreOpToVk(AttachmentStoreOp op)
+        {
+            switch (op)
+            {
+            case AttachmentStoreOp::Store:    return VK_ATTACHMENT_STORE_OP_STORE;
+            case AttachmentStoreOp::DontCare: return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+            default:                          return VK_ATTACHMENT_STORE_OP_STORE;
+            }
+        }
     }
 }

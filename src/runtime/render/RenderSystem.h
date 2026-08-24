@@ -8,10 +8,6 @@
 
 namespace shzk
 {
-	// static const RHIFormat HDR_COLOR_FORMAT = FORMAT_R16G16B16A16_SFLOAT;
-	static const RHIFormat COLOR_FORMAT = FORMAT_B8G8R8A8_UNORM;
-	static const RHIFormat DEPTH_FORMAT = FORMAT_D32_SFLOAT;
-
 	class RHI;
 	class RHISurface;
 	class RHISwapchain;

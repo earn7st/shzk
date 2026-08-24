@@ -1,5 +1,6 @@
 #include "RenderResourceManager.h"
 #include "runtime/log/Log.h"
+#include "runtime/render/RenderConfig.h"
 #include "runtime/render/resources/Sampler.h"
 #include "runtime/rhi/RHI.h"
 #include "runtime/rhi/RHIResource.h"
@@ -49,6 +50,11 @@ namespace shzk
         return shader;
 	}
 
+    void RenderResourceManager::BeginFrame(uint32_t frameIdx)
+    {
+        m_frameIndex = frameIdx;
+    }
+
     std::shared_ptr<RHIDescriptorSet> RenderResourceManager::CreateMaterialDescriptorSet()
     {
         return m_materialRootSignature->CreateDescriptorSet(DESCRIPTORSET_INDEX_MATERIAL);
@@ -57,22 +63,54 @@ namespace shzk
     void RenderResourceManager::InitGlobalResources()
     {
         // per frame root signature
-        RHIRootSignatureInfo perFrameInfo{};
-
+        {
+            RHIRootSignatureInfo perFrameInfo{};
+            perFrameInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_PER_FRAME, .binding = PER_FRAME_BINDING_VIEW, .size = 1, .frequency = SHADER_FREQUENCY_ALL, .type = RESOURCE_TYPE_UNIFORM_BUFFER });
+            m_perFrameRootSignature = RHI::Get()->CreateRootSignature(perFrameInfo);
+        }
+        
         // material root signature
-        RHIRootSignatureInfo matInfo{};
-        matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_UNIFORM, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_UNIFORM_BUFFER })
-            .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_DIFFUSE, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
-            .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_NORMAL, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
-            .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_ARM, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
-            .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_SPECULAR, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
-        for (int i = 0; i < 8; ++i)
-            matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURE2D + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
-        for (int i = 0; i < 4; ++i)
-            matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURECUBE + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
-        for (int i = 0; i < 4; ++i)
-            matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURE3D + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
-        m_materialRootSignature = RHI::Get()->CreateRootSignature(matInfo);
+        {
+            RHIRootSignatureInfo matInfo{};
+            matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_UNIFORM, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_UNIFORM_BUFFER })
+                .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_DIFFUSE, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
+                .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_NORMAL, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
+                .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_ARM, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
+                .AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_SPECULAR, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
+            for (int i = 0; i < 8; ++i)
+                matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURE2D + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
+            for (int i = 0; i < 4; ++i)
+                matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURECUBE + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
+            for (int i = 0; i < 4; ++i)
+                matInfo.AddEntry({ .set = DESCRIPTORSET_INDEX_MATERIAL, .binding = MATERIAL_BINDING_TEXTURE3D + i, .size = 1, .frequency = SHADER_FREQUENCY_FRAGMENT, .type = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER });
+            m_materialRootSignature = RHI::Get()->CreateRootSignature(matInfo);
+        }
+        
+        // per frame resources
+        {
+            for (int i = 0; i < FRAMES_IN_FLIGHT; ++i)
+            {
+                auto& perFrame = m_perFrameResources[i];
+                // descriptor set (set 0)
+                perFrame.descriptorSet = m_perFrameRootSignature->CreateDescriptorSet(DESCRIPTORSET_INDEX_PER_FRAME);
+
+                // color attachment
+                RHITextureInfo info{};
+                info.format = HDR_COLOR_FORMAT;
+                info.extent = { m_renderExtent.width, m_renderExtent.height, 1 };
+                info.arrayLayers = 1;
+                info.mipLevels = 1;
+                info.memoryUsage = MemoryUsage::GPUOnly;
+                info.type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_RENDER_TARGET;
+                perFrame.sceneColorTexture = RHI::Get()->CreateTexture(info);
+
+                RHITextureViewInfo viewInfo{};
+                viewInfo.texture = perFrame.sceneColorTexture;
+                viewInfo.format = HDR_COLOR_FORMAT;
+                viewInfo.viewType = TextureViewType::View2D;
+                perFrame.sceneColorTextureView = RHI::Get()->CreateTextureView(viewInfo);
+            }
+        }
 
         // multiframe resources
         {

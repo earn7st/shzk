@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 
 namespace shzk
 {
@@ -22,6 +23,8 @@ namespace shzk
 		Max,
 	};
 
+	class RHICommandList;
+
 	class RenderPass
 	{
 	public:
@@ -30,6 +33,9 @@ namespace shzk
 		~RenderPass() = default;
 
 		virtual void Init() = 0;
+		virtual void Prepare() = 0;
+		virtual void Execute(std::shared_ptr<RHICommandList> cmd) = 0;
+
 		PassType GetType() const { return m_type; }
 
 	protected:

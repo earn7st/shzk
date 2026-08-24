@@ -3,6 +3,7 @@
 // #include <crtdbg.h>
 #include <memory>
 #include "editor/Editor.h"
+#include "runtime/core/Transform.h"
 #include "runtime/asset/AssetManager.h"
 #include "runtime/global/Engine.h"
 // framework
@@ -38,16 +39,34 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 	// Damaged Helmet
 	if (true)
 	{
-		std::shared_ptr<shzk::Node> helmet = std::make_shared<shzk::Node>(1, "damaged_helmet");
+		std::shared_ptr<shzk::Node> helmet0 = std::make_shared<shzk::Node>(1, "damaged_helmet0");
+		std::shared_ptr<shzk::Node> helmet1 = std::make_shared<shzk::Node>(2, "damaged_helmet1");
 		
-		std::shared_ptr<shzk::TransformComponent> transform = std::make_shared<shzk::TransformComponent>();
-		std::shared_ptr<shzk::MeshComponent> mesh = std::make_shared<shzk::MeshComponent>();
-		mesh->SetModel(result.models[0]);
+		shzk::Transform transform{};
+		transform.translation = glm::vec3(1.f, 0.f, 0.f);
+		transform.rotation = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		
+		{
+			std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
+			transformComp->SetTransform(transform);
+			helmet0->AddComponent(transformComp);
+			std::shared_ptr<shzk::MeshComponent> meshComp = std::make_shared<shzk::MeshComponent>();
+			meshComp->SetModel(result.models[0]);
+			helmet0->AddComponent(meshComp);
+		}
 
-		helmet->AddComponent(transform);
-		helmet->AddComponent(mesh);
-
-		scene->AddNode(helmet);
+		{
+			std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
+			transform.translation = glm::vec3(-1.f, 0.f, 0.f);
+			transformComp->SetTransform(transform);
+			helmet1->AddComponent(transformComp);
+			std::shared_ptr<shzk::MeshComponent> meshComp = std::make_shared<shzk::MeshComponent>();
+			meshComp->SetModel(result.models[0]);
+			helmet1->AddComponent(meshComp);
+		}
+		
+		scene->AddNode(helmet0);
+		scene->AddNode(helmet1);
 	}
 	
 }

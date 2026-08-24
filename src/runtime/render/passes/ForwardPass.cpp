@@ -4,7 +4,10 @@
 
 #include "runtime/asset/Shader.h"
 #include "runtime/asset/Material.h"
+#include "runtime/render/RenderConfig.h"
+#include "runtime/render/resources/RenderResourceManager.h"
 #include "runtime/rhi/RHI.h"
+#include "runtime/rhi/RHICommandList.h"
 #include "runtime/rhi/RHIDefinitions.h"
 
 #include <memory>
@@ -19,10 +22,55 @@ namespace shzk
 		m_vertexShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "forward.vert.spv", SHADER_FREQUENCY_VERTEX, "main");
 		m_fragmentShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "forward.frag.spv", SHADER_FREQUENCY_FRAGMENT, "main");
 
-		// TODO
-		RHIRootSignatureInfo info{};
-		m_rootSignature = RHI::Get()->CreateRootSignature(info);
+		{
+			RHIRootSignatureInfo info{};
+			auto perFrameRS = RenderResourceManager::Get()->GetPerFrameRootSignature();
+			auto matRS = RenderResourceManager::Get()->GetMaterialRootSignature();
+			assert(perFrameRS);
+			assert(matRS);
+			info.AddPushConstant({ .offset = 0, .size = 128, .frequency = SHADER_FREQUENCY_VERTEX });
+			info.AddEntry(perFrameRS->GetInfo())
+				.AddEntry(matRS->GetInfo());
+			m_rootSignature = RHI::Get()->CreateRootSignature(info);
+		}
 		
+		{
+			m_colorAttachmentFormats.fill(FORMAT_UKNOWN);
+			m_colorAttachmentFormats[0] = HDR_COLOR_FORMAT;
+			m_depthStencilAttachmentFormat = FORMAT_UKNOWN;
+		}
+	}
+
+	void ForwardPass::Prepare()
+	{
+		std::shared_ptr<RHITextureView> sceneColorView =
+			RenderResourceManager::Get()->GetCurrentSceneColorTextureView();
+
+		m_renderPassInfo = {};
+		m_renderPassInfo.renderArea = RenderResourceManager::Get()->GetRenderExtent();
+		m_renderPassInfo.layerCount = 1;
+		m_renderPassInfo.viewMask = m_viewMask;
+
+		auto& color = m_renderPassInfo.colorAttachments[0];
+		color.view = sceneColorView;
+		color.layout = RHIResourceState::ColorAttachment;
+		color.loadOp = AttachmentLoadOp::Clear;
+		color.storeOp = AttachmentStoreOp::Store;
+		color.clearColor = CLEAR_COLOR;
+	}
+
+	void ForwardPass::Execute(std::shared_ptr<RHICommandList> cmd)
+	{
+		cmd->TextureBarrier({
+		  RenderResourceManager::Get()->GetCurrentSceneColorTexture(),
+		  RHIResourceState::Undefined,
+		  RHIResourceState::ColorAttachment
+			});
+		cmd->BeginRendering(m_renderPassInfo);
+		cmd->SetViewport({ 0,0 }, { m_renderPassInfo.renderArea.width, m_renderPassInfo.renderArea.height });
+		cmd->SetScissor({ 0,0 }, { m_renderPassInfo.renderArea.width, m_renderPassInfo.renderArea.height });
+		m_meshPassProcessor->ExecuteDrawCommands(cmd);
+		cmd->EndRendering();
 	}
 
 // ForwardPassProcessor	

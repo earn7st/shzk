@@ -74,11 +74,11 @@ namespace shzk
         createInfo.queueFamilyIndexCount = 0;
         createInfo.pQueueFamilyIndices = nullptr;
 
-        createInfo.preTransform = m_capabilities.currentTransform;                  // �任������������ת��ת����Ĭ��
-        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;              // ͸���Ȼ��
-        createInfo.presentMode = presentMode;                                       // ˢ��ģʽ
-        createInfo.clipped = VK_TRUE;                                               // �ü����ڵ����ٿ��ӷ�Χ��ȣ�
-        createInfo.oldSwapchain = VK_NULL_HANDLE;                                   // ����������ʱʹ��
+        createInfo.preTransform = m_capabilities.currentTransform;
+        createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        createInfo.presentMode = presentMode;
+        createInfo.clipped = VK_TRUE;
+        createInfo.oldSwapchain = VK_NULL_HANDLE;
 
         VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_handle));
 

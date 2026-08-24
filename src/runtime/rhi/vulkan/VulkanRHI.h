@@ -111,6 +111,9 @@ namespace shzk
 			std::shared_ptr<RHISemaphore> waitSemaphore,
 			std::shared_ptr<RHISemaphore> signalSemaphore) override final;
 
+		virtual void RHIBlitTexture(std::shared_ptr<RHITexture> src, std::shared_ptr<RHITexture> dst,
+			TextureSubresourceLayers srcSubresource, TextureSubresourceLayers dstSubresource,
+			FilterType filter) override final;
 		virtual void RHITextureClearColor(std::shared_ptr<RHITexture> texture, glm::vec4 rgba) override final;
 		virtual void RHITextureBarrierCommand(const RHITextureBarrier& barrier) override final;
 		virtual void RHIBufferBarrierCommand(const RHIBufferBarrier& barrier) override final;
@@ -129,7 +132,7 @@ namespace shzk
 		virtual void RHISetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline) override final;
 		// virtual void RHISetComputePipeline(RHIComputePipelineRef computePipeline) override final;
 
-		virtual void RHIBeginRendering() override final;
+		virtual void RHIBeginRendering(const RHIRenderPassInfo& info) override final;
 		virtual void RHIEndRendering() override final;
 
 		virtual void RHIPushConstants(void* data, uint16_t size, ShaderFrequency frequency) override final;
@@ -187,8 +190,8 @@ namespace shzk
 	void RHICopyTextureImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource);
 	void RHIGenerateMipsImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHITexture> src);
 
-	void RHIBlitTexture(VkCommandBuffer& cmdBuffer, 
+	void RHIBlitTextureImpl(VkCommandBuffer& cmdBuffer, 
 		std::shared_ptr<RHITexture> src, std::shared_ptr<RHITexture> dst,
 		TextureSubresourceLayers srcSubresource, TextureSubresourceLayers dstSubresource,
 		FilterType filter);
-}
+}	

@@ -149,11 +149,11 @@ namespace shzk
         viewInfo.image = CastTo<VulkanRHITexture>(info.texture)->GetHandle();
         viewInfo.viewType = VulkanUtil::TextureViewTypeToVk(info.viewType);
         viewInfo.format = VulkanUtil::RHIFormatToVkFormat(info.format);
-        viewInfo.subresourceRange.aspectMask = VulkanUtil::TextureAspectFlagsToVk(info.subresourceRange.aspect);
-        viewInfo.subresourceRange.baseMipLevel = info.subresourceRange.baseMipLevel;
-        viewInfo.subresourceRange.levelCount = info.subresourceRange.levelCount;
-        viewInfo.subresourceRange.baseArrayLayer = info.subresourceRange.baseArrayLayer;
-        viewInfo.subresourceRange.layerCount = info.subresourceRange.layerCount;
+        viewInfo.subresourceRange.aspectMask = VulkanUtil::TextureAspectFlagsToVk(m_info.subresourceRange.aspect);
+        viewInfo.subresourceRange.baseMipLevel = m_info.subresourceRange.baseMipLevel;
+        viewInfo.subresourceRange.levelCount = m_info.subresourceRange.levelCount;
+        viewInfo.subresourceRange.baseArrayLayer = m_info.subresourceRange.baseArrayLayer;
+        viewInfo.subresourceRange.layerCount = m_info.subresourceRange.layerCount;
 		
 		VK_CHECK(vkCreateImageView(rhi.GetDevice(), &viewInfo, nullptr, &m_handle));
     }
@@ -396,7 +396,7 @@ namespace shzk
         VkPipelineVertexInputStateCreateInfo    vertexInputStateCI      = GetVertexInputStateCreateInfo(info.vertexInputState);
         VkPipelineInputAssemblyStateCreateInfo  inputAssemblyStateCI    = GetInputAssemblyStateCreateInfo(info.primitiveType);
         // VkPipelineTessellationStateCreateInfo   tessellationStateCI;   
-        // VkPipelineViewportStateCreateInfo       viewportStateCI;  // Use Dynamic
+        VkPipelineViewportStateCreateInfo       viewportStateCI         = GetViewportStateCreateInfo();  // Use Dynamic
         VkPipelineRasterizationStateCreateInfo  rasterizationStateCI    = GetRasterizationStateCreateInfo(info.rasterizerState);
         VkPipelineMultisampleStateCreateInfo    multisampleStateCI      = GetMultisampleStateCreateInfo();
         VkPipelineDepthStencilStateCreateInfo   depthStencilStateCI     = GetDepthStencilStateCreateInfo(info.depthStencilState);
@@ -412,7 +412,7 @@ namespace shzk
         pipelineCI.pVertexInputState = &vertexInputStateCI;
         pipelineCI.pInputAssemblyState = &inputAssemblyStateCI;
         pipelineCI.pTessellationState = nullptr;
-        pipelineCI.pViewportState = nullptr;    // use dynamic
+        pipelineCI.pViewportState = &viewportStateCI;    // use dynamic
         pipelineCI.pRasterizationState = &rasterizationStateCI;
         pipelineCI.pMultisampleState = &multisampleStateCI;
         pipelineCI.pDepthStencilState = &depthStencilStateCI;
@@ -470,6 +470,18 @@ namespace shzk
         info.topology   = VulkanUtil::PrimitiveTypeToVkTopology(primitiveType);
         info.primitiveRestartEnable = VK_FALSE;
 
+        return info;
+    }
+
+    inline VkPipelineViewportStateCreateInfo VulkanRHIGraphicsPipeline::GetViewportStateCreateInfo()
+    {
+        // empty viewport state, since we use dynamic states
+        VkPipelineViewportStateCreateInfo info{};
+        info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        info.viewportCount = 1;
+        info.pViewports = nullptr;
+        info.scissorCount = 1;
+        info.pScissors = nullptr;
         return info;
     }
 
