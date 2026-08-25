@@ -198,23 +198,7 @@ namespace shzk
         // The default material set 1
         // Layout should be retrived from RenderResourceManager.m_materialRootSignature
         std::shared_ptr<RHIDescriptorSet> m_descriptorSet;
-
-        struct MaterialUniformData
-        {
-            glm::vec4 baseColor;
-            glm::vec3 emission;
-
-            float metallic;
-            float roughness;
-            float alphaCutoff;
-            uint32_t bUseVertexColor;
-
-            // General slots
-            std::array<int32_t, 8> ints{};    // 0: alpha mode 1£ºdouble sided 2: unlit
-            std::array<float, 8>   floats{};  // 0: normal scale 1: occlusion strength
-            std::array<glm::vec4, 8> colors{};
-        };
-        Buffer<MaterialUniformData> m_buffer;
+        Buffer<MaterialUniformStruct> m_buffer;
         
 	};
 }

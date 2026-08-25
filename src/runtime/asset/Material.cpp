@@ -19,20 +19,20 @@ namespace shzk
 
 	void Material::UpdateUniformData()
 	{
-		MaterialUniformData data;
-		data.baseColor = m_baseColor;
-		data.emission = m_emission;
-		data.metallic = m_metallic;
-		data.roughness = m_roughness;
-		data.alphaCutoff = m_alphaCutoff;
-		data.bUseVertexColor = m_bUseVertexColor ? 1 : 0;
+		MaterialUniformStruct ub;
+		ub.baseColor = m_baseColor;
+		ub.emission = m_emission;
+		ub.metallic = m_metallic;
+		ub.roughness = m_roughness;
+		ub.alphaCutoff = m_alphaCutoff;
+		ub.bUseVertexColor = m_bUseVertexColor ? 1 : 0;
 		for (int i = 0; i < 8; ++i)
 		{
-			data.ints[i] = m_ints[i];
-			data.floats[i] = m_floats[i];
-			data.colors[i] = m_colors[i];
+			ub.ints[i] = m_ints[i];
+			ub.floats[i] = m_floats[i];
+			ub.colors[i] = m_colors[i];
 		}
-		m_buffer.SetData(data);
+		m_buffer.SetData(ub);
 	}
 
 	void Material::UpdateTexture(uint32_t binding, std::shared_ptr<Texture> texture)

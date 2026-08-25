@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cstdint>
+#include <glm/glm.hpp>
 
 namespace shzk
 {
+	// enums
 	enum DescriptorSetIndex : uint32_t
 	{
 		DESCRIPTORSET_INDEX_PER_FRAME = 0,
@@ -30,4 +32,31 @@ namespace shzk
 		MATERIAL_BINDING_TEXTURECUBE = 13,  // [13, 17) m_textureCube[4]
 		MATERIAL_BINDING_TEXTURE3D = 17,  // [17, 21) m_texture3D[4]
 	};
+
+	// structs
+	typedef struct PerFrameUniformStruct
+	{
+		float timeStamp;
+
+		glm::mat4x4 viewProj;
+	} PerFrameUniformStruct;
+
+	typedef struct MaterialUniformStruct
+	{
+		glm::vec4 baseColor;
+		glm::vec3 emission;
+
+		char  _padding[4];
+
+		float metallic;
+		float roughness;
+		float alphaCutoff;
+		uint32_t bUseVertexColor;
+
+		// General slots
+		std::array<int32_t, 8> ints{};    // 0: alpha mode 1£ºdouble sided 2: unlit
+		std::array<float, 8>   floats{};  // 0: normal scale 1: occlusion strength
+		std::array<glm::vec4, 8> colors{};
+	} MaterialUniformStruct;
+
 }

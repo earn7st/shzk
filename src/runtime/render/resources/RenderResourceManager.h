@@ -1,5 +1,6 @@
 #pragma once
 
+#include "runtime/render/resources/Buffer.h"
 #include "runtime/render/resources/Sampler.h"
 #include "runtime/render/resources/GraphicsPipelineCache.h"
 #include "runtime/render/resources/RenderResourceDefinitions.h"
@@ -62,9 +63,9 @@ namespace shzk
 		// per frame resources
 		struct PerFrameResource
 		{
-			std::shared_ptr<RHIDescriptorSet> descriptorSet;	// set 0
-
-			// Uniform Buffers: Camera, Light
+			// Shader Binding
+			std::shared_ptr<RHIDescriptorSet> descriptorSet;
+			Buffer<PerFrameUniformStruct> ub;
 
 			// Render Targets
 			std::shared_ptr<RHITexture>	sceneColorTexture;
