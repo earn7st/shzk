@@ -93,6 +93,8 @@ namespace shzk
                 auto& perFrame = m_perFrameResources[i];
                 // descriptor set (set 0)
                 perFrame.descriptorSet = m_perFrameRootSignature->CreateDescriptorSet(DESCRIPTORSET_INDEX_PER_FRAME);
+                perFrame.ub = std::make_shared<Buffer<PerFrameUniformShaderParameters>>();
+                perFrame.descriptorSet->UpdateBuffer(PER_FRAME_BINDING_VIEW, perFrame.ub->GetBuffer());
 
                 // color attachment
                 RHITextureInfo info{};

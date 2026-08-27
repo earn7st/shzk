@@ -65,10 +65,10 @@ namespace shzk
 		// TODO: numInstance
 
 	public:
-		bool SubmitDraw(std::shared_ptr<RHICommandList> cmdList, std::shared_ptr<RHIGraphicsPipeline> pipeline);
+		bool SubmitDraw(std::shared_ptr<RHICommandList> cmdList);
 
 	private:
-		bool SubmitDrawBegin(std::shared_ptr<RHICommandList> cmdList, std::shared_ptr<RHIGraphicsPipeline> pipeline);
+		bool SubmitDrawBegin(std::shared_ptr<RHICommandList> cmdList);
 		void SubmitDrawEnd(std::shared_ptr<RHICommandList> cmdList);
 	};
 }

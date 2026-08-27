@@ -34,14 +34,15 @@ namespace shzk
 	};
 
 	// structs
-	typedef struct PerFrameUniformStruct
+	typedef struct PerFrameUniformShaderParameters
 	{
-		float timeStamp;
-
+		glm::mat4x4 view;
+		glm::mat4x4 proj;
 		glm::mat4x4 viewProj;
-	} PerFrameUniformStruct;
 
-	typedef struct MaterialUniformStruct
+	} PerFrameUniformShaderParameters;
+
+	typedef struct MaterialUniformShaderParameters
 	{
 		glm::vec4 baseColor;
 		glm::vec3 emission;
@@ -57,6 +58,6 @@ namespace shzk
 		std::array<int32_t, 8> ints{};    // 0: alpha mode 1£ºdouble sided 2: unlit
 		std::array<float, 8>   floats{};  // 0: normal scale 1: occlusion strength
 		std::array<glm::vec4, 8> colors{};
-	} MaterialUniformStruct;
+	} MaterialUniformShaderParameters;
 
 }

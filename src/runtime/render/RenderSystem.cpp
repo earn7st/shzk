@@ -46,17 +46,15 @@ namespace shzk
 	{
 		RenderResourceManager::Get()->BeginFrame(m_currentFrameIndex);	// update frame index in RenderResourceManager
 
-		// 1. get current frame's RHI resources
 		PerFrameRHIResource& resource = m_perFrameResources[m_currentFrameIndex];
 		resource.fence->Wait();
 
-		// 2. SceneRenderer: collect render scene, build mesh draw commands
 		m_sceneRenderer->Process(Engine::Get()->GetActiveScene());
 
-		// 3. execute passes
 		auto& cmd = RHICommandList::Get();
 		cmd->SetContext(resource.cmdContext.get());
 		cmd->BeginCommand();
+
 		for (auto& pass : m_passes)
 		{
 			if (!pass) continue;
@@ -64,7 +62,6 @@ namespace shzk
 			pass->Execute(cmd);
 		}
 
-		// 4. Texture Barrier & blit color attachment to swapchain image
 		std::shared_ptr<RHITexture> currentSwapchainTexture = m_rhiSwapchain->AcquireNextTexture(nullptr, resource.startSemaphore);
 		std::shared_ptr<RHITexture> sceneColorTexture = RenderResourceManager::Get()->GetCurrentSceneColorTexture();
 		std::shared_ptr<RHITextureView> sceneColorTextureView = RenderResourceManager::Get()->GetCurrentSceneColorTextureView();
@@ -76,11 +73,9 @@ namespace shzk
 
 		cmd->EndCommand();
 
-		// 5. Queue Submit & Present
 		cmd->Submit(resource.fence, resource.startSemaphore, resource.endSemaphore);
 		m_rhiSwapchain->Present(resource.endSemaphore);
 
-		// 6. Update Frame Index
 		m_currentFrameIndex = (m_currentFrameIndex + 1) % FRAMES_IN_FLIGHT;
 	}
 

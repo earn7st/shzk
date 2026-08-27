@@ -3,6 +3,7 @@
 #include "runtime/log/Log.h"
 #include "runtime/framework/Node.h"
 #include "runtime/framework/components/CameraComponent.h"
+#include "runtime/framework/components/TransformComponent.h"
 
 #include <cassert>
 
@@ -12,7 +13,8 @@ namespace shzk
 	{
 		for (auto& node : m_nodes)
 		{
-			
+			auto transformComp = node->TryGetComponent<TransformComponent>();
+			if (!transformComp) continue;
 		}
 	}
 

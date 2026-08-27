@@ -195,10 +195,10 @@ namespace shzk
 
     // GPU side resources and data for upload
     protected:
+        std::shared_ptr<Buffer<MaterialUniformShaderParameters>> m_buffer;
+
         // The default material set 1
         // Layout should be retrived from RenderResourceManager.m_materialRootSignature
         std::shared_ptr<RHIDescriptorSet> m_descriptorSet;
-        Buffer<MaterialUniformStruct> m_buffer;
-        
 	};
 }

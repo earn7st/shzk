@@ -39,6 +39,8 @@ namespace shzk
 		std::shared_ptr<RHIDescriptorSet> CreateMaterialDescriptorSet();
 
 		// per frame resources
+		std::shared_ptr<RHIDescriptorSet> GetCurrentPerFrameDescriptorSet() const { return m_perFrameResources[m_frameIndex].descriptorSet; }
+		std::shared_ptr<Buffer<PerFrameUniformShaderParameters>> GetCurrentPerFrameUniformBuffer() const{ return m_perFrameResources[m_frameIndex].ub; }
 		std::shared_ptr<RHITexture>	GetCurrentSceneColorTexture() const { return m_perFrameResources[m_frameIndex].sceneColorTexture; }
 		std::shared_ptr<RHITextureView> GetCurrentSceneColorTextureView() const { return m_perFrameResources[m_frameIndex].sceneColorTextureView; }
 
@@ -65,7 +67,7 @@ namespace shzk
 		{
 			// Shader Binding
 			std::shared_ptr<RHIDescriptorSet> descriptorSet;
-			Buffer<PerFrameUniformStruct> ub;
+			std::shared_ptr<Buffer<PerFrameUniformShaderParameters>> ub;
 
 			// Render Targets
 			std::shared_ptr<RHITexture>	sceneColorTexture;

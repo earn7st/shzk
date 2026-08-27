@@ -13,9 +13,11 @@ namespace shzk
 	class SceneRenderer
 	{
 	public:
-		void Process(const std::shared_ptr<Scene>& scene);
+		void Process(std::shared_ptr<Scene> scene);
 
 	private:
+		void InitActiveCameraView(std::shared_ptr<Scene> scene);
+		// void InitViews();
 		void CollectNodeMesh(const std::shared_ptr<Node>& node, std::vector<MeshBatch>& batches, glm::mat4x4 accTransformMat);
 	};
 }

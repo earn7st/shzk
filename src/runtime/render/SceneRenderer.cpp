@@ -1,21 +1,30 @@
 #include "SceneRenderer.h"
 #include "MeshDrawCommand.h"
+
+#include "runtime/log/Log.h"
 #include "runtime/global/Engine.h"
 #include "runtime/render/MeshBatch.h"
 #include "runtime/render/RenderSystem.h"
 #include "runtime/render/passes/MeshPass.h"
 #include "runtime/render/passes/MeshPassProcessor.h"
+#include "runtime/render/resources/RenderResourceManager.h"
 #include "runtime/framework/Scene.h"
 #include "runtime/framework/Node.h"
 #include "runtime/framework/components/MeshComponent.h"
 #include "runtime/framework/components/TransformComponent.h"
+#include "runtime/framework/components/CameraComponent.h"
 
 #include <glm/glm.hpp>
+#include <cassert>
 
 namespace shzk
 {
-	void SceneRenderer::Process(const std::shared_ptr<Scene>& scene)
+	void SceneRenderer::Process(std::shared_ptr<Scene> scene)
 	{
+		// Init Views
+		InitActiveCameraView(scene);
+
+		// CollectBatches
 		std::vector<MeshBatch>	batches;
 		glm::mat4 transformMat = glm::identity<glm::mat4>();
 
@@ -28,6 +37,31 @@ namespace shzk
 			if (!pass) continue;
 			pass->GetMeshPassProcessor()->Process(batches);
 		}
+	}
+
+	void SceneRenderer::InitActiveCameraView(std::shared_ptr<Scene> scene)
+	{
+		PerFrameUniformShaderParameters params{};
+
+		std::shared_ptr<CameraComponent> cameraComp = scene->GetActiveCamera();
+		if (!cameraComp) 
+		{
+			SHZK_LOG_ERROR("No active camera in active scene!");
+			assert(false);
+			return;
+		}
+		
+		Extent2D extent = RenderResourceManager::Get()->GetRenderExtent();
+		float aspect = (float)extent.width / extent.height;
+		glm::mat4x4 view = cameraComp->GetViewMatrix();
+		glm::mat4x4 proj = cameraComp->GetProjectionMatrix(aspect);
+
+		params.view = view;
+		params.proj = proj;
+		params.viewProj = proj * view;
+		
+		std::shared_ptr<Buffer<PerFrameUniformShaderParameters>> buffer = RenderResourceManager::Get()->GetCurrentPerFrameUniformBuffer();
+		buffer->SetData(params);
 	}
 
 	void SceneRenderer::CollectNodeMesh(const std::shared_ptr<Node>& node, std::vector<MeshBatch>& batches, glm::mat4x4 accTransformMat)

@@ -27,11 +27,15 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 	{
 		std::shared_ptr<shzk::Node> camera = std::make_shared<shzk::Node>(0, "main_camera");
 
-		std::shared_ptr<shzk::TransformComponent> transformComponent = std::make_shared<shzk::TransformComponent>();
-		std::shared_ptr<shzk::CameraComponent>	cameraComponent = std::make_shared<shzk::CameraComponent>();
+		std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
+		shzk::Transform transform{};
+		transform.translation = glm::vec3(0.f, 0.f, 5.f);
+		transformComp->SetTransform(transform);
 
-		camera->AddComponent(transformComponent);
-		camera->AddComponent(cameraComponent);
+		std::shared_ptr<shzk::CameraComponent> cameraComp = std::make_shared<shzk::CameraComponent>();
+		
+		camera->AddComponent(transformComp);
+		camera->AddComponent(cameraComp);
 	
 		scene->AddNode(camera);
 	}
@@ -44,7 +48,7 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 		
 		shzk::Transform transform{};
 		transform.translation = glm::vec3(1.f, 0.f, 0.f);
-		transform.rotation = glm::angleAxis(glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		transform.rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 		
 		{
 			std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();

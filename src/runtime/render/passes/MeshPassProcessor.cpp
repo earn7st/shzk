@@ -88,12 +88,20 @@ namespace shzk
 
 	void MeshPassProcessor::ExecuteDrawCommands(std::shared_ptr<RHICommandList> cmd)
 	{
+		bool bPerFrameUnifomDescBound = false;
 		for (auto& meshDrawCommand : m_oneFrameMeshDrawCommands)
 		{
 			RHIGraphicsPipelineInfo pipelineInfo = BuildRHIGraphicsPipelineInfo(meshDrawCommand.m_state);
 			std::shared_ptr<RHIGraphicsPipeline> pipeline = RenderResourceManager::GetGraphicsPipelineCache()->GetOrCreateGraphicsPipeline(pipelineInfo);
+			cmd->SetGraphicsPipeline(pipeline);
 
-			meshDrawCommand.SubmitDraw(cmd, pipeline);
+			if (!bPerFrameUnifomDescBound)
+			{
+				cmd->BindDescriptorSet(RenderResourceManager::Get()->GetCurrentPerFrameDescriptorSet(), DESCRIPTORSET_INDEX_PER_FRAME);
+				bPerFrameUnifomDescBound = true;
+			}
+
+			meshDrawCommand.SubmitDraw(cmd);
 		}
 	}
 

@@ -7,6 +7,8 @@ namespace shzk
 {
 	void Material::InitRenderResources()
 	{
+		m_buffer = std::make_shared<Buffer<MaterialUniformShaderParameters>>();
+
 		m_descriptorSet = RenderResourceManager::Get()->CreateMaterialDescriptorSet();
 		if (!m_descriptorSet)
 		{
@@ -14,12 +16,12 @@ namespace shzk
 			assert(false);
 			return;
 		}
-		m_descriptorSet->UpdateBuffer(MATERIAL_BINDING_UNIFORM, m_buffer.GetBuffer());
+		m_descriptorSet->UpdateBuffer(MATERIAL_BINDING_UNIFORM, m_buffer->GetBuffer());
 	}
 
 	void Material::UpdateUniformData()
 	{
-		MaterialUniformStruct ub;
+		MaterialUniformShaderParameters ub;
 		ub.baseColor = m_baseColor;
 		ub.emission = m_emission;
 		ub.metallic = m_metallic;
@@ -32,7 +34,7 @@ namespace shzk
 			ub.floats[i] = m_floats[i];
 			ub.colors[i] = m_colors[i];
 		}
-		m_buffer.SetData(ub);
+		m_buffer->SetData(ub);
 	}
 
 	void Material::UpdateTexture(uint32_t binding, std::shared_ptr<Texture> texture)

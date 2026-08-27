@@ -8,8 +8,10 @@ layout(location = 0) out vec4 outColor;
 
 layout(set = 0, binding = 0) uniform PerFrameUBO
 {
+    mat4 view;
+    mat4 proj;
     mat4 viewProj;
-}
+} perFrame;
 
 layout(set = 1, binding = 0) uniform MaterialUBO 
 {

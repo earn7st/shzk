@@ -17,7 +17,7 @@ namespace shzk
 				.indexBuffer		= submesh.indexBuffer,
 				.firstIndex			= 0,
 				.indexCount			= submesh.indexBuffer->GetIndexNum(),
-				.modelMatrix		= accTransformMat,
+				.modelMatrix		= submesh.localTransform.ToMat4x4() * accTransformMat,
 			};
 			elements.push_back(element);
 			batches.emplace_back(elements, submesh.vertexFactory, submesh.material, submesh.primitiveType);	// only one MeshBatchElement per MeshBatch for now

@@ -26,6 +26,8 @@ namespace shzk
 		bool ShouldClose() const { return m_shouldClose; }
 
 		SDL_Window* GetWindow() const { return m_window; }
+		uint32_t GetWidth() const { return m_width; }
+		uint32_t GetHeight() const { return m_height; }
 
 	private:
 		SDL_Window* m_window = nullptr;

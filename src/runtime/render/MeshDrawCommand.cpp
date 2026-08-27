@@ -6,9 +6,9 @@
 
 namespace shzk
 {
-	bool MeshDrawCommand::SubmitDraw(std::shared_ptr<RHICommandList> cmdList, std::shared_ptr<RHIGraphicsPipeline> pipeline)
+	bool MeshDrawCommand::SubmitDraw(std::shared_ptr<RHICommandList> cmdList)
 	{
-		if (SubmitDrawBegin(cmdList, pipeline))
+		if (SubmitDrawBegin(cmdList))
 		{
 			SubmitDrawEnd(cmdList);
 			return true;
@@ -16,10 +16,8 @@ namespace shzk
 		return false;
 	}
 
-	bool MeshDrawCommand::SubmitDrawBegin(std::shared_ptr<RHICommandList> cmdList, std::shared_ptr<RHIGraphicsPipeline> pipeline)
+	bool MeshDrawCommand::SubmitDrawBegin(std::shared_ptr<RHICommandList> cmdList)
 	{
-        cmdList->SetGraphicsPipeline(pipeline);
-
         if (m_shaderBindings.materialSet)
         {
             cmdList->BindDescriptorSet(m_shaderBindings.materialSet, DESCRIPTORSET_INDEX_MATERIAL);
