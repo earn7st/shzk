@@ -9,12 +9,11 @@
 
 namespace shzk
 {
-	void Scene::Tick()
+	void Scene::Tick(float dt)
 	{
 		for (auto& node : m_nodes)
 		{
-			auto transformComp = node->TryGetComponent<TransformComponent>();
-			if (!transformComp) continue;
+			node->Tick(dt);
 		}
 	}
 
@@ -53,8 +52,8 @@ namespace shzk
 	{
 		for (auto& node : m_nodes)
 		{
-			std::shared_ptr<CameraComponent> component = node->TryGetComponent<CameraComponent>();
-			if (component) return component;
+			std::shared_ptr<CameraComponent> cameraComp = node->TryGetComponent<CameraComponent>();
+			if (cameraComp && cameraComp->Is) return cameraComp;
 		}
 		return nullptr;
 	}

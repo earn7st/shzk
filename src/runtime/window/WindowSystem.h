@@ -23,8 +23,9 @@ namespace shzk
 		void Shutdown();
 
 		void Tick();
-		bool ShouldClose() const { return m_shouldClose; }
+		void RequestClose() { m_shouldClose = true; }
 
+		bool ShouldClose() const { return m_shouldClose; }
 		SDL_Window* GetWindow() const { return m_window; }
 		uint32_t GetWidth() const { return m_width; }
 		uint32_t GetHeight() const { return m_height; }

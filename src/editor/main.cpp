@@ -21,24 +21,6 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 	shzk::GltfLoadResult result;
 	gltfLoader.Load(SHZK_ASSETS_DIR "DamagedHelmet/glTF/DamagedHelmet.gltf", result);
 	shzk::AssetManager::Get()->ProcessGltfLoadResult(result);
-
-	// Camera
-	if (true)
-	{
-		std::shared_ptr<shzk::Node> camera = std::make_shared<shzk::Node>(0, "main_camera");
-
-		std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
-		shzk::Transform transform{};
-		transform.translation = glm::vec3(0.f, 0.f, 5.f);
-		transformComp->SetTransform(transform);
-
-		std::shared_ptr<shzk::CameraComponent> cameraComp = std::make_shared<shzk::CameraComponent>();
-		
-		camera->AddComponent(transformComp);
-		camera->AddComponent(cameraComp);
-	
-		scene->AddNode(camera);
-	}
 	
 	// Damaged Helmet
 	if (true)
@@ -81,8 +63,8 @@ int main()
 
 	shzk::EngineInitInfo engineInitInfo{};
 	engineInitInfo.name = "shzk";
-	engineInitInfo.width = 1280;
-	engineInitInfo.height = 720;
+	engineInitInfo.width = 1920;
+	engineInitInfo.height = 1080;
 
 	shzk::Engine::Init(engineInitInfo);
 
@@ -91,6 +73,7 @@ int main()
 	shzk::Engine::Get()->SetActiveScene(scene);
 
 	shzk::Editor* editor = new shzk::Editor();
+	editor->Init(scene);
 	editor->Run();
 	editor->Shutdown();
 

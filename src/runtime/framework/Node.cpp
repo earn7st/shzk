@@ -4,8 +4,17 @@
 
 namespace shzk
 {
-	void Node::Tick()
+	void Node::Tick(float dt)
 	{
+		for (auto& component : m_components)
+		{
+			component->Tick(dt);
+		}
+
+		for (auto& child : m_children)
+		{
+			child->Tick(dt);
+		}
 	}
 
 	void Node::AddChildren(const std::shared_ptr<Node>& node) 

@@ -22,6 +22,8 @@ namespace shzk
 		Component(ComponentType type) : m_type(type) {}
 		virtual ~Component() = default;
 
+		virtual void Tick(float dt) {};
+
 		ComponentType GetType() const { return m_type; }
 
 	protected:

@@ -17,7 +17,7 @@ namespace shzk
 		Node(uint32_t id, std::string name) : m_id(id), m_name(name) {}
 		~Node() = default;
 
-		void Tick();
+		void Tick(float dt);
 
 		void SetId(uint32_t id) { m_id = id; }
 		void SetName(std::string name) { m_name = std::move(name); }

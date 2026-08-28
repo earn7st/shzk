@@ -1,5 +1,7 @@
 #include "RenderResourceManager.h"
 #include "runtime/log/Log.h"
+#include "runtime/global/Engine.h"
+#include "runtime/window/WindowSystem.h"
 #include "runtime/render/RenderConfig.h"
 #include "runtime/render/resources/Sampler.h"
 #include "runtime/rhi/RHI.h"
@@ -14,10 +16,11 @@ namespace shzk
 {
 	std::shared_ptr<RenderResourceManager> RenderResourceManager::g_renderResourceManager = std::make_shared<RenderResourceManager>();
 
-	void RenderResourceManager::Init()
-	{
+    void RenderResourceManager::Init()
+    {
+        m_renderExtent = { Engine::GetWindowSystem()->GetWidth(), Engine::GetWindowSystem()->GetHeight() };
         InitGlobalResources();
-	}
+    }
 
 	std::shared_ptr<RHIShader> RenderResourceManager::GetOrCreateRHIShader(const std::string& path, ShaderFrequency frequency, const std::string& entry)
 	{

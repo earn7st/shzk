@@ -11,6 +11,9 @@ add_library(
     # import
     "runtime/import/GltfLoader.cpp"
 
+    # input
+    "runtime/input/InputSystem.cpp"
+
     # asset
     "runtime/asset/AssetManager.cpp"
     "runtime/asset/Model.cpp"
@@ -55,8 +58,8 @@ add_library(
     "runtime/rhi/vulkan/VulkanRHIQueue.cpp"
     "runtime/rhi/vulkan/VulkanRHIResource.cpp"
 
-    # others in runtime
-    "runtime/WindowSystem.cpp"
+    # window
+    "runtime/window/WindowSystem.cpp"
 
 )
 

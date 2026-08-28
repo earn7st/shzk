@@ -126,19 +126,21 @@ namespace shzk
 
             if constexpr (std::is_same_v<T, fastgltf::TRS>)
             {
-                result.translation = glm::vec3(
+                result.SetTranslation(
+                    glm::vec3(
                     transform.translation.x(),
                     transform.translation.y(),
-                    transform.translation.z());
+                    transform.translation.z()));
 
                 const auto& q = transform.rotation;
                 glm::quat glmQuat(q.w(), q.x(), q.y(), q.z());
-                result.rotation = glmQuat;
+                result.SetRotation(glmQuat);
 
-                result.scale = glm::vec3(
+                result.SetScale(
+                    glm::vec3(
                     transform.scale.x(),
                     transform.scale.y(),
-                    transform.scale.z());
+                    transform.scale.z()));
             }
             else if constexpr (std::is_same_v<T, fastgltf::math::fmat4x4>)
             {
