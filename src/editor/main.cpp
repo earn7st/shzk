@@ -29,8 +29,8 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 		std::shared_ptr<shzk::Node> helmet1 = std::make_shared<shzk::Node>(2, "damaged_helmet1");
 		
 		shzk::Transform transform{};
-		transform.translation = glm::vec3(1.f, 0.f, 0.f);
-		transform.rotation = glm::angleAxis(glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		transform.SetTranslation(glm::vec3(1.f, 0.f, 0.f));
+		transform.SetRotation(glm::angleAxis(glm::radians(0.f), glm::vec3(1.0f, 0.0f, 0.0f)));
 		
 		{
 			std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
@@ -43,7 +43,7 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 
 		{
 			std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
-			transform.translation = glm::vec3(-1.f, 0.f, 0.f);
+			transform.SetTranslation(glm::vec3(-1.f, 0.f, 0.f));
 			transformComp->SetTransform(transform);
 			helmet1->AddComponent(transformComp);
 			std::shared_ptr<shzk::MeshComponent> meshComp = std::make_shared<shzk::MeshComponent>();

@@ -5,6 +5,10 @@
 add_library(
     shzk_runtime
 
+    #core
+    "runtime/core/Math.cpp"
+    "runtime/core/Transform.cpp"
+
     # global
     "runtime/global/Engine.cpp"
 

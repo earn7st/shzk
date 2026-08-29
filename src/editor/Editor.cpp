@@ -36,7 +36,7 @@ namespace shzk
 
 		std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
 		shzk::Transform transform{};
-		transform.translation = glm::vec3(0.f, 0.f, 5.f);
+		transform.SetTranslation(glm::vec3(0.f, 0.f, 5.f));
 		transformComp->SetTransform(transform);
 
 		std::shared_ptr<shzk::CameraComponent> cameraComp = std::make_shared<shzk::CameraComponent>();

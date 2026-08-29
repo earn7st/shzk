@@ -50,10 +50,30 @@ namespace shzk
         inline void SetRoughness(float value)               { m_roughness = value;      UpdateUniformData();}
         inline void SetAlphaCutoff(float value)             { m_alphaCutoff = value;    UpdateUniformData(); }
         inline void SetUseVertexColor(bool value)           { m_bUseVertexColor = value; UpdateUniformData(); }
-        inline void SetTextureDiffuse(const std::shared_ptr<Texture>& texture)  { m_textureDiffuse = texture;   UpdateTexture(MATERIAL_BINDING_DIFFUSE, m_textureDiffuse); }
-        inline void SetTextureNormal(const std::shared_ptr<Texture>& texture)   { m_textureNormal = texture;    UpdateTexture(MATERIAL_BINDING_NORMAL, m_textureNormal); }
-        inline void SetTextureArm(const std::shared_ptr<Texture>& texture)      { m_textureArm = texture;       UpdateTexture(MATERIAL_BINDING_ARM, m_textureArm); }
-        inline void SetTextureSpecular(const std::shared_ptr<Texture>& texture) { m_textureSpecular = texture;  UpdateTexture(MATERIAL_BINDING_SPECULAR, m_textureSpecular); }
+        inline void SetTextureDiffuse(const std::shared_ptr<Texture>& texture)  
+        { 
+            if (!texture) return;
+            m_textureDiffuse = texture;   
+            UpdateTexture(MATERIAL_BINDING_DIFFUSE, m_textureDiffuse); 
+        }
+        inline void SetTextureNormal(const std::shared_ptr<Texture>& texture)   
+        { 
+            if (!texture) return;
+            m_textureNormal = texture;    
+            UpdateTexture(MATERIAL_BINDING_NORMAL, m_textureNormal); 
+        }
+        inline void SetTextureArm(const std::shared_ptr<Texture>& texture)      
+        { 
+            if (!texture) return;
+            m_textureArm = texture;       
+            UpdateTexture(MATERIAL_BINDING_ARM, m_textureArm); 
+        }
+        inline void SetTextureSpecular(const std::shared_ptr<Texture>& texture) 
+        { 
+            if (!texture) return;
+            m_textureSpecular = texture;  
+            UpdateTexture(MATERIAL_BINDING_SPECULAR, m_textureSpecular); 
+        }
         inline void SetIntSlot(uint8_t idx, int32_t value)
         {
             if (idx >= m_ints.size())
@@ -86,6 +106,7 @@ namespace shzk
         }
         inline void SetTexture2DSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
+            if (!texture) return;
             if (idx >= m_texture2D.size())
             {
                 SHZK_LOG_ERROR("Exceeded Texture2D slots size!");
@@ -96,6 +117,7 @@ namespace shzk
         }
         inline void SetTextureCubeSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
+            if (!texture) return;
             if (idx >= m_textureCube.size())
             {
                 SHZK_LOG_ERROR("Exceeded TextureCube slots size!");
@@ -106,6 +128,7 @@ namespace shzk
         }
         inline void SetTexture3DSlot(uint8_t idx, const std::shared_ptr<Texture>& texture)
         {
+            if (!texture) return;
             if (idx >= m_texture3D.size())
             {
                 SHZK_LOG_ERROR("Exceeded Texture3D slots size!");

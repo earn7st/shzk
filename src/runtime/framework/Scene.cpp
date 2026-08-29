@@ -53,7 +53,7 @@ namespace shzk
 		for (auto& node : m_nodes)
 		{
 			std::shared_ptr<CameraComponent> cameraComp = node->TryGetComponent<CameraComponent>();
-			if (cameraComp && cameraComp->Is) return cameraComp;
+			if (cameraComp && cameraComp->IsActiveCamera()) return cameraComp;
 		}
 		return nullptr;
 	}

@@ -1,6 +1,7 @@
 #include "CameraComponent.h"
 #include "TransformComponent.h"
 
+#include "runtime/core/Math.h"
 #include "runtime/log/Log.h"
 #include "runtime/global/Engine.h"
 #include "runtime/input/InputSystem.h"
@@ -9,83 +10,78 @@
 #include <memory>
 #include <glm/glm.hpp>
 
+
 namespace shzk
 {
-	glm::mat4x4 CameraComponent::GetViewMatrix()
-	{
-		std::shared_ptr<Node> node = m_owner.lock();
-		std::shared_ptr<TransformComponent> transformComp = node->TryGetComponent<TransformComponent>();
-		if (!transformComp) 
-		{
-			SHZK_LOG_ERROR("Active camera doesn't have a transform!");
-			assert(false);
-			return glm::identity<glm::mat4x4>();
-		}
-		return glm::inverse(transformComp->GetTransform().ToMat4x4());
-	}
-
-	glm::mat4x4 CameraComponent::GetProjectionMatrix(float aspect)
-	{
-		switch (m_mode)
-		{
-		case CameraProjectionMode::Perspective: 
-		{
-			glm::mat4x4 proj = glm::perspective(glm::radians(m_fovY), aspect, m_nearPlane, m_farPlane);
-			// proj[1][1] *= -1.0f;	// vertical flip
-			return proj;
-		}
-		case CameraProjectionMode::Orthographic:
-		{
-			float halfHeight = m_orthoHeight * 0.5f;
-			float halfWidth = halfHeight * aspect;
-			glm::mat4x4 proj = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, m_nearPlane, m_farPlane);
-			break;
-		}
-		default: SHZK_LOG_ERROR("Unsupported CameraProjectionMode!"); break;
-		}
-		return glm::identity<glm::mat4x4>();
-	}
-
 	void CameraComponent::Tick(float dt)
 	{
-		if (m_bIsActiveCamera)
+		if (m_bIsActiveCamera) ProcessInputMovement(dt);
+	}
+
+	glm::mat4x4 CameraComponent::GetViewMatrix() const
+	{
+		auto node = m_owner.lock();
+		auto transformComp = node->TryGetComponent<TransformComponent>();
+		if (!transformComp)
 		{
-			ProcessInputMovement(dt);
+			SHZK_LOG_ERROR("Camera doesn't have a transform!");
+			assert(false);
+			return glm::mat4x4{};
 		}
+
+		glm::vec3 position	= transformComp->GetPosition();
+		glm::vec3 front		= transformComp->Front();
+		glm::vec3 up		= transformComp->Up();
+
+		return glm::lookAtRH(position, position + front, up);
+	}
+
+	glm::mat4x4 CameraComponent::GetProjMatrix(float aspect) const
+	{
+		glm::mat4 result = glm::perspectiveRH_ZO(glm::radians(m_fovY), aspect, m_nearPlane, m_farPlane);
+		result[1][1] *= -1;
+		return result;
 	}
 
 	// --- private functions ---
 	// Movement
 	void CameraComponent::ProcessInputMovement(float dt)
 	{
-		std::shared_ptr<TransformComponent> transformComponent = m_owner.lock()->TryGetComponent<TransformComponent>();
-		if (!transformComponent) return;
+		std::shared_ptr<TransformComponent> transformComp = m_owner.lock()->TryGetComponent<TransformComponent>();
+		if (!transformComp) return;
 
-		float delta = m_speed * dt / 1000.0f;
-
+		// movement
+		float delta = m_speed * dt / 2.0f;
 		auto& inputSystem = Engine::GetInputSystem();
 		glm::vec3 deltaPosition = glm::vec3(0.f);
-		if (inputSystem->IsKeyPressed(KeyCode::LeftShift))		delta *= 5;
-		if (inputSystem->IsKeyPressed(KeyCode::W))				deltaPosition += transformComponent->Front() * delta;
-		if (inputSystem->IsKeyPressed(KeyCode::S))				deltaPosition -= transformComponent->Front() * delta;
-		if (inputSystem->IsKeyPressed(KeyCode::A))				deltaPosition -= transformComponent->Right() * delta;
-		if (inputSystem->IsKeyPressed(KeyCode::D))				deltaPosition += transformComponent->Right() * delta;
-		if (inputSystem->IsKeyPressed(KeyCode::Q))				deltaPosition += transformComponent->Up() * delta;
-		if (inputSystem->IsKeyPressed(KeyCode::E))				deltaPosition -= transformComponent->Up() * delta;
-		transformComponent->Translate(deltaPosition);
+		if (inputSystem->IsKeyDown(KeyCode::LeftShift))		delta *= 5;
+		if (inputSystem->IsKeyDown(KeyCode::W))				deltaPosition += transformComp->Front() * delta;
+		if (inputSystem->IsKeyDown(KeyCode::S))				deltaPosition -= transformComp->Front() * delta;
+		if (inputSystem->IsKeyDown(KeyCode::A))				deltaPosition -= transformComp->Right() * delta;
+		if (inputSystem->IsKeyDown(KeyCode::D))				deltaPosition += transformComp->Right() * delta;
+		if (inputSystem->IsKeyDown(KeyCode::Q))				deltaPosition += transformComp->Up() * delta;
+		if (inputSystem->IsKeyDown(KeyCode::E))				deltaPosition -= transformComp->Up() * delta;
+		transformComp->Translate(deltaPosition);
 
-		if (inputSystem->IsMouseButtonPressed(MouseButton::Right))
+		if (inputSystem->IsMouseButtonDown(MouseButton::Right))
 		{
-			glm::vec2 offset = - inputSystem->GetMouseDelta() * m_sens;
+			glm::vec2 offset = inputSystem->GetMouseDelta() * m_sens;
 
-			glm::vec3 eulerAngle = transformComponent->GetEulerAngle();
-			eulerAngle = Math::ClampEulerAngle(eulerAngle + glm::vec3(0.f, offset.x(), offset.y()));
-			transformComponent->SetRotation(eulerAngle);
+			float yawDelta = -offset.x;
+			float pitchDelta = -offset.y;
+			float clampedDelta = Math::ClampPitch(transformComp->GetEulerDegree().x, pitchDelta);
 
-			m_fovY -= inputSystem->GetScrollDelta().y() * m_scrollSens * 2;
-			m_fovY = m_fovY > m_maxFovY ? m_maxFovY : m_fovY;
-			m_fovY = m_fovY < m_minFovY ? m_minFovY: m_fovY;
+			glm::quat rot = transformComp->GetRotation();
+
+			glm::quat yawQ = glm::angleAxis(glm::radians(yawDelta), glm::vec3(0.f, 1.f, 0.f));
+			glm::quat pitchQ = glm::angleAxis(glm::radians(clampedDelta), glm::vec3(1.f, 0.f, 0.f));
+
+			transformComp->SetRotation(yawQ * rot * pitchQ);
 		}
+
+		m_fovY -= inputSystem->GetScrollDelta().y * m_scrollSens * 2;
+		m_fovY = m_fovY > m_maxFovY ? m_maxFovY : m_fovY;
+		m_fovY = m_fovY < m_minFovY ? m_minFovY: m_fovY;
 	}
 
 }

@@ -53,12 +53,10 @@ namespace shzk
 		
 		Extent2D extent = RenderResourceManager::Get()->GetRenderExtent();
 		float aspect = (float)extent.width / extent.height;
-		glm::mat4x4 view = cameraComp->GetViewMatrix();
-		glm::mat4x4 proj = cameraComp->GetProjectionMatrix(aspect);
-
-		params.view = view;
-		params.proj = proj;
-		params.viewProj = proj * view;
+		
+		params.view = cameraComp->GetViewMatrix();
+		params.proj = cameraComp->GetProjMatrix(aspect);
+		params.viewProj = params.proj * params.view;
 		
 		std::shared_ptr<Buffer<PerFrameUniformShaderParameters>> buffer = RenderResourceManager::Get()->GetCurrentPerFrameUniformBuffer();
 		buffer->SetData(params);

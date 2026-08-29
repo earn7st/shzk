@@ -4,8 +4,4 @@
 
 namespace shzk
 {
-	void TransformComponent::Translate(const glm::vec3& translation)
-	{
-		
-	}
 }

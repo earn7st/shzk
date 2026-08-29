@@ -33,9 +33,8 @@ namespace shzk
 		float GetFarPlane() const { return m_farPlane; }
 		bool IsActiveCamera() const { return m_bIsActiveCamera; }
 
-		// TODO: Multi threaded, compute during scene tick
-		glm::mat4x4 GetViewMatrix(); // need to know transform info (from transform component)
-		glm::mat4x4 GetProjectionMatrix(float aspect = 0);
+		glm::mat4x4 GetViewMatrix() const;
+		glm::mat4x4 GetProjMatrix(float aspect) const;
 		
 		virtual void Tick(float dt) override final;
 

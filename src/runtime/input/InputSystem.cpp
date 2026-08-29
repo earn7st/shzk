@@ -1,6 +1,7 @@
 #include "InputSystem.h"
 #include "runtime/global/Engine.h"
 #include "runtime/window/WindowSystem.h"
+#include "runtime/log/Log.h"
 
 #include <SDL3/SDL.h>
 
@@ -53,6 +54,7 @@ namespace shzk
 		{
 			KeyCode kc = SDLScancodeToKeyCode(event.key.scancode);
 			m_keyStates[(size_t)kc] = event.key.repeat ? InputState::Repeat : InputState::Press;
+			// SHZK_LOG_INFO("key pressed {}", (size_t)kc);
 			break;
 		}
 		case SDL_EVENT_KEY_UP:
@@ -74,6 +76,7 @@ namespace shzk
 		{
 			m_mouseDelta.x += event.motion.xrel;
 			m_mouseDelta.y += event.motion.yrel;
+			// SHZK_LOG_INFO("mouse motion: x:{}, y:{}", m_mouseDelta.x, m_mouseDelta.y);
 			break;
 		}
 		case SDL_EVENT_MOUSE_WHEEL:
