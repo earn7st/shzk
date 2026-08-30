@@ -11,7 +11,7 @@ namespace shzk
 	{
 		m_window = window;
 	
-		SDL_SetWindowRelativeMouseMode(m_window, true);
+		// SDL_SetWindowRelativeMouseMode(m_window, true);
 	}
 
 	void InputSystem::Tick()

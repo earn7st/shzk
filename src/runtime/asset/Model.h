@@ -27,13 +27,12 @@ namespace shzk
 
 		std::shared_ptr<IndexBuffer> indexBuffer;
 		std::shared_ptr<Material> material;
-
 	};
 
 	class Model : public Asset
 	{
 	public:
-		Model() : Asset(AssetType::Model) {};	// loader to fill
+		Model() : Asset(AssetType::Model) {};	// fill by loader
 		~Model() = default;
 
 		inline const std::vector<Submesh>& GetSubmeshes() const { return m_submeshes; }

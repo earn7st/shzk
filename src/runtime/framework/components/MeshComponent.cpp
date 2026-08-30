@@ -8,11 +8,10 @@ namespace shzk
 {
 	void MeshComponent::CollectMeshBatchWithTransform(std::vector<MeshBatch>& batches, const glm::mat4x4& accTransformMat)
 	{
-		std::vector<MeshBatchElement> elements{};
-		
 		auto& submeshes = m_model->GetSubmeshes();
 		for (auto& submesh : submeshes)
 		{
+			std::vector<MeshBatchElement> elements{};
 			MeshBatchElement element{
 				.indexBuffer		= submesh.indexBuffer,
 				.firstIndex			= 0,

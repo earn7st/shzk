@@ -7,7 +7,7 @@
 
 // Coordinates
 // World - Right-handed: forward: +x, right: +z, up: +y
-// 
+// View  - Right-handed: forward: -z, right: +x, up: +y
 
 namespace shzk
 {

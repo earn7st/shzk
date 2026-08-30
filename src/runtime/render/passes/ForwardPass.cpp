@@ -36,27 +36,35 @@ namespace shzk
 		
 		{
 			m_colorAttachmentFormats.fill(FORMAT_UKNOWN);
-			m_colorAttachmentFormats[0] = HDR_COLOR_FORMAT;
-			m_depthStencilAttachmentFormat = FORMAT_UKNOWN;
+			m_colorAttachmentFormats[0]		= HDR_COLOR_FORMAT;
+			m_depthStencilAttachmentFormat	= DEPTH_FORMAT;
 		}
 	}
 
 	void ForwardPass::Prepare()
 	{
-		std::shared_ptr<RHITextureView> sceneColorView =
-			RenderResourceManager::Get()->GetCurrentSceneColorTextureView();
-
 		m_renderPassInfo = {};
 		m_renderPassInfo.renderArea = RenderResourceManager::Get()->GetRenderExtent();
 		m_renderPassInfo.layerCount = 1;
 		m_renderPassInfo.viewMask = m_viewMask;
 
+		std::shared_ptr<RHITextureView> sceneColorView =
+			RenderResourceManager::Get()->GetCurrentSceneColorTextureView();
 		auto& color = m_renderPassInfo.colorAttachments[0];
 		color.view = sceneColorView;
 		color.layout = RHIResourceState::ColorAttachment;
 		color.loadOp = AttachmentLoadOp::Clear;
 		color.storeOp = AttachmentStoreOp::Store;
 		color.clearColor = CLEAR_COLOR;
+
+		std::shared_ptr<RHITextureView> depthView =
+			RenderResourceManager::Get()->GetCurrentSceneDepthTextureView();
+		auto& depth = m_renderPassInfo.depthStencilAttachment;
+		depth.view = depthView;
+		depth.layout = RHIResourceState::DepthStencilAttachment;
+		depth.loadOp = AttachmentLoadOp::Clear;
+		depth.storeOp = AttachmentStoreOp::DontCare;
+		depth.clearDepth = 0.f;	// reverse-z
 	}
 
 	void ForwardPass::Execute(std::shared_ptr<RHICommandList> cmd)
@@ -65,6 +73,11 @@ namespace shzk
 		  RenderResourceManager::Get()->GetCurrentSceneColorTexture(),
 		  RHIResourceState::Undefined,
 		  RHIResourceState::ColorAttachment
+			});
+		cmd->TextureBarrier({
+			RenderResourceManager::Get()->GetCurrentSceneDepthTexture(),
+			RHIResourceState::Undefined,
+			RHIResourceState::DepthStencilAttachment
 			});
 		cmd->BeginRendering(m_renderPassInfo);
 		cmd->SetViewport({ 0,0 }, { m_renderPassInfo.renderArea.width, m_renderPassInfo.renderArea.height });
@@ -92,7 +105,7 @@ namespace shzk
 
 		m_renderState.depthStencilState.bEnableDepthTest = true;	// default value, could be override by material parameters
 		m_renderState.depthStencilState.bEnableDepthWrite = true;
-		m_renderState.depthStencilState.depthTest = CompareFunction::LessEqual;
+		m_renderState.depthStencilState.depthTest = CompareFunction::GreaterEqual; // reverse-z
 
 		// m_renderState.stencilRef = 0;
 	}

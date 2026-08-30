@@ -55,8 +55,8 @@ namespace shzk
 
 		// Movement
 		void ProcessInputMovement(float dt);	// TODO: Camera Controller
-		float m_speed		= 5.f;
+		float m_speed		= 2.f;
 		float m_sens		= 1.f;
-		float m_scrollSens	= 1.f;
+		float m_scrollSens	= 5.f;
 	};
 }

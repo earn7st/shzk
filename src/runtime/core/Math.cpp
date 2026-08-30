@@ -34,6 +34,38 @@ namespace shzk::Math
         return glm::clamp(currentPitch + delta, -kPitchLimit, kPitchLimit) - currentPitch;
     }
 
+    glm::mat4x4 PerspectiveRH_ZO_ReverseZ(float fovY, float aspect, float near, float far)
+    {
+
+        float k = 1.f / glm::tan(fovY / 2);   // fovY: radians
+
+        glm::mat4x4 proj(0.f);
+        proj[0][0] = k / aspect;
+        proj[1][1] = -k;                              
+        proj[2][2] = near / (far - near);             
+        proj[3][2] = near * far / (far - near);       
+        proj[2][3] = -1.f;                            // w = -z
+        return proj;
+        
+        //glm::mat4x4 ortho(0.f);
+        //ortho[0][0] = k / (near  * aspect);
+        //ortho[1][1] = k / near;
+        //// ortho[2][2] = 2 / (far - near);                             // z: [-1(far), 1(near)]
+        //// ortho[3][2] = (far + near) / (far - near);  
+        //ortho[2][2] = 1 / (far - near);
+        //ortho[3][2] = (3 * far - near) / (2 * (far - near));      // z: [-1(far), 1(near)] -> [0, 1]
+        //ortho[3][3] = 1;
+
+        //glm::mat4x4 perspective(0.f);
+        //perspective[0][0] = near;
+        //perspective[1][1] = -near;          // Vulkan NDC Y flip
+        //perspective[2][2] = near + far;
+        //perspective[3][2] = far * near;
+        //perspective[2][3] = -1; 
+
+        //return ortho * perspective;
+    }
+
     //glm::mat4x4 LookAtLHS(glm::vec3 position, glm::vec3 front, glm::vec3 up)
     //{
     //    glm::vec3 f = glm::normalize(front);

@@ -38,8 +38,7 @@ namespace shzk
 
 	glm::mat4x4 CameraComponent::GetProjMatrix(float aspect) const
 	{
-		glm::mat4 result = glm::perspectiveRH_ZO(glm::radians(m_fovY), aspect, m_nearPlane, m_farPlane);
-		result[1][1] *= -1;
+		glm::mat4x4 result = Math::PerspectiveRH_ZO_ReverseZ(glm::radians(m_fovY), aspect, m_nearPlane, m_farPlane);
 		return result;
 	}
 
@@ -51,7 +50,7 @@ namespace shzk
 		if (!transformComp) return;
 
 		// movement
-		float delta = m_speed * dt / 2.0f;
+		float delta = m_speed * dt;
 		auto& inputSystem = Engine::GetInputSystem();
 		glm::vec3 deltaPosition = glm::vec3(0.f);
 		if (inputSystem->IsKeyDown(KeyCode::LeftShift))		delta *= 5;
@@ -59,14 +58,13 @@ namespace shzk
 		if (inputSystem->IsKeyDown(KeyCode::S))				deltaPosition -= transformComp->Front() * delta;
 		if (inputSystem->IsKeyDown(KeyCode::A))				deltaPosition -= transformComp->Right() * delta;
 		if (inputSystem->IsKeyDown(KeyCode::D))				deltaPosition += transformComp->Right() * delta;
-		if (inputSystem->IsKeyDown(KeyCode::Q))				deltaPosition += transformComp->Up() * delta;
-		if (inputSystem->IsKeyDown(KeyCode::E))				deltaPosition -= transformComp->Up() * delta;
+		if (inputSystem->IsKeyDown(KeyCode::E))				deltaPosition += transformComp->Up() * delta;
+		if (inputSystem->IsKeyDown(KeyCode::Q))				deltaPosition -= transformComp->Up() * delta;
 		transformComp->Translate(deltaPosition);
 
-		if (inputSystem->IsMouseButtonDown(MouseButton::Right))
+		glm::vec2 offset = inputSystem->GetMouseDelta() * m_sens;
+		if (inputSystem->IsMouseButtonDown(MouseButton::Left))
 		{
-			glm::vec2 offset = inputSystem->GetMouseDelta() * m_sens;
-
 			float yawDelta = -offset.x;
 			float pitchDelta = -offset.y;
 			float clampedDelta = Math::ClampPitch(transformComp->GetEulerDegree().x, pitchDelta);
@@ -78,7 +76,6 @@ namespace shzk
 
 			transformComp->SetRotation(yawQ * rot * pitchQ);
 		}
-
 		m_fovY -= inputSystem->GetScrollDelta().y * m_scrollSens * 2;
 		m_fovY = m_fovY > m_maxFovY ? m_maxFovY : m_fovY;
 		m_fovY = m_fovY < m_minFovY ? m_minFovY: m_fovY;

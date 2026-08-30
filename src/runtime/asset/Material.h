@@ -211,7 +211,7 @@ namespace shzk
         // DepthStencilState
         bool m_bDepthTest = true;
         bool m_bDepthWrite = true;
-        CompareFunction m_depthCompare = CompareFunction::LessEqual;
+        CompareFunction m_depthCompare = CompareFunction::GreaterEqual;   // Reverse-Z
 
         //bool m_bUseForDepthPass = true; 
         bool m_bCastShadow = true;

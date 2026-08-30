@@ -18,26 +18,25 @@
 void InitScene(std::shared_ptr<shzk::Scene>& scene)
 {
 	shzk::GltfLoader gltfLoader;
-	shzk::GltfLoadResult result;
-	gltfLoader.Load(SHZK_ASSETS_DIR "DamagedHelmet/glTF/DamagedHelmet.gltf", result);
-	shzk::AssetManager::Get()->ProcessGltfLoadResult(result);
-	
+
 	// Damaged Helmet
-	if (true)
+	if (false)
 	{
+		shzk::GltfLoadResult helmetResult;
+		gltfLoader.Load(SHZK_ASSETS_DIR "DamagedHelmet/glTF/DamagedHelmet.gltf", helmetResult);
+		shzk::AssetManager::Get()->ProcessGltfLoadResult(helmetResult);
+
 		std::shared_ptr<shzk::Node> helmet0 = std::make_shared<shzk::Node>(1, "damaged_helmet0");
 		std::shared_ptr<shzk::Node> helmet1 = std::make_shared<shzk::Node>(2, "damaged_helmet1");
 		
 		shzk::Transform transform{};
 		transform.SetTranslation(glm::vec3(1.f, 0.f, 0.f));
-		transform.SetRotation(glm::angleAxis(glm::radians(0.f), glm::vec3(1.0f, 0.0f, 0.0f)));
-		
 		{
 			std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
 			transformComp->SetTransform(transform);
 			helmet0->AddComponent(transformComp);
 			std::shared_ptr<shzk::MeshComponent> meshComp = std::make_shared<shzk::MeshComponent>();
-			meshComp->SetModel(result.models[0]);
+			meshComp->SetModel(helmetResult.models[0]);
 			helmet0->AddComponent(meshComp);
 		}
 
@@ -47,12 +46,35 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 			transformComp->SetTransform(transform);
 			helmet1->AddComponent(transformComp);
 			std::shared_ptr<shzk::MeshComponent> meshComp = std::make_shared<shzk::MeshComponent>();
-			meshComp->SetModel(result.models[0]);
+			meshComp->SetModel(helmetResult.models[0]);
 			helmet1->AddComponent(meshComp);
 		}
 		
-		scene->AddNode(helmet0);
-		scene->AddNode(helmet1);
+		//scene->AddNode(helmet0);
+		//scene->AddNode(helmet1);
+	}
+
+	// Sponza
+	if (true)
+	{
+		shzk::GltfLoadResult sponzaResult;
+		gltfLoader.Load(SHZK_ASSETS_DIR "Sponza/glTF/Sponza.gltf", sponzaResult);
+		shzk::AssetManager::Get()->ProcessGltfLoadResult(sponzaResult);
+
+		std::shared_ptr<shzk::Node> sponza = std::make_shared<shzk::Node>(1, "sponza");
+		shzk::Transform transform{};
+		transform.SetTranslation(glm::vec3(0.f, 0.f, 0.f));
+
+		{
+			std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
+			transformComp->SetTransform(transform);
+			sponza->AddComponent(transformComp);
+			std::shared_ptr<shzk::MeshComponent> meshComp = std::make_shared<shzk::MeshComponent>();
+			meshComp->SetModel(sponzaResult.models[0]);
+			sponza->AddComponent(meshComp);
+		}
+
+		scene->AddNode(sponza);
 	}
 	
 }
