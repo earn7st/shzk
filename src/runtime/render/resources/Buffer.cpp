@@ -10,8 +10,9 @@ namespace shzk
         glm::vec3 position;
         glm::vec3 normal;
         glm::vec2 texcoord;
+        glm::vec4 tangent;
     } InterleavedVertex;
-    static_assert(sizeof(InterleavedVertex) == 32);
+    static_assert(sizeof(InterleavedVertex) == 48);
 
 	VertexBuffer::VertexBuffer(const std::shared_ptr<Primitive>& primitive)
 	{
@@ -27,9 +28,12 @@ namespace shzk
         {
             vertices[i].position = primitive->position[i];
             vertices[i].normal = hasNormal
-                ? primitive->normal[i] : glm::vec3(0, 0, 1);
+                ? primitive->normal[i] : glm::vec3(0, 0, 1);    // dummy
             vertices[i].texcoord = hasTexcoord
-                ? primitive->texcoord[i] : glm::vec2(0, 0);
+                ? primitive->texcoord[i] : glm::vec2(0, 0);     // dummy
+
+            vertices[i].tangent = primitive->tangent[i];    // don't have to deal with dummy 
+                                                            // because either filled by mikktspace or by original gltf tangents data
         }
 
         uint32_t bufferSize = m_vertexNum * m_stride;

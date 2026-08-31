@@ -1,4 +1,5 @@
 #include "Material.h"
+#include "runtime/asset/AssetManager.h"
 #include "runtime/render/resources/Buffer.h"
 #include "runtime/render/resources/RenderResourceManager.h"
 #include "runtime/rhi/RHIResource.h"
@@ -8,7 +9,6 @@ namespace shzk
 	void Material::InitRenderResources()
 	{
 		m_buffer = std::make_shared<Buffer<MaterialUniformShaderParameters>>();
-
 		m_descriptorSet = RenderResourceManager::Get()->CreateMaterialDescriptorSet();
 		if (!m_descriptorSet)
 		{
@@ -17,6 +17,12 @@ namespace shzk
 			return;
 		}
 		m_descriptorSet->UpdateBuffer(MATERIAL_BINDING_UNIFORM, m_buffer->GetBuffer());
+
+		SetTextureBaseColor(AssetManager::GetWhiteTexture1x1());
+		SetTextureArm(AssetManager::GetWhiteTexture1x1());
+		SetTextureNormal(AssetManager::GetNormalTexture1x1());
+		SetTextureOcclusion(AssetManager::GetWhiteTexture1x1());
+		SetTextureEmissive(AssetManager::GetWhiteTexture1x1());
 	}
 
 	void Material::UpdateUniformData()

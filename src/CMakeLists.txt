@@ -102,6 +102,7 @@ target_link_libraries(
         imgui
         fastgltf::fastgltf
         stb
+        mikktspace
 )
 
 add_dependencies(

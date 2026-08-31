@@ -20,7 +20,7 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 	shzk::GltfLoader gltfLoader;
 
 	// Damaged Helmet
-	if (false)
+	if (true)
 	{
 		shzk::GltfLoadResult helmetResult;
 		gltfLoader.Load(SHZK_ASSETS_DIR "DamagedHelmet/glTF/DamagedHelmet.gltf", helmetResult);
@@ -50,12 +50,12 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 			helmet1->AddComponent(meshComp);
 		}
 		
-		//scene->AddNode(helmet0);
-		//scene->AddNode(helmet1);
+		scene->AddNode(helmet0);
+		scene->AddNode(helmet1);
 	}
 
 	// Sponza
-	if (true)
+	if (false)
 	{
 		shzk::GltfLoadResult sponzaResult;
 		gltfLoader.Load(SHZK_ASSETS_DIR "Sponza/glTF/Sponza.gltf", sponzaResult);

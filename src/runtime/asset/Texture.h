@@ -23,7 +23,8 @@ namespace shzk
     {
     public:
         Texture() = delete;
-        Texture(std::string path, TextureType type);
+        Texture(std::string path, TextureType type, RHIFormat format = RHIFormat::FORMAT_R8G8B8A8_SRGB);
+        Texture(Extent2D extent, glm::vec4 rgba);
         ~Texture() = default;
 
     public:

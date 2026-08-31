@@ -11,10 +11,102 @@
 #include <fastgltf/tools.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <filesystem>
-#include <iostream>
+#include <set>
+#include <mikktspace.h>
 
 namespace shzk
 {
+    namespace
+    {
+        struct MikktUserData
+        {
+            const std::vector<glm::vec3>* positions;
+            const std::vector<glm::vec3>* normals;
+            const std::vector<glm::vec2>* texcoords;
+            const std::vector<uint32_t>* indices;      // triangle list
+            std::vector<glm::vec4>* tangentsOut;       // unindexed, size = indices.size()
+        };
+
+        int GetNumFaces(const SMikkTSpaceContext* ctx)
+        {
+            auto* ud = static_cast<MikktUserData*>(ctx->m_pUserData);
+            return (int)(ud->indices->size() / 3);
+        }
+
+        int GetNumVerticesOfFace(const SMikkTSpaceContext*, int) { return 3; }
+
+        void GetPosition(const SMikkTSpaceContext* ctx, float out[], int face, int vert)
+        {
+            auto* ud = static_cast<MikktUserData*>(ctx->m_pUserData);
+            uint32_t idx = (*ud->indices)[face * 3 + vert];
+            const glm::vec3& p = (*ud->positions)[idx];
+            out[0] = p.x; out[1] = p.y; out[2] = p.z;
+        }
+
+        void GetNormal(const SMikkTSpaceContext* ctx, float out[], int face, int vert)
+        {
+            auto* ud = static_cast<MikktUserData*>(ctx->m_pUserData);
+            uint32_t idx = (*ud->indices)[face * 3 + vert];
+            const glm::vec3& n = (*ud->normals)[idx];
+            out[0] = n.x; out[1] = n.y; out[2] = n.z;
+        }
+
+        void GetTexCoord(const SMikkTSpaceContext* ctx, float out[], int face, int vert)
+        {
+            auto* ud = static_cast<MikktUserData*>(ctx->m_pUserData);
+            uint32_t idx = (*ud->indices)[face * 3 + vert];
+            const glm::vec2& uv = (*ud->texcoords)[idx];
+            out[0] = uv.x; out[1] = uv.y;
+        }
+
+        void SetTSpaceBasic(const SMikkTSpaceContext* ctx, const float tangent[], const float sign, int face, int vert)
+        {
+            auto* ud = static_cast<MikktUserData*>(ctx->m_pUserData);
+            (*ud->tangentsOut)[face * 3 + vert] = glm::vec4(tangent[0], tangent[1], tangent[2], sign);
+        }
+
+        std::vector<glm::vec4> GenerateTangents(
+            const std::vector<glm::vec3>& positions,
+            const std::vector<glm::vec3>& normals,
+            const std::vector<glm::vec2>& texcoords,
+            const std::vector<uint32_t>& indices)
+        {
+            std::vector<glm::vec4> result(positions.size(), glm::vec4(0.f, 0.f, 0.f, 1.f));
+            if (indices.empty() || positions.empty() || normals.empty() || texcoords.empty())
+                return result;
+
+            std::vector<glm::vec4> unindexed(indices.size());
+
+            MikktUserData ud{};
+            ud.positions = &positions;
+            ud.normals = &normals;
+            ud.texcoords = &texcoords;
+            ud.indices = &indices;
+            ud.tangentsOut = &unindexed;
+
+            SMikkTSpaceInterface iface{};
+            iface.m_getNumFaces = GetNumFaces;
+            iface.m_getNumVerticesOfFace = GetNumVerticesOfFace;
+            iface.m_getPosition = GetPosition;
+            iface.m_getNormal = GetNormal;
+            iface.m_getTexCoord = GetTexCoord;
+            iface.m_setTSpaceBasic = SetTSpaceBasic;
+            iface.m_setTSpace = nullptr;   // normal mapping ÓÃ Basic ¾Í¹»
+
+            SMikkTSpaceContext ctx{};
+            ctx.m_pInterface = &iface;
+            ctx.m_pUserData = &ud;
+
+            if (!genTangSpaceDefault(&ctx))
+                return result;
+
+            for (size_t i = 0; i < indices.size(); ++i)
+                result[indices[i]] = unindexed[i];
+
+            return result;
+        }
+    }
+
 	void GltfLoader::Load(std::string path, GltfLoadResult& result)
 	{
         m_basePath = std::filesystem::path(path).parent_path();
@@ -33,16 +125,35 @@ namespace shzk
 
         auto& gltf = assetResult.get();
 
+        // Textures
         result.textures.resize(gltf.textures.size());
-        for (size_t i = 0; i < gltf.textures.size(); ++i)
+        std::vector<size_t> sRGBTextureIndices;
+        std::vector<size_t> linearTextureIndices;
+        for (auto& mat : gltf.materials)
         {
-            result.textures[i] = CreateTexture(gltf, gltf.textures[i]);
-            if (result.textures[i])
-            {
-                SHZK_LOG_INFO("  Texture[{}] loaded: {}", i, result.textures[i]->GetName());
-            }
+            if (mat.pbrData.baseColorTexture)
+                sRGBTextureIndices.push_back(mat.pbrData.baseColorTexture->textureIndex);
+            if (mat.emissiveTexture)
+                sRGBTextureIndices.push_back(mat.emissiveTexture->textureIndex);
+            if (mat.normalTexture)
+                linearTextureIndices.push_back(mat.normalTexture->textureIndex);
+            if (mat.pbrData.metallicRoughnessTexture)
+                linearTextureIndices.push_back(mat.pbrData.metallicRoughnessTexture->textureIndex);
+            if (mat.occlusionTexture)
+                linearTextureIndices.push_back(mat.occlusionTexture->textureIndex);
+        }
+        for (auto& idx : sRGBTextureIndices)
+        {
+            result.textures[idx] = CreateTexture(gltf, gltf.textures[idx], RHIFormat::FORMAT_R8G8B8A8_SRGB);
+            if (result.textures[idx]) SHZK_LOG_INFO("  Texture[{}] loaded: {}", idx, result.textures[idx]->GetName());
+        }
+        for (auto& idx : linearTextureIndices)
+        {
+            result.textures[idx] = CreateTexture(gltf, gltf.textures[idx], RHIFormat::FORMAT_R8G8B8A8_UNORM);
+            if (result.textures[idx]) SHZK_LOG_INFO("  Texture[{}] loaded: {}", idx, result.textures[idx]->GetName());
         }
 
+        // Materials
         result.materials.resize(gltf.materials.size());
         for (size_t i = 0; i < gltf.materials.size(); ++i)
         {
@@ -82,11 +193,19 @@ namespace shzk
                 prim->position = ReadPositions(gltf, gltfPrimitive);
                 prim->normal = ReadNormals(gltf, gltfPrimitive);
                 prim->texcoord = ReadTexcoords(gltf, gltfPrimitive);
+
+                auto indices = ReadIndices(gltf, gltfPrimitive);
+
+                bool hasTangent = (FindAttributeAccessor(gltf, gltfPrimitive, "TANGENT") != nullptr);
+                if (hasTangent)
+                    prim->tangent = ReadTangents(gltf, gltfPrimitive);
+                else if (!prim->normal.empty() && !prim->texcoord.empty() && !indices.empty())
+                    prim->tangent = GenerateTangents(prim->position, prim->normal, prim->texcoord, indices);
+
                 submesh.primitive = prim;
 
                 // VertexBuffer, IndexBuffer, VertexFactory
                 submesh.interleavedBuffer = std::make_shared<VertexBuffer>(submesh.primitive);
-                auto indices = ReadIndices(gltf, gltfPrimitive);
                 submesh.indexBuffer = std::make_shared<IndexBuffer>(indices);
 
                 submesh.vertexFactory = std::make_shared<InterleavedVertexFactory>();
@@ -175,6 +294,14 @@ namespace shzk
         return ReadAccessorData<glm::vec2, fastgltf::math::fvec2>(gltf, *accessor);
     }
 
+    std::vector<glm::vec4>	GltfLoader::ReadTangents(const fastgltf::Asset& gltf, const fastgltf::Primitive& primitive)
+    {
+        const auto* accessor = FindAttributeAccessor(gltf, primitive, "TANGENT");
+        if (!accessor) return {};
+
+        return ReadAccessorData<glm::vec4, fastgltf::math::fvec4>(gltf, *accessor);
+    }
+
     std::vector<uint32_t> GltfLoader::ReadIndices(
         const fastgltf::Asset& gltf,
         const fastgltf::Primitive& primitive)
@@ -213,7 +340,7 @@ namespace shzk
         return result;
     }
 
-    std::shared_ptr<Texture> GltfLoader::CreateTexture(const fastgltf::Asset& gltf, const fastgltf::Texture& texture)
+    std::shared_ptr<Texture> GltfLoader::CreateTexture(const fastgltf::Asset& gltf, const fastgltf::Texture& texture, RHIFormat format)
     {
         std::string texturePath;
 
@@ -235,7 +362,7 @@ namespace shzk
             return nullptr;
         }
 
-        auto tex = std::make_shared<Texture>(texturePath, TextureType::Type2D);
+        auto tex = std::make_shared<Texture>(texturePath, TextureType::Type2D, format);
         return tex;
     }
 
@@ -268,15 +395,13 @@ namespace shzk
             return textures[idx];
             };
 
-        mat->SetTextureDiffuse(getTexture(material.pbrData.baseColorTexture));
-        mat->SetTextureNormal(getTexture(material.normalTexture));
+        mat->SetTextureBaseColor(getTexture(material.pbrData.baseColorTexture));
         mat->SetTextureArm(getTexture(material.pbrData.metallicRoughnessTexture));
-        mat->SetTextureSpecular(nullptr);   // KHR_materials_pbrSpecularGlossiness
-
+        mat->SetTextureNormal(getTexture(material.normalTexture));
+        mat->SetTextureOcclusion(getTexture(material.occlusionTexture));
+        mat->SetTextureEmissive(getTexture(material.emissiveTexture));
+        
         // general slots
-        mat->SetTexture2DSlot(0, getTexture(material.occlusionTexture));  // glTF occlusion ¡ú 2D[0]
-        mat->SetTexture2DSlot(1, getTexture(material.emissiveTexture));   // glTF emissive ¡ú 2D[1]
-
         mat->SetIntSlot(0, static_cast<int32_t>(material.alphaMode));  // 0=Opaque, 1=Mask, 2=Blend
         mat->SetIntSlot(1, material.doubleSided ? 1 : 0);
         mat->SetIntSlot(2, material.unlit ? 1 : 0);

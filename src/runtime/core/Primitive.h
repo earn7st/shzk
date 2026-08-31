@@ -18,5 +18,6 @@ namespace shzk
 		std::vector<glm::vec3> position;
 		std::vector<glm::vec3> normal;
 		std::vector<glm::vec2> texcoord;
+		std::vector<glm::vec4> tangent;
 	};
 }

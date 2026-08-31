@@ -1,6 +1,4 @@
 #include "Texture.h"
-#include "Texture.h"
-#include "Texture.h"
 #include "Asset.h"
 #include "runtime/log/Log.h"
 #include "runtime/rhi/RHI.h"
@@ -11,7 +9,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 #include <filesystem>
-#include <iostream>
+#include <memory>
+#include <glm/glm.hpp>
 
 namespace shzk
 {
@@ -28,11 +27,58 @@ namespace shzk
 		return viewType;
 	}
 
-	Texture::Texture(std::string path, TextureType type = TextureType::Type2D)
-		: Asset(AssetType::Texture), m_type(type), m_format(RHIFormat::FORMAT_R8G8B8A8_SRGB), m_arrayLayer(1)
+	Texture::Texture(std::string path, TextureType type = TextureType::Type2D, RHIFormat format)
+		: Asset(AssetType::Texture), m_type(type), m_format(format), m_arrayLayer(1)
 	{
 		m_paths.push_back(path);
 		LoadFromFile();
+	}
+
+	Texture::Texture(Extent2D extent, glm::vec4 rgba)
+		: Asset(AssetType::Texture),
+		m_type(TextureType::Type2D),
+		m_format(RHIFormat::FORMAT_R8G8B8A8_UNORM),
+		m_extent({ extent.width, extent.height, 1 }),
+		m_mipLevels(1),
+		m_arrayLayer(1)
+	{
+		InitRHI();
+
+		const uint32_t pixelCount = extent.width * extent.height;
+		const uint32_t bufferSize = pixelCount * 4;
+		std::vector<uint8_t> pixels(bufferSize);
+
+		const uint8_t r = (uint8_t)(glm::clamp(rgba.r, 0.0f, 1.0f) * 255.0f + 0.5f);
+		const uint8_t g = (uint8_t)(glm::clamp(rgba.g, 0.0f, 1.0f) * 255.0f + 0.5f);
+		const uint8_t b = (uint8_t)(glm::clamp(rgba.b, 0.0f, 1.0f) * 255.0f + 0.5f);
+		const uint8_t a = (uint8_t)(glm::clamp(rgba.a, 0.0f, 1.0f) * 255.0f + 0.5f);
+		for (uint32_t i = 0; i < pixelCount; ++i)
+		{
+			pixels[i * 4 + 0] = r;
+			pixels[i * 4 + 1] = g;
+			pixels[i * 4 + 2] = b;
+			pixels[i * 4 + 3] = a;
+		}
+
+		auto immediateCmd = RHI::Get()->GetCommandContextImmediate();
+
+		RHIBufferInfo bufferInfo = {
+			.size = bufferSize,
+			.memoryUsage = MemoryUsage::CPUOnly,
+			.type = RESOURCE_TYPE_BUFFER,
+			.creationFlag = BUFFER_CREATION_PERSISTENT_MAP
+		};
+		std::shared_ptr<RHIBuffer> stagingBuffer = RHI::Get()->CreateBuffer(bufferInfo);
+		memcpy(stagingBuffer->Map(), pixels.data(), bufferSize);
+
+		immediateCmd->RHITextureBarrierCommand(
+			{ m_texture, RHIResourceState::Undefined, RHIResourceState::TransferDst,
+			  { TEXTURE_ASPECT_COLOR, 0, 1, 0, 1 } });
+		immediateCmd->RHICopyBufferToTexture(stagingBuffer, 0, m_texture, { TEXTURE_ASPECT_COLOR, 0, 0, 1 });
+		immediateCmd->RHITextureBarrierCommand(
+			{ m_texture, RHIResourceState::TransferDst, RHIResourceState::ShaderResource,
+			  { TEXTURE_ASPECT_COLOR, 0, 1, 0, 1 } });
+		immediateCmd->RHISubmit();
 	}
 	
 	void Texture::LoadFromFile()
@@ -44,7 +90,6 @@ namespace shzk
 		}
 
 		m_name = std::filesystem::path(m_paths[0]).filename().generic_string();	// TODO: proper naming
-		
 		auto immediateCmd = RHI::Get()->GetCommandContextImmediate();
 		for (uint32_t i = 0; i < m_paths.size(); ++i)
 		{

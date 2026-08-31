@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime/core/Transform.h"
+#include "runtime/rhi/RHIDefinitions.h"
 
 #include <memory>
 #include <string>
@@ -38,9 +39,10 @@ namespace shzk
 		std::vector<glm::vec3>	ReadPositions(const fastgltf::Asset& gltf, const fastgltf::Primitive& primitive);
 		std::vector<glm::vec3>	ReadNormals(const fastgltf::Asset& gltf, const fastgltf::Primitive& primitive);
 		std::vector<glm::vec2>	ReadTexcoords(const fastgltf::Asset& gltf, const fastgltf::Primitive& primitive);
+		std::vector<glm::vec4>	ReadTangents(const fastgltf::Asset& gltf, const fastgltf::Primitive& primitive);
 		std::vector<uint32_t>	ReadIndices(const fastgltf::Asset& gltf, const fastgltf::Primitive& primitive);
 
-		std::shared_ptr<Texture>	CreateTexture(const fastgltf::Asset& gltf, const fastgltf::Texture& texture);
+		std::shared_ptr<Texture>	CreateTexture(const fastgltf::Asset& gltf, const fastgltf::Texture& texture, RHIFormat format);
 		std::shared_ptr<Material>	CreateMaterial(const fastgltf::Asset& gltf, const fastgltf::Material& material, const std::vector<std::shared_ptr<Texture>>& textures);
 
 		// helpers

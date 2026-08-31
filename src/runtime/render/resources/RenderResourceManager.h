@@ -46,6 +46,7 @@ namespace shzk
 		std::shared_ptr<RHITexture> GetCurrentSceneDepthTexture() const { return m_perFrameResources[m_frameIndex].sceneDepthTexture; }
 		std::shared_ptr<RHITextureView> GetCurrentSceneDepthTextureView() const { return m_perFrameResources[m_frameIndex].sceneDepthTextureView; }
 
+		// multiframe resources
 		const std::shared_ptr<Sampler> GetDefaultSampler() const { return m_samplers[0]; }
 
 		inline Extent2D GetRenderExtent() const { return m_renderExtent; }
@@ -64,6 +65,7 @@ namespace shzk
 		std::shared_ptr<RHIRootSignature> m_perFrameRootSignature;	// as true source of set 0
 		std::shared_ptr<RHIRootSignature> m_materialRootSignature;	// as true source of set 1
 
+		
 		// per frame resources
 		struct PerFrameResource
 		{

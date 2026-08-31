@@ -35,7 +35,7 @@ namespace shzk
 		position.offset = 0;
 		position.type = VertexElementType::Float3;
 		position.attributeIndex = 0;
-		position.stride = 32;
+		position.stride = 48;
 		m_declaration->elements[0] = position;
 
 		VertexElement normal{};
@@ -43,7 +43,7 @@ namespace shzk
 		normal.offset = 12;
 		normal.type = VertexElementType::Float3;
 		normal.attributeIndex = 1;
-		normal.stride = 32;
+		normal.stride = 48;
 		m_declaration->elements[1] = normal;
 
 		VertexElement texcoord{};
@@ -51,8 +51,16 @@ namespace shzk
 		texcoord.offset = 24;
 		texcoord.type = VertexElementType::Float2;
 		texcoord.attributeIndex = 2;
-		texcoord.stride = 32;
+		texcoord.stride = 48;
 		m_declaration->elements[2] = texcoord;
+
+		VertexElement tangent{};
+		tangent.streamIndex = 0;
+		tangent.offset = 32;
+		tangent.type = VertexElementType::Float4;
+		tangent.attributeIndex = 3;
+		tangent.stride = 48;
+		m_declaration->elements[3] = tangent;
 	}
 	
 }

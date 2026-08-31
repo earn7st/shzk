@@ -50,11 +50,11 @@ namespace shzk
         inline void SetRoughness(float value)               { m_roughness = value;      UpdateUniformData();}
         inline void SetAlphaCutoff(float value)             { m_alphaCutoff = value;    UpdateUniformData(); }
         inline void SetUseVertexColor(bool value)           { m_bUseVertexColor = value; UpdateUniformData(); }
-        inline void SetTextureDiffuse(const std::shared_ptr<Texture>& texture)  
+        inline void SetTextureBaseColor(const std::shared_ptr<Texture>& texture)  
         { 
             if (!texture) return;
-            m_textureDiffuse = texture;   
-            UpdateTexture(MATERIAL_BINDING_DIFFUSE, m_textureDiffuse); 
+            m_textureBaseColor = texture;   
+            UpdateTexture(MATERIAL_BINDING_BASECOLOR, m_textureBaseColor); 
         }
         inline void SetTextureNormal(const std::shared_ptr<Texture>& texture)   
         { 
@@ -68,11 +68,17 @@ namespace shzk
             m_textureArm = texture;       
             UpdateTexture(MATERIAL_BINDING_ARM, m_textureArm); 
         }
-        inline void SetTextureSpecular(const std::shared_ptr<Texture>& texture) 
-        { 
+        inline void SetTextureOcclusion(const std::shared_ptr<Texture>& texture)
+        {
             if (!texture) return;
-            m_textureSpecular = texture;  
-            UpdateTexture(MATERIAL_BINDING_SPECULAR, m_textureSpecular); 
+            m_textureOcclusion = texture;
+            UpdateTexture(MATERIAL_BINDING_OCCLUSION, m_textureOcclusion);
+        }
+        inline void SetTextureEmissive(const std::shared_ptr<Texture>& texture)
+        {
+            if (!texture) return;
+            m_textureEmissive = texture;
+            UpdateTexture(MATERIAL_BINDING_EMISSIVE, m_textureEmissive);
         }
         inline void SetIntSlot(uint8_t idx, int32_t value)
         {
@@ -148,11 +154,10 @@ namespace shzk
         inline float GetRoughness() { return m_roughness; }
         inline float GetAlphaCutoff() { return m_alphaCutoff; }
         inline bool UseVertexColor() { return m_bUseVertexColor; }
-        inline std::shared_ptr<Texture> GetTextureDiffuse() const { return m_textureDiffuse; }
+        inline std::shared_ptr<Texture> GetTextureBaseColor() const { return m_textureBaseColor; }
         inline std::shared_ptr<Texture> GetTextureNormal() const { return m_textureNormal; }
         inline std::shared_ptr<Texture> GetTextureArm() const { return m_textureArm; }
-        inline std::shared_ptr<Texture> GetTextureSpecular() const { return m_textureSpecular; }
-        // TODO: General Slots
+
         inline std::shared_ptr<Shader> GetVertexShader() const { return m_vertexShader; }
         inline std::shared_ptr<Shader> GetFragmentShader() const { return m_fragmentShader; }
 
@@ -187,16 +192,17 @@ namespace shzk
         float m_alphaCutoff = 0.5f;
         bool m_bUseVertexColor = false;
 
-        std::shared_ptr<Texture> m_textureDiffuse;
-        std::shared_ptr<Texture> m_textureNormal;
-        std::shared_ptr<Texture> m_textureArm;
-        std::shared_ptr<Texture> m_textureSpecular;
+        std::shared_ptr<Texture> m_textureBaseColor;    // sRGB 
+        std::shared_ptr<Texture> m_textureArm;          // linear
+        std::shared_ptr<Texture> m_textureNormal;       // linear
+        std::shared_ptr<Texture> m_textureOcclusion;    // linear
+        std::shared_ptr<Texture> m_textureEmissive;     // sRGB
 
         // General slots
         std::array<int32_t, 8> m_ints{};    // 0: alpha mode 1£ºdouble sided 2: unlit
         std::array<float, 8>   m_floats{};  // 0: normal scale 1: occlusion strength
         std::array<glm::vec4, 8> m_colors{};
-        std::array<std::shared_ptr<Texture>, 8> m_texture2D;    // 0: occlusion 1: emissive 2~7: not used
+        std::array<std::shared_ptr<Texture>, 4> m_texture2D;    // not used
         std::array<std::shared_ptr<Texture>, 4> m_textureCube;  // not used
         std::array<std::shared_ptr<Texture>, 4> m_texture3D;    // not used 
 

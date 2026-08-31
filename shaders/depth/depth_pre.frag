@@ -1,6 +1,6 @@
 #version 460
 
-layout(location = 0) in vec3 fragWorldPos;
+layout(location = 0) in vec4 fragWorldPos;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec2 fragTexcoord;
 
@@ -24,7 +24,7 @@ layout(set = 1, binding = 0) uniform MaterialUBO {
     vec4  colors[8];
 } material;
 
-layout(set = 1, binding = 1) uniform sampler2D texDiffuse;
+layout(set = 1, binding = 1) uniform sampler2D texBaseColor;
 
 layout(push_constant) uniform PushConstants {
     mat4 modelMat;
@@ -32,7 +32,7 @@ layout(push_constant) uniform PushConstants {
 
 void main()
 {
-    vec4 albedoTex  = texture(texDiffuse, fragTexcoord);
+    vec4 albedoTex  = texture(texBaseColor, fragTexcoord);
     float alpha = material.baseColor.a * albedoTex.a;
     if (material.ints0.x == 1 && alpha < material.alphaCutoff)
     {

@@ -1,8 +1,9 @@
 #version 460
 
-layout(location = 0) in vec3 fragWorldPos;
+layout(location = 0) in vec4 fragWorldPos;
 layout(location = 1) in vec3 fragNormal;
 layout(location = 2) in vec2 fragTexcoord;
+layout(location = 3) in vec4 fragTangent;
 
 layout(location = 0) out vec4 outColor;
 
@@ -26,12 +27,11 @@ layout(set = 1, binding = 0) uniform MaterialUBO {
     vec4  colors[8];
 } material;
 
-layout(set = 1, binding = 1) uniform sampler2D texDiffuse;
-layout(set = 1, binding = 2) uniform sampler2D texNormal;
-layout(set = 1, binding = 3) uniform sampler2D texArm;
-layout(set = 1, binding = 4) uniform sampler2D texSpecular;
-layout(set = 1, binding = 5) uniform sampler2D tex2D_0;
-layout(set = 1, binding = 6) uniform sampler2D tex2D_1;
+layout(set = 1, binding = 1) uniform sampler2D texBaseColor;    // sRGB
+layout(set = 1, binding = 2) uniform sampler2D texArm;          // linear
+layout(set = 1, binding = 3) uniform sampler2D texNormal;       // linear
+layout(set = 1, binding = 4) uniform sampler2D texOcclusion;
+layout(set = 1, binding = 5) uniform sampler2D texEmissive;
 
 layout(push_constant) uniform PushConstants {
     mat4 modelMat;
@@ -80,29 +80,39 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
-void main()
+vec3 GetNormalFromMap()
 {
     vec3 N = normalize(fragNormal);
+    vec3 T = normalize(fragTangent.xyz);
+    vec3 B = fragTangent.w * normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
 
+    vec3 n = texture(texNormal, fragTexcoord).rgb * 2.0 - 1.0;
+    return normalize(TBN * n);
+}
+
+void main()
+{
+    vec3 N = GetNormalFromMap();
     vec3 camPos = -transpose(mat3(perFrame.view)) * perFrame.view[3].xyz;
-    vec3 V = normalize(camPos - fragWorldPos);
+    vec3 V = normalize(camPos - fragWorldPos.xyz);
 
-    vec4 albedoTex  = texture(texDiffuse, fragTexcoord);
+    vec4 albedoTex  = texture(texBaseColor, fragTexcoord);
     float alpha = material.baseColor.a * albedoTex.a;
-    if (material.ints0.x == 1 && alpha < material.alphaCutoff)
+    if (material.ints0.x == 1 && alpha < material.alphaCutoff)  // TODO: move ints re-definition
     {
         discard;
     }
 
     vec3 albedo     = material.baseColor.rgb * albedoTex.rgb;
-    // float ao        = texture(tex2D_0, fragTexcoord).r;
+    float ao        = texture(texOcclusion, fragTexcoord).r;
+    //float roughness = material.roughness;
+    //float metallic = material.metallic;
     float roughness = material.roughness * texture(texArm, fragTexcoord).g;
     float metallic  = material.metallic  * texture(texArm, fragTexcoord).b;
     roughness = max(roughness, 0.045);
 
-
     vec3 F0 = mix(vec3(0.04), albedo, metallic);
-
 
     DirectionalLight sun = GetSun();
     vec3 L = sun.L;
@@ -119,12 +129,9 @@ void main()
     float NdL = max(dot(N, L), 0.0);
     vec3  Lo  = (kD * albedo / kPi + specular) * sun.radiance * NdL;
 
-
-    // vec3 emissive = material.emission.rgb * texture(tex2D_1, fragTexcoord).rgb;
-    // vec3 ambient  = vec3(0.03) * albedo * ao;
-    // vec3 color    = ambient + Lo + emissive;
-    vec3 ambient  = vec3(0.03) * albedo;
-    vec3 color    = ambient + Lo;
+    vec3 emissive = material.emission.rgb * texture(texEmissive, fragTexcoord).rgb;
+    vec3 ambient  = vec3(0.03) * albedo * ao;
+    vec3 color    = ambient + Lo + emissive;
 
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));

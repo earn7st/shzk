@@ -6,18 +6,29 @@
 #include "runtime/import/GltfLoader.h"
 
 #include <iostream>
+#include <glm/glm.hpp>
 
 namespace shzk
 {
 	std::shared_ptr<AssetManager> AssetManager::g_assetManager = std::make_shared<AssetManager>();
+	std::shared_ptr<Texture> AssetManager::g_white1x1;
+	std::shared_ptr<Texture> AssetManager::g_black1x1;
+	std::shared_ptr<Texture> AssetManager::g_normal1x1;
 
 	void AssetManager::Init()
 	{
+		g_white1x1 = std::make_shared<Texture>(Extent2D{ 1, 1 }, glm::vec4(1.f, 1.f, 1.f, 1.f));
+		g_black1x1 = std::make_shared<Texture>(Extent2D{ 1, 1 }, glm::vec4(0.f, 0.f, 0.f, 1.f));
+		g_normal1x1 = std::make_shared<Texture>(Extent2D{ 1, 1 }, glm::vec4(0.5f, 0.5f, 1.f, 1.f));
 	}
 
 	void AssetManager::Shutdown()
 	{
 		m_assets.clear();
+
+		g_white1x1.reset();
+		g_black1x1.reset();
+		g_normal1x1.reset();
 	}
 
 	void AssetManager::ProcessGltfLoadResult(const GltfLoadResult& result)

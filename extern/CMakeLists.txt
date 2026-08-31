@@ -52,3 +52,14 @@ target_include_directories(stb
         ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
+#
+# mikktspace
+#
+add_library(mikktspace STATIC
+    mikktspace.c
+)
+
+target_include_directories(mikktspace
+      PUBLIC
+          ${CMAKE_CURRENT_SOURCE_DIR}
+)
