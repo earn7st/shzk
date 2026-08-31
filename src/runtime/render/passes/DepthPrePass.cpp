@@ -1,4 +1,5 @@
-#include "ForwardPass.h"
+#include "DepthPrePass.h"
+
 #include "MeshPass.h"
 #include "MeshPassProcessor.h"
 
@@ -14,115 +15,97 @@
 
 namespace shzk
 {
-// ForwardPass
-	void ForwardPass::Init()
+	void DepthPrePass::Init()
 	{
-		m_meshPassProcessor = std::make_shared<ForwardPassProcessor>(this);
+		m_meshPassProcessor = std::make_shared<DepthPrePassProcessor>(this);
 
 		m_vertexShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "default.vert.spv", SHADER_FREQUENCY_VERTEX, "main");
-		m_fragmentShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "forward.frag.spv", SHADER_FREQUENCY_FRAGMENT, "main");
+		m_fragmentShader = std::make_shared<Shader>(SHZK_SPIRV_DIR "depth_pre.frag.spv", SHADER_FREQUENCY_FRAGMENT, "main");
 
 		{
 			RHIRootSignatureInfo info{};
 			auto perFrameRS = RenderResourceManager::Get()->GetPerFrameRootSignature();
-			auto matRS = RenderResourceManager::Get()->GetMaterialRootSignature();
-			assert(perFrameRS);
-			assert(matRS);
+			auto materialRS = RenderResourceManager::Get()->GetMaterialRootSignature();
 			info.AddPushConstant({ .offset = 0, .size = 128, .frequency = SHADER_FREQUENCY_VERTEX });
 			info.AddEntry(perFrameRS->GetInfo())
-				.AddEntry(matRS->GetInfo());
+				.AddEntry(materialRS->GetInfo());
 			m_rootSignature = RHI::Get()->CreateRootSignature(info);
 		}
-		
+
 		{
 			m_colorAttachmentFormats.fill(FORMAT_UKNOWN);
-			m_colorAttachmentFormats[0]		= HDR_COLOR_FORMAT;
-			m_depthStencilAttachmentFormat	= DEPTH_FORMAT;
+			m_depthStencilAttachmentFormat = DEPTH_FORMAT;
 		}
 	}
 
-	void ForwardPass::Prepare()
+	void DepthPrePass::Prepare()
 	{
 		m_renderPassInfo = {};
 		m_renderPassInfo.renderArea = RenderResourceManager::Get()->GetRenderExtent();
 		m_renderPassInfo.layerCount = 1;
 		m_renderPassInfo.viewMask = m_viewMask;
 
-		std::shared_ptr<RHITextureView> sceneColorView =
-			RenderResourceManager::Get()->GetCurrentSceneColorTextureView();
-		auto& color = m_renderPassInfo.colorAttachments[0];
-		color.view = sceneColorView;
-		color.layout = RHIResourceState::ColorAttachment;
-		color.loadOp = AttachmentLoadOp::Clear;
-		color.storeOp = AttachmentStoreOp::Store;
-		color.clearColor = CLEAR_COLOR;
-
-		std::shared_ptr<RHITextureView> depthView =
+		std::shared_ptr<RHITextureView> sceneDepthView =
 			RenderResourceManager::Get()->GetCurrentSceneDepthTextureView();
+		
 		auto& depth = m_renderPassInfo.depthStencilAttachment;
-		depth.view = depthView;
+		depth.view = sceneDepthView;
 		depth.layout = RHIResourceState::DepthStencilAttachment;
-		depth.loadOp = AttachmentLoadOp::Load;
-		depth.storeOp = AttachmentStoreOp::DontCare;
+		depth.loadOp = AttachmentLoadOp::Clear;
+		depth.storeOp = AttachmentStoreOp::Store;
 		depth.clearDepth = 0.f;	// reverse-z
 	}
 
-	void ForwardPass::Execute(std::shared_ptr<RHICommandList> cmd)
+	void DepthPrePass::Execute(std::shared_ptr<RHICommandList> cmd)
 	{
 		cmd->TextureBarrier({
-		  RenderResourceManager::Get()->GetCurrentSceneColorTexture(),
-		  RHIResourceState::Undefined,
-		  RHIResourceState::ColorAttachment
-			});
-		cmd->TextureBarrier({
 			RenderResourceManager::Get()->GetCurrentSceneDepthTexture(),
-			RHIResourceState::DepthStencilAttachment,
+			RHIResourceState::Undefined,
 			RHIResourceState::DepthStencilAttachment
 			});
 		cmd->BeginRendering(m_renderPassInfo);
-		cmd->SetViewport({ 0,0 }, { m_renderPassInfo.renderArea.width, m_renderPassInfo.renderArea.height });
-		cmd->SetScissor({ 0,0 }, { m_renderPassInfo.renderArea.width, m_renderPassInfo.renderArea.height });
+		cmd->SetViewport({ 0, 0 }, { m_renderPassInfo.renderArea.width, m_renderPassInfo.renderArea.height });
+		cmd->SetScissor({ 0, 0 }, { m_renderPassInfo.renderArea.width, m_renderPassInfo.renderArea.height });
 		m_meshPassProcessor->ExecuteDrawCommands(cmd);
 		cmd->EndRendering();
 	}
 
-// ForwardPassProcessor	
-
-	ForwardPassProcessor::ForwardPassProcessor(ForwardPass* pass)
+	// DepthPrePass Processor
+	DepthPrePassProcessor::DepthPrePassProcessor(DepthPrePass* pass)
 		: MeshPassProcessor(), m_pass(pass)
 	{
 		for (auto& rt : m_renderState.blendState.renderTargets)
 		{
 			rt.bEnable = false;
-			rt.colorWriteMask	= COLOR_WRITE_MASK_RGBA;
-			rt.colorBlendOp		= BlendOp::Add;
-			rt.alphaBlendOp		= BlendOp::Add;
-			rt.colorSrcBlend	= BlendFactor::One;
-			rt.colorDstBlend	= BlendFactor::Zero;
-			rt.alphaSrcBlend	= BlendFactor::One;
-			rt.alphaDstBlend	= BlendFactor::Zero;
+			rt.colorWriteMask = COLOR_WRITE_MASK_RGBA;
+			rt.colorBlendOp = BlendOp::Add;
+			rt.alphaBlendOp = BlendOp::Add;
+			rt.colorSrcBlend = BlendFactor::One;
+			rt.colorDstBlend = BlendFactor::Zero;
+			rt.alphaSrcBlend = BlendFactor::One;
+			rt.alphaDstBlend = BlendFactor::Zero;
 		}
 
-		m_renderState.depthStencilState.bEnableDepthTest = true;
-		m_renderState.depthStencilState.bEnableDepthWrite = false;
-		m_renderState.depthStencilState.depthTest = CompareFunction::GreaterEqual;
+		m_renderState.depthStencilState.bEnableDepthTest = true;	// default value, could be override by material parameters
+		m_renderState.depthStencilState.bEnableDepthWrite = true;
+		m_renderState.depthStencilState.depthTest = CompareFunction::GreaterEqual; // reverse-z
 
 		// m_renderState.stencilRef = 0;
 	}
 
-	void ForwardPassProcessor::AddMeshBatch(const MeshBatch& batch)
+	void DepthPrePassProcessor::AddMeshBatch(const MeshBatch& batch)
 	{
 		std::shared_ptr<Material> material = batch.material;
 		if (!material) return;
-		if (material->GetPassMask() & PASS_MASK_FORWARD_PASS)
+		if (material->GetPassMask() & PASS_MASK_DEPTH_PRE_PASS)
 		{
 			std::shared_ptr<Shader> vertexShader = material->GetVertexShader();
 			std::shared_ptr<Shader> fragmentShader = material->GetFragmentShader();
 
 			MeshPassProcessorRenderState renderState = m_renderState;	// baseline
-			// renderState.depthStencilState.bEnableDepthTest	= material->DepthTest();
+			// renderState.depthStencilState.bEnableDepthTest = material->DepthTest();
 			// renderState.depthStencilState.bEnableDepthWrite = material->DepthWrite();
-			// renderState.depthStencilState.depthTest			= material->GetDepthCompare();
+			// renderState.depthStencilState.depthTest = material->GetDepthCompare();
 
 			BuildMeshDrawCommands(
 				batch,
@@ -134,7 +117,8 @@ namespace shzk
 				material->GetRasterizerFillMode());
 		}
 	}
-	RHIGraphicsPipelineInfo ForwardPassProcessor::BuildRHIGraphicsPipelineInfo(const GraphicsMinimalPipelineState& minimal)
+
+	RHIGraphicsPipelineInfo DepthPrePassProcessor::BuildRHIGraphicsPipelineInfo(const GraphicsMinimalPipelineState& minimal)
 	{
 		RHIGraphicsPipelineInfo info{};
 		info.vertexShader = minimal.boundShaderStateInput.vertexShader;

@@ -37,14 +37,17 @@ add_library(
     "runtime/render/RenderSystem.cpp"
     "runtime/render/SceneRenderer.cpp"
     "runtime/render/MeshDrawCommand.cpp"
+
     "runtime/render/resources/Buffer.cpp"
     "runtime/render/resources/GraphicsPipelineCache.cpp"
     "runtime/render/resources/Sampler.cpp"
     "runtime/render/resources/RenderResourceManager.cpp"
     "runtime/render/resources/VertexFactory.cpp"
+
     "runtime/render/passes/MeshPass.cpp"
     "runtime/render/passes/MeshPassProcessor.cpp"
     "runtime/render/passes/ForwardPass.cpp"
+    "runtime/render/passes/DepthPrePass.cpp"
     
     # rhi
     "runtime/rhi/RHI.cpp"

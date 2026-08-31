@@ -11,6 +11,7 @@
 #include "runtime/render/passes/RenderPass.h"
 #include "runtime/render/passes/MeshPass.h"
 #include "runtime/render/passes/ForwardPass.h"
+#include "runtime/render/passes/DepthPrePass.h"
 #include "RenderConfig.h"
 #include <cassert>
 
@@ -127,9 +128,13 @@ namespace shzk
 
 	void RenderSystem::InitPasses()
 	{
+		m_meshPasses[(size_t)PassType::DepthPre] = std::make_shared<DepthPrePass>();
 		m_meshPasses[(size_t)PassType::Forward] = std::make_shared<ForwardPass>();
 	
+		m_meshPasses[(size_t)PassType::DepthPre]->Init();
 		m_meshPasses[(size_t)PassType::Forward]->Init();
+
+		m_passes[(size_t)PassType::DepthPre] = m_meshPasses[(size_t)PassType::DepthPre];
 		m_passes[(size_t)PassType::Forward] = m_meshPasses[(size_t)PassType::Forward];
 	}
 }

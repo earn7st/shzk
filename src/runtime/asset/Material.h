@@ -25,7 +25,7 @@ namespace shzk
         PASS_MASK_FORWARD_PASS          = 1 << 0,
         // PASS_MASK_DEFERRED_PASS      = 1 << 1,
         // PASS_MASK_TRANSPARENT_PASS   = 1 << 2,
-        // PASS_MASK_DEPTH_PASS         = 1 << 3,
+        PASS_MASK_DEPTH_PRE_PASS         = 1 << 3,
         // PASS_MASK_POST_PROCESS_PASS  = 1 << 4,
 
         PASS_MASK_MAX_ENUM = 0x7FFFFFFF,
@@ -164,9 +164,9 @@ namespace shzk
         inline uint32_t GetPassMask() const { return m_passMask; }
         inline RasterizerCullMode GetRasterizerCullMode() const { return m_cullMode; }
         inline RasterizerFillMode GetRasterizerFillMode() const { return m_fillMode; }
-        inline bool DepthTest() const { return m_bDepthTest; }
-        inline bool DepthWrite() const { return m_bDepthWrite; }
-        inline CompareFunction GetDepthCompare() const{ return m_depthCompare; }
+        // inline bool DepthTest() const { return m_bDepthTest; }
+        // inline bool DepthWrite() const { return m_bDepthWrite; }
+        // inline CompareFunction GetDepthCompare() const{ return m_depthCompare; }
         inline bool CastShadow() const { return m_bCastShadow; }
 
         std::shared_ptr<RHIDescriptorSet> GetDescriptorSet() const { return m_descriptorSet; }
@@ -202,18 +202,13 @@ namespace shzk
 
     // CPU side options
     protected:
-        PassMask m_passMask = PASS_MASK_FORWARD_PASS;
+        PassMask m_passMask =   PASS_MASK_FORWARD_PASS | 
+                                PASS_MASK_DEPTH_PRE_PASS;
 
         // RasteriazerState
         RasterizerCullMode m_cullMode = RasterizerCullMode::CW;
         RasterizerFillMode m_fillMode = RasterizerFillMode::Solid;
 
-        // DepthStencilState
-        bool m_bDepthTest = true;
-        bool m_bDepthWrite = true;
-        CompareFunction m_depthCompare = CompareFunction::GreaterEqual;   // Reverse-Z
-
-        //bool m_bUseForDepthPass = true; 
         bool m_bCastShadow = true;
 
     // GPU side resources and data for upload
