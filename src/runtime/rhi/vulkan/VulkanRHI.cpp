@@ -962,9 +962,6 @@ namespace shzk
 			for (uint32_t j = 0; j < mipLevels - 1; ++j)	// Generate one mip level at a time
 			{
 				TextureAspectFlags	  aspect = TEXTURE_ASPECT_NONE;
-				uint32_t              mipLevel = 0;
-				uint32_t              baseArrayLayer = 0;
-				uint32_t              layerCount = 0;
 				RHIBlitTextureImpl(
 					cmdBuffer,
 					src, src,

@@ -10,8 +10,9 @@
 
 #include "runtime/render/passes/RenderPass.h"
 #include "runtime/render/passes/MeshPass.h"
-#include "runtime/render/passes/ForwardPass.h"
 #include "runtime/render/passes/DepthPrePass.h"
+#include "runtime/render/passes/ForwardPass.h"
+#include "runtime/render/passes/SkyPass.h"
 #include "RenderConfig.h"
 #include <cassert>
 
@@ -130,11 +131,14 @@ namespace shzk
 	{
 		m_meshPasses[(size_t)PassType::DepthPre] = std::make_shared<DepthPrePass>();
 		m_meshPasses[(size_t)PassType::Forward] = std::make_shared<ForwardPass>();
+		m_meshPasses[(size_t)PassType::Sky] = std::make_shared<SkyPass>();
 	
 		m_meshPasses[(size_t)PassType::DepthPre]->Init();
 		m_meshPasses[(size_t)PassType::Forward]->Init();
+		m_meshPasses[(size_t)PassType::Sky]->Init();
 
-		m_passes[(size_t)PassType::DepthPre] = m_meshPasses[(size_t)PassType::DepthPre];
-		m_passes[(size_t)PassType::Forward] = m_meshPasses[(size_t)PassType::Forward];
+		m_passes[(size_t)PassType::DepthPre]	= m_meshPasses[(size_t)PassType::DepthPre];
+		m_passes[(size_t)PassType::Forward]		= m_meshPasses[(size_t)PassType::Forward];
+		m_passes[(size_t)PassType::Sky]			= m_meshPasses[(size_t)PassType::Sky];
 	}
 }

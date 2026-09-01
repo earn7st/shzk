@@ -13,6 +13,7 @@
 #include "runtime/framework/components/MeshComponent.h"
 #include "runtime/framework/components/TransformComponent.h"
 #include "runtime/framework/components/CameraComponent.h"
+#include "runtime/framework/components/SkyBoxComponent.h"
 
 #include <glm/glm.hpp>
 #include <cassert>
@@ -73,6 +74,12 @@ namespace shzk
 		if (meshComp)
 		{
 			meshComp->CollectMeshBatchWithTransform(batches, accTransformMat);
+		}
+
+		std::shared_ptr<SkyBoxComponent> skyBoxComp = node->TryGetComponent<SkyBoxComponent>();
+		if (skyBoxComp)
+		{
+			skyBoxComp->CollectMeshBatchWithTransform(batches, accTransformMat);
 		}
 
 		// recursive

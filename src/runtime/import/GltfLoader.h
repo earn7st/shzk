@@ -32,6 +32,10 @@ namespace shzk
 	class GltfLoader
 	{
 	public:
+		static std::shared_ptr<GltfLoader> g_gltfLoader;
+		static std::shared_ptr<GltfLoader> Get() { return g_gltfLoader; }
+
+	public:
 		GltfLoader() = default;
 		void Load(std::string path, GltfLoadResult& result);
 

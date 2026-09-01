@@ -27,10 +27,17 @@ namespace shzk
 		return viewType;
 	}
 
-	Texture::Texture(std::string path, TextureType type = TextureType::Type2D, RHIFormat format)
+	Texture::Texture(std::string path, TextureType type, RHIFormat format)
 		: Asset(AssetType::Texture), m_type(type), m_format(format), m_arrayLayer(1)
 	{
 		m_paths.push_back(path);
+		LoadFromFile();
+	}
+
+	Texture::Texture(const std::vector<std::string>& paths, TextureType type, RHIFormat format)
+		: Asset(AssetType::Texture), m_type(type), m_format(format), m_arrayLayer((uint32_t)paths.size())
+	{
+		m_paths = paths;
 		LoadFromFile();
 	}
 

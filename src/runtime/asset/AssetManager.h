@@ -10,6 +10,7 @@ namespace shzk
 	struct GltfLoadResult;
 
 	class Texture;
+	class Model;
 
 	class AssetManager
 	{
@@ -19,11 +20,13 @@ namespace shzk
 		static std::shared_ptr<Texture> g_white1x1;
 		static std::shared_ptr<Texture> g_black1x1;
 		static std::shared_ptr<Texture> g_normal1x1;
+		static std::shared_ptr<Model>   g_cube;
 
 	public:
 		static std::shared_ptr<Texture> GetWhiteTexture1x1() { return g_white1x1; }
 		static std::shared_ptr<Texture> GetBlackTexture1x1() { return g_black1x1; }
 		static std::shared_ptr<Texture> GetNormalTexture1x1() { return g_normal1x1; }
+		static std::shared_ptr<Model>   GetCubeModel() { return g_cube; }
 
 	public:
 		AssetManager() = default;
@@ -37,12 +40,12 @@ namespace shzk
 		void ProcessGltfLoadResult(const GltfLoadResult& result);
 		void Register(const std::shared_ptr<Asset>& asset);
 
-		
-
 		// Debug
 		void PrintAllAssets();
 		
 	private:
+		void InitBuiltInAssets();
+
 		std::shared_ptr<Asset> GetOrLoadAssetInternal(std::string name, std::string path);
 
 	private:

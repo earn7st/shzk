@@ -12,8 +12,12 @@ namespace shzk
 		Transform			= 1,
 		Mesh				= 2,
 		Camera				= 3,
-		DirectionalLight	= 4,
-		PointLight			= 5,
+		SkyBox				= 4,
+		DirectionalLight	= 5,
+		PointLight			= 6,
+		SkyLight			= 7,
+
+		Max,
 	};
 
 	class Component

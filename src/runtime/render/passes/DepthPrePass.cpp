@@ -103,7 +103,9 @@ namespace shzk
 			std::shared_ptr<Shader> fragmentShader = material->GetFragmentShader();
 
 			MeshPassProcessorRenderState renderState = m_renderState;	// baseline
-			// renderState.depthStencilState.bEnableDepthTest = material->DepthTest();
+			// TODO: material.blendMode decides depthTest and depthWrite
+			// 
+			// renderState.depthStencilState.bEnableDepthTest = material->DepthTest();	// wrong
 			// renderState.depthStencilState.bEnableDepthWrite = material->DepthWrite();
 			// renderState.depthStencilState.depthTest = material->GetDepthCompare();
 

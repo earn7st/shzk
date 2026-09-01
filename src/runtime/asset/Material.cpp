@@ -6,6 +6,26 @@
 
 namespace shzk
 {
+	Material::Material()
+		: Asset(AssetType::Material)
+	{
+		InitRenderResources();
+	
+		m_baseColor = glm::vec4(1.f);
+		m_emission = glm::vec3(0.f);
+		m_metallic = 0.f;
+		m_roughness = 1.f;
+		m_alphaCutoff = 0.5f;
+		m_bUseVertexColor = false;
+		for (int i = 0; i < 8; ++i)
+		{
+			m_ints[i] = 0;
+			m_floats[i] = 0.f;
+			m_colors[i] = glm::vec4(0.f);
+		}
+		UpdateUniformData();
+	}
+
 	void Material::InitRenderResources()
 	{
 		m_buffer = std::make_shared<Buffer<MaterialUniformShaderParameters>>();

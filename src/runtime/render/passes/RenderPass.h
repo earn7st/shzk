@@ -9,8 +9,9 @@ namespace shzk
 	{
 		DepthPre				= 0,
 		Forward					= 1,
-		DirectionalShadowMap	= 2,
-		PointLightShadowMap		= 3,
+		Sky						= 2,
+		DirectionalShadowMap	= 3,
+		PointLightShadowMap		= 4,
 
 		Max,
 	};

@@ -5,6 +5,8 @@
 #include "editor/Editor.h"
 #include "runtime/core/Transform.h"
 #include "runtime/asset/AssetManager.h"
+#include "runtime/asset/Texture.h"
+#include "runtime/asset/Material.h"
 #include "runtime/global/Engine.h"
 // framework
 #include "runtime/framework/Scene.h"
@@ -12,18 +14,41 @@
 #include "runtime/framework/components/MeshComponent.h"
 #include "runtime/framework/components/CameraComponent.h"	
 #include "runtime/framework/components/TransformComponent.h"	
+#include "runtime/framework/components/SkyBoxComponent.h"
 //import
 #include "runtime/import/GltfLoader.h"
 
 void InitScene(std::shared_ptr<shzk::Scene>& scene)
 {
-	shzk::GltfLoader gltfLoader;
+	// SkyBox
+	if (true)
+	{
+		std::shared_ptr<shzk::Node> skybox = std::make_shared<shzk::Node>(0, "skybox_industrial");
+		std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
+		skybox->AddComponent(transformComp);
+		std::shared_ptr<shzk::SkyBoxComponent> skyboxComp = std::make_shared<shzk::SkyBoxComponent>();
+		skybox->AddComponent(skyboxComp);
+
+		std::vector<std::string> restingPlacePaths = {
+			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/px.png",
+			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/nx.png",
+			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/py.png",
+			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/ny.png",
+			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/pz.png",
+			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/nz.png" };
+		std::shared_ptr<shzk::Texture> restingPlaceCubeMap = std::make_shared<shzk::Texture>(restingPlacePaths, shzk::TextureType::TypeCube, shzk::RHIFormat::FORMAT_R8G8B8A8_SRGB);
+
+		std::shared_ptr<shzk::Material> skyboxMaterial = skyboxComp->GetMaterial();
+		skyboxMaterial->SetTextureCubeSlot(0, restingPlaceCubeMap);
+
+		scene->AddNode(skybox);
+	}
 
 	// Damaged Helmet
 	if (true)
 	{
 		shzk::GltfLoadResult helmetResult;
-		gltfLoader.Load(SHZK_ASSETS_DIR "DamagedHelmet/glTF/DamagedHelmet.gltf", helmetResult);
+		shzk::GltfLoader::Get()->Load(SHZK_ASSETS_DIR "DamagedHelmet/glTF/DamagedHelmet.gltf", helmetResult);
 		shzk::AssetManager::Get()->ProcessGltfLoadResult(helmetResult);
 
 		std::shared_ptr<shzk::Node> helmet0 = std::make_shared<shzk::Node>(1, "damaged_helmet0");
@@ -58,7 +83,7 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 	if (false)
 	{
 		shzk::GltfLoadResult sponzaResult;
-		gltfLoader.Load(SHZK_ASSETS_DIR "Sponza/glTF/Sponza.gltf", sponzaResult);
+		shzk::GltfLoader::Get()->Load(SHZK_ASSETS_DIR "Sponza/glTF/Sponza.gltf", sponzaResult);
 		shzk::AssetManager::Get()->ProcessGltfLoadResult(sponzaResult);
 
 		std::shared_ptr<shzk::Node> sponza = std::make_shared<shzk::Node>(1, "sponza");

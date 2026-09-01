@@ -16,6 +16,8 @@
 
 namespace shzk
 {
+    std::shared_ptr<GltfLoader> GltfLoader::g_gltfLoader = std::make_shared<GltfLoader>();
+
     namespace
     {
         struct MikktUserData
@@ -91,7 +93,7 @@ namespace shzk
             iface.m_getNormal = GetNormal;
             iface.m_getTexCoord = GetTexCoord;
             iface.m_setTSpaceBasic = SetTSpaceBasic;
-            iface.m_setTSpace = nullptr;   // normal mapping ÓÃ Basic ¾Í¹»
+            iface.m_setTSpace = nullptr;
 
             SMikkTSpaceContext ctx{};
             ctx.m_pInterface = &iface;
@@ -369,7 +371,6 @@ namespace shzk
     std::shared_ptr<Material> GltfLoader::CreateMaterial(const fastgltf::Asset& gltf, const fastgltf::Material& material, const std::vector<std::shared_ptr<Texture>>& textures)
     {
         auto mat = std::make_shared<Material>();
-        mat->InitRenderResources();
 
         mat->SetBaseColor(glm::vec4(
             material.pbrData.baseColorFactor.x(),

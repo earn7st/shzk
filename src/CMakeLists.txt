@@ -29,6 +29,7 @@ add_library(
     "runtime/framework/components/TransformComponent.cpp"
     "runtime/framework/components/MeshComponent.cpp"
     "runtime/framework/components/CameraComponent.cpp"
+    "runtime/framework/components/SkyBoxComponent.cpp"
     "runtime/framework/components/DirectionalLightComponent.cpp"
     "runtime/framework/Node.cpp"
     "runtime/framework/Scene.cpp"
@@ -48,6 +49,7 @@ add_library(
     "runtime/render/passes/MeshPassProcessor.cpp"
     "runtime/render/passes/ForwardPass.cpp"
     "runtime/render/passes/DepthPrePass.cpp"
+    "runtime/render/passes/SkyPass.cpp"
     
     # rhi
     "runtime/rhi/RHI.cpp"

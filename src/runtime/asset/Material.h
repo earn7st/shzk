@@ -22,11 +22,9 @@ namespace shzk
     enum PassMaskBits : uint32_t
     {
         PASS_MASK_NONE                  = 0,
-        PASS_MASK_FORWARD_PASS          = 1 << 0,
-        // PASS_MASK_DEFERRED_PASS      = 1 << 1,
-        // PASS_MASK_TRANSPARENT_PASS   = 1 << 2,
-        PASS_MASK_DEPTH_PRE_PASS         = 1 << 3,
-        // PASS_MASK_POST_PROCESS_PASS  = 1 << 4,
+        PASS_MASK_DEPTH_PRE_PASS        = 1 << 0,
+        PASS_MASK_FORWARD_PASS          = 1 << 1,
+        PASS_MASK_SKY_PASS              = 1 << 2,
 
         PASS_MASK_MAX_ENUM = 0x7FFFFFFF,
     };
@@ -35,7 +33,7 @@ namespace shzk
     class Material : public Asset
     {
     public:
-        Material() : Asset(AssetType::Material) {}
+        Material();
         ~Material() = default;
 
         void InitRenderResources();
@@ -214,6 +212,11 @@ namespace shzk
         // RasteriazerState
         RasterizerCullMode m_cullMode = RasterizerCullMode::CW;
         RasterizerFillMode m_fillMode = RasterizerFillMode::Solid;
+
+        // Depth
+		// bool m_bDepthTest = true;
+		// bool m_bDepthWrite = true; // depth-pre pass
+		// CompareFunction m_depthCompare = CompareFunction::GreaterEqual;
 
         bool m_bCastShadow = true;
 
