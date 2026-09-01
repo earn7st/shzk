@@ -30,12 +30,12 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 		skybox->AddComponent(skyboxComp);
 
 		std::vector<std::string> restingPlacePaths = {
-			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/px.png",
-			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/nx.png",
-			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/py.png",
-			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/ny.png",
-			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/pz.png",
-			SHZK_ASSETS_DIR "_environment/resting_place/CubeMap_2K/nz.png" };
+			SHZK_ASSETS_DIR "_environment/climbing_gym/CubeMap_4K/px.png",
+			SHZK_ASSETS_DIR "_environment/climbing_gym/CubeMap_4K/nx.png",
+			SHZK_ASSETS_DIR "_environment/climbing_gym/CubeMap_4K/py.png",
+			SHZK_ASSETS_DIR "_environment/climbing_gym/CubeMap_4K/ny.png",
+			SHZK_ASSETS_DIR "_environment/climbing_gym/CubeMap_4K/pz.png",
+			SHZK_ASSETS_DIR "_environment/climbing_gym/CubeMap_4K/nz.png" };
 		std::shared_ptr<shzk::Texture> restingPlaceCubeMap = std::make_shared<shzk::Texture>(restingPlacePaths, shzk::TextureType::TypeCube, shzk::RHIFormat::FORMAT_R8G8B8A8_SRGB);
 
 		std::shared_ptr<shzk::Material> skyboxMaterial = skyboxComp->GetMaterial();

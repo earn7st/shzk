@@ -24,8 +24,8 @@ namespace shzk
     public:
         Texture() = delete;
 		Texture(std::string path, TextureType type = TextureType::Type2D, RHIFormat format = RHIFormat::FORMAT_R8G8B8A8_SRGB);                          // 2D texture
-		Texture(const std::vector<std::string>& paths, TextureType type = TextureType::TypeCube, RHIFormat format = RHIFormat::FORMAT_R8G8B8A8_SRGB);   // cubemap: .png-sRGB , .hdr-linear(not implementated)
-        Texture(Extent2D extent, glm::vec4 rgba);
+		Texture(const std::vector<std::string>& paths, TextureType type = TextureType::TypeCube, RHIFormat format = RHIFormat::FORMAT_R8G8B8A8_SRGB);   // cubemap: .png-sRGB, .hdr-linear(not implementated)
+        Texture(Extent2D extent, glm::vec4 rgba, RHIFormat format = RHIFormat::FORMAT_R8G8B8A8_UNORM);
         ~Texture() = default;
 
     public:

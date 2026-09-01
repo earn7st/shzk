@@ -41,10 +41,10 @@ namespace shzk
 		LoadFromFile();
 	}
 
-	Texture::Texture(Extent2D extent, glm::vec4 rgba)
+	Texture::Texture(Extent2D extent, glm::vec4 rgba, RHIFormat format)
 		: Asset(AssetType::Texture),
 		m_type(TextureType::Type2D),
-		m_format(RHIFormat::FORMAT_R8G8B8A8_UNORM),
+		m_format(format),
 		m_extent({ extent.width, extent.height, 1 }),
 		m_mipLevels(1),
 		m_arrayLayer(1)
