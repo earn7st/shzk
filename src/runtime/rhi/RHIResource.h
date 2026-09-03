@@ -113,9 +113,12 @@ namespace shzk
 	public:
 		RHIDescriptorSet() : RHIResource(RHIResourceType::DescriptorSet) {}
 
-		virtual void UpdateBuffer(uint32_t binding, std::shared_ptr<RHIBuffer> buffer) = 0;
-		virtual void UpdateTexture(uint32_t binding, std::shared_ptr<RHITextureView> view, std::shared_ptr<RHISampler> sampler) = 0;
-
+		virtual RHIDescriptorSet& UpdateDescriptor(const RHIDescriptorUpdateInfo& descriptorUpdateInfo) = 0;
+		inline RHIDescriptorSet& UpdateDescriptors(const std::vector<RHIDescriptorUpdateInfo>& descriptorUpdateInfos)
+		{
+			for (auto& info : descriptorUpdateInfos) UpdateDescriptor(info);
+			return *this;
+		};
 	};
 
 	class RHIRootSignature : public RHIResource
@@ -145,5 +148,18 @@ namespace shzk
 
 	protected:
 		RHIGraphicsPipelineInfo m_info;
+	};
+
+	class RHIComputePipeline : public RHIResource
+	{
+	public:
+		RHIComputePipeline() = delete;
+		RHIComputePipeline(const RHIComputePipelineInfo& info)
+			: RHIResource(RHIResourceType::ComputePipeline), m_info(info) {}
+
+		inline const RHIComputePipelineInfo& GetInfo() const { return m_info; }
+
+	protected:
+		RHIComputePipelineInfo m_info;
 	};
 }

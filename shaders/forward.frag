@@ -27,11 +27,11 @@ layout(set = 1, binding = 0) uniform MaterialUBO {
     vec4  colors[8];
 } material;
 
-layout(set = 1, binding = 1) uniform sampler2D texBaseColor;    // sRGB
-layout(set = 1, binding = 2) uniform sampler2D texArm;          // linear
-layout(set = 1, binding = 3) uniform sampler2D texNormal;       // linear
-layout(set = 1, binding = 4) uniform sampler2D texOcclusion;    // linear
-layout(set = 1, binding = 5) uniform sampler2D texEmissive;     // sRGB
+layout(set = 1, binding = 1) uniform sampler2D texBaseColor;
+layout(set = 1, binding = 2) uniform sampler2D texArm;
+layout(set = 1, binding = 3) uniform sampler2D texNormal;
+layout(set = 1, binding = 4) uniform sampler2D texOcclusion;
+layout(set = 1, binding = 5) uniform sampler2D texEmissive;
 
 const float kPi = 3.14159265359;
 
@@ -132,9 +132,6 @@ void main()
     vec3 ambient      = ambientColor * mix(albedo, metalFloor, metallic) * ao;
 
     vec3 color    = ambient + Lo + emissive;
-
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2));
 
     outColor = vec4(color, alpha);
 }

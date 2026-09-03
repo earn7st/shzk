@@ -12,6 +12,7 @@ namespace shzk
     class RHIFence;
     class RHISemaphore;
     class RHIGraphicsPipeline;
+	class RHIComputePipeline;
     class RHIBuffer;
     class RHIDescriptorSet;
 
@@ -56,7 +57,7 @@ namespace shzk
         void SetLineWidth(float width);
 
         void SetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline);
-        // void SetComputePipeline(RHIComputePipelineRef computePipeline);
+        void SetComputePipeline(std::shared_ptr<RHIComputePipeline> computePipeline);
 
         void BeginRendering(const RHIRenderPassInfo& info);
         void EndRendering();
@@ -65,6 +66,8 @@ namespace shzk
         void BindDescriptorSet(std::shared_ptr<RHIDescriptorSet> descriptorSet, uint32_t set = 0);
         void BindVertexBuffer(std::shared_ptr<RHIBuffer> vertexBuffer, uint32_t streamIndex = 0, uint32_t offset = 0);
         void BindIndexBuffer(std::shared_ptr<RHIBuffer> indexBuffer, uint32_t offset = 0);
+
+		void Dispatch(uint32_t groupCountX = 1, uint32_t groupCountY = 1, uint32_t groupCountZ = 1);
 
         void Draw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
         void DrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);

@@ -113,8 +113,8 @@ namespace shzk
 				batch,
 				material,
 				renderState,
-				vertexShader != nullptr ? vertexShader->m_shader : m_pass->GetVertexShader()->m_shader,
-				fragmentShader != nullptr ? fragmentShader->m_shader : m_pass->GetFragmentShader()->m_shader,
+				vertexShader != nullptr ? vertexShader->GetRHIShader() : m_pass->GetVertexShader()->GetRHIShader(),
+				fragmentShader != nullptr ? fragmentShader->GetRHIShader() : m_pass->GetFragmentShader()->GetRHIShader(),
 				material->GetRasterizerCullMode(),
 				material->GetRasterizerFillMode());
 		}

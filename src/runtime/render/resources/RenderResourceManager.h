@@ -31,6 +31,7 @@ namespace shzk
 
 		void Init();
 		void BeginFrame(uint32_t frameIdx);
+		uint32_t GetCurrentFrameIndex() const { return m_frameIndex; }
 
 		std::shared_ptr<RHIShader> GetOrCreateRHIShader(const std::string& path, ShaderFrequency frequency, const std::string& entry = "main");
 
@@ -41,8 +42,15 @@ namespace shzk
 		// per frame resources
 		std::shared_ptr<RHIDescriptorSet> GetCurrentPerFrameDescriptorSet() const { return m_perFrameResources[m_frameIndex].descriptorSet; }
 		std::shared_ptr<Buffer<PerFrameUniformShaderParameters>> GetCurrentPerFrameUniformBuffer() const{ return m_perFrameResources[m_frameIndex].ub; }
+
+		std::shared_ptr<RHITextureView> GetHDRColorTextureView(uint32_t idx) const { return m_perFrameResources[idx].hdrColorTextureView; }
+		std::shared_ptr<RHITexture>	GetCurrentHDRColorTexture() const { return m_perFrameResources[m_frameIndex].hdrColorTexture; }
+		std::shared_ptr<RHITextureView> GetCurrentHDRColorTextureView() const { return m_perFrameResources[m_frameIndex].hdrColorTextureView; }
+		
+		std::shared_ptr<RHITextureView> GetSceneColorTextureView(uint32_t idx) const { return m_perFrameResources[idx].sceneColorTextureView; }
 		std::shared_ptr<RHITexture>	GetCurrentSceneColorTexture() const { return m_perFrameResources[m_frameIndex].sceneColorTexture; }
 		std::shared_ptr<RHITextureView> GetCurrentSceneColorTextureView() const { return m_perFrameResources[m_frameIndex].sceneColorTextureView; }
+		
 		std::shared_ptr<RHITexture> GetCurrentSceneDepthTexture() const { return m_perFrameResources[m_frameIndex].sceneDepthTexture; }
 		std::shared_ptr<RHITextureView> GetCurrentSceneDepthTextureView() const { return m_perFrameResources[m_frameIndex].sceneDepthTextureView; }
 
@@ -69,16 +77,19 @@ namespace shzk
 		// per frame resources
 		struct PerFrameResource
 		{
-			// Shader Binding
+			// per frame uniform buffer and descriptor set
 			std::shared_ptr<RHIDescriptorSet> descriptorSet;
 			std::shared_ptr<Buffer<PerFrameUniformShaderParameters>> ub;
 
 			// Render Targets
-			std::shared_ptr<RHITexture>	sceneColorTexture;
+			std::shared_ptr<RHITexture>	hdrColorTexture;
+			std::shared_ptr<RHITextureView> hdrColorTextureView;
+			std::shared_ptr<RHITexture> sceneColorTexture;
 			std::shared_ptr<RHITextureView> sceneColorTextureView;
+
+			// Depth Targets
 			std::shared_ptr<RHITexture> sceneDepthTexture;
 			std::shared_ptr<RHITextureView> sceneDepthTextureView;
-
 		};
 		std::array<PerFrameResource, FRAMES_IN_FLIGHT> m_perFrameResources;
 		uint32_t m_frameIndex = 0;

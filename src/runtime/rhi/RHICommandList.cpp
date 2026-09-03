@@ -181,6 +181,15 @@ namespace shzk
 		}
 	}
 
+	void RHICommandList::SetComputePipeline(std::shared_ptr<RHIComputePipeline> computePipeline)
+	{
+		if (m_bypass)
+		{
+			assert(m_cmdContext);
+			m_cmdContext->RHISetComputePipeline(computePipeline);
+		}
+	}
+
 	void RHICommandList::BeginRendering(const RHIRenderPassInfo& info)
 	{
 		if (m_bypass)
@@ -233,6 +242,15 @@ namespace shzk
 		{
 			assert(m_cmdContext);
 			m_cmdContext->RHIBindIndexBuffer(indexBuffer, offset);
+		}
+	}
+
+	void RHICommandList::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+	{
+		if (m_bypass)
+		{
+			assert(m_cmdContext);
+			m_cmdContext->RHIDispatch(groupCountX, groupCountY, groupCountZ);
 		}
 	}
 

@@ -66,9 +66,8 @@ namespace shzk
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
             VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT;
-        //TODO: post-process pass | HDR
-            //| VK_IMAGE_USAGE_STORAGE_BIT;
+            VK_IMAGE_USAGE_SAMPLED_BIT |
+            VK_IMAGE_USAGE_STORAGE_BIT;
 
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         createInfo.queueFamilyIndexCount = 0;
@@ -156,7 +155,7 @@ namespace shzk
     VkSurfaceFormatKHR VulkanRHISwapchain::ChooseSwapchainSurfaceFormat(VkFormat targetFormat)
     {
         if (m_availableFormats.size() == 1 && m_availableFormats[0].format == VK_FORMAT_UNDEFINED) {
-            return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+            return { VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
         }
 
         for (const auto& format : m_availableFormats)

@@ -3,6 +3,7 @@
 #include "runtime/render/resources/Buffer.h"
 #include "runtime/render/resources/RenderResourceManager.h"
 #include "runtime/rhi/RHIResource.h"
+#include "runtime/rhi/RHIDefinitions.h"
 
 namespace shzk
 {
@@ -36,7 +37,15 @@ namespace shzk
 			assert(false);
 			return;
 		}
-		m_descriptorSet->UpdateBuffer(MATERIAL_BINDING_UNIFORM, m_buffer->GetBuffer());
+
+		RHIDescriptorUpdateInfo info{};
+		info.binding		= MATERIAL_BINDING_UNIFORM;
+		info.index			= 0;
+		info.resourceType = RESOURCE_TYPE_UNIFORM_BUFFER;
+		info.buffer			= m_buffer->GetBuffer();		
+		info.bufferOffset	= 0;
+		info.bufferRange	= sizeof(MaterialUniformShaderParameters);
+		m_descriptorSet->UpdateDescriptor(info);
 
 		SetTextureBaseColor(AssetManager::GetWhiteTexture1x1());
 		SetTextureArm(AssetManager::GetWhiteTexture1x1());
@@ -71,6 +80,12 @@ namespace shzk
 			return;
 		}
 
-		m_descriptorSet->UpdateTexture(binding, texture->m_textureView, RenderResourceManager::Get()->GetDefaultSampler()->m_sampler);
+		RHIDescriptorUpdateInfo info{};
+		info.binding		= binding;
+		info.index			= 0;
+		info.resourceType	= RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER;
+		info.textureView	= texture->m_textureView;
+		info.sampler		= RenderResourceManager::Get()->GetDefaultSampler()->GetRHISampler();
+		m_descriptorSet->UpdateDescriptor(info);
 	}
 }

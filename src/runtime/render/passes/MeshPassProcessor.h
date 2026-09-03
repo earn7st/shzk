@@ -41,8 +41,8 @@ namespace shzk
 
 	protected:
 		virtual void AddMeshBatch(const MeshBatch& batch) = 0;
-		virtual RHIGraphicsPipelineInfo BuildRHIGraphicsPipelineInfo(const GraphicsMinimalPipelineState& minimal) = 0;
-
+		virtual RHIGraphicsPipelineInfo BuildRHIGraphicsPipelineInfo(const GraphicsMinimalPipelineState& minimal) = 0;	// 实际上好像可以不子类实现？ 但是因为目前在子类里维护了具体的 xxPass*，所以不得不重复写一些
+																														// TODO: pass 放到 MeshPassProcessor 里?
 		friend class MeshPass;
 
 	protected:

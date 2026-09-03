@@ -112,8 +112,7 @@ namespace shzk
 
 		inline VkDescriptorSet& GetHandle() { return m_handle; }
 
-		virtual void UpdateBuffer(uint32_t binding, std::shared_ptr<RHIBuffer> buffer) override final;
-		virtual void UpdateTexture(uint32_t binding, std::shared_ptr<RHITextureView> view, std::shared_ptr<RHISampler> sampler) override final;
+		virtual RHIDescriptorSet& UpdateDescriptor(const RHIDescriptorUpdateInfo& descriptorUpdateInfo) override final;
 			 
 	protected:
 		virtual void Destroy() override final;
@@ -155,19 +154,19 @@ namespace shzk
 
 		void Bind(VkCommandBuffer cmBuffer);
 
-		inline VkPipelineVertexInputStateCreateInfo GetVertexInputStateCreateInfo(std::shared_ptr<const RHIVertexDeclaration> declaration);
-		inline VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyStateCreateInfo(PrimitiveType primitiveType);
-		inline VkPipelineViewportStateCreateInfo GetViewportStateCreateInfo();
-		inline VkPipelineRasterizationStateCreateInfo GetRasterizationStateCreateInfo(const RHIRasterizerState& state);
-		inline VkPipelineMultisampleStateCreateInfo GetMultisampleStateCreateInfo();
-		inline VkPipelineDepthStencilStateCreateInfo GetDepthStencilStateCreateInfo(const RHIDepthStencilState& state);
-		inline VkPipelineColorBlendStateCreateInfo GetColorBlendStateCreateInfo(const RHIBlendState& state, uint32_t attachmentCount);
-		inline VkPipelineDynamicStateCreateInfo GetDynamicStateCreateInfo();
-
 	protected:
 		void Destroy() override final;
 
 	private:
+		VkPipelineVertexInputStateCreateInfo GetVertexInputStateCreateInfo(std::shared_ptr<const RHIVertexDeclaration> declaration);
+		VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyStateCreateInfo(PrimitiveType primitiveType);
+		VkPipelineViewportStateCreateInfo GetViewportStateCreateInfo();
+		VkPipelineRasterizationStateCreateInfo GetRasterizationStateCreateInfo(const RHIRasterizerState& state);
+		VkPipelineMultisampleStateCreateInfo GetMultisampleStateCreateInfo();
+		VkPipelineDepthStencilStateCreateInfo GetDepthStencilStateCreateInfo(const RHIDepthStencilState& state);
+		VkPipelineColorBlendStateCreateInfo GetColorBlendStateCreateInfo(const RHIBlendState& state, uint32_t attachmentCount);
+		VkPipelineDynamicStateCreateInfo GetDynamicStateCreateInfo();
+
 		VkPipeline m_handle;
 		VkPipelineLayout m_layout;
 
@@ -188,5 +187,25 @@ namespace shzk
 			// VK_DYNAMIC_STATE_STENCIL_REFERENCE
 		};
 
+	};
+
+	class VulkanRHIComputePipeline : public RHIComputePipeline
+	{
+	public:
+		VulkanRHIComputePipeline() = delete;
+		VulkanRHIComputePipeline(const RHIComputePipelineInfo& info, VulkanRHI& rhi);
+		~VulkanRHIComputePipeline() = default;
+
+		inline const VkPipeline& GetHandle() { return m_handle; }
+		inline const VkPipelineLayout& GetLayout() { return m_layout; }
+
+		void Bind(VkCommandBuffer cmBuffer);
+
+	protected:
+		virtual void Destroy() override final;
+
+	private:
+		VkPipeline m_handle;
+		VkPipelineLayout m_layout;
 	};
 }

@@ -13,15 +13,18 @@ namespace shzk
 		DirectionalShadowMap	= 3,
 		PointLightShadowMap		= 4,
 
+		PostProcess				= 5,
+
 		Max,
 	};
 
 	enum class MeshPassType : uint32_t
 	{
-		DepthPre				= 0,
-		Forward					= 1,
-		DirectionalShadowMap	= 2,
-		PointLightShadowMap		= 3,
+		DepthPre = 0,
+		Forward = 1,
+		Sky = 2,
+		DirectionalShadowMap = 3,
+		PointLightShadowMap = 4,
 
 		Max,
 	};

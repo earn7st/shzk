@@ -13,6 +13,7 @@
 #include "runtime/render/passes/DepthPrePass.h"
 #include "runtime/render/passes/ForwardPass.h"
 #include "runtime/render/passes/SkyPass.h"
+#include "runtime/render/passes/PostProcessPass.h"
 #include "RenderConfig.h"
 #include <cassert>
 
@@ -51,8 +52,9 @@ namespace shzk
 		PerFrameRHIResource& resource = m_perFrameResources[m_currentFrameIndex];
 		resource.fence->Wait();
 
+		std::shared_ptr<RHITexture> currentSwapchainTexture = m_rhiSwapchain->AcquireNextTexture(nullptr, resource.startSemaphore);
+		
 		m_sceneRenderer->Process(Engine::Get()->GetActiveScene());
-
 		auto& cmd = RHICommandList::Get();
 		cmd->SetContext(resource.cmdContext.get());
 		cmd->BeginCommand();
@@ -63,14 +65,14 @@ namespace shzk
 			pass->Prepare();
 			pass->Execute(cmd);
 		}
-
-		std::shared_ptr<RHITexture> currentSwapchainTexture = m_rhiSwapchain->AcquireNextTexture(nullptr, resource.startSemaphore);
+		
 		std::shared_ptr<RHITexture> sceneColorTexture = RenderResourceManager::Get()->GetCurrentSceneColorTexture();
 		std::shared_ptr<RHITextureView> sceneColorTextureView = RenderResourceManager::Get()->GetCurrentSceneColorTextureView();
 
-		cmd->TextureBarrier({ sceneColorTexture, RHIResourceState::ColorAttachment, RHIResourceState::TransferSrc });
+		cmd->TextureBarrier({ sceneColorTexture, RHIResourceState::Common, RHIResourceState::TransferSrc });
 		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::Undefined, RHIResourceState::TransferDst });
-		cmd->BlitTexture(sceneColorTexture, currentSwapchainTexture, sceneColorTexture->GetDefaultSubresourceLayers(), sceneColorTexture->GetDefaultSubresourceLayers(), FilterType::Linear);
+		cmd->CopyTexture(sceneColorTexture, sceneColorTexture->GetDefaultSubresourceLayers(), currentSwapchainTexture, currentSwapchainTexture->GetDefaultSubresourceLayers());
+		//cmd->BlitTexture(sceneColorTexture, currentSwapchainTexture, sceneColorTexture->GetDefaultSubresourceLayers(), sceneColorTexture->GetDefaultSubresourceLayers(), FilterType::Linear);
 		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::TransferDst, RHIResourceState::Present });
 
 		cmd->EndCommand();
@@ -129,16 +131,22 @@ namespace shzk
 
 	void RenderSystem::InitPasses()
 	{
+		// MeshPasses
 		m_meshPasses[(size_t)PassType::DepthPre] = std::make_shared<DepthPrePass>();
 		m_meshPasses[(size_t)PassType::Forward] = std::make_shared<ForwardPass>();
 		m_meshPasses[(size_t)PassType::Sky] = std::make_shared<SkyPass>();
-	
+
 		m_meshPasses[(size_t)PassType::DepthPre]->Init();
 		m_meshPasses[(size_t)PassType::Forward]->Init();
 		m_meshPasses[(size_t)PassType::Sky]->Init();
 
-		m_passes[(size_t)PassType::DepthPre]	= m_meshPasses[(size_t)PassType::DepthPre];
-		m_passes[(size_t)PassType::Forward]		= m_meshPasses[(size_t)PassType::Forward];
-		m_passes[(size_t)PassType::Sky]			= m_meshPasses[(size_t)PassType::Sky];
+		m_passes[(size_t)PassType::DepthPre] = m_meshPasses[(size_t)PassType::DepthPre];
+		m_passes[(size_t)PassType::Forward] = m_meshPasses[(size_t)PassType::Forward];
+		m_passes[(size_t)PassType::Sky] = m_meshPasses[(size_t)PassType::Sky];
+		
+		// Other Render Passes
+		m_passes[(size_t)PassType::PostProcess] = std::make_shared<PostProcessPass>();
+		m_passes[(size_t)PassType::PostProcess]->Init();
+		
 	}
 }

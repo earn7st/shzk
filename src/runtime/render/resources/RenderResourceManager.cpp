@@ -98,39 +98,66 @@ namespace shzk
                 // descriptor set (set 0)
                 perFrame.descriptorSet = m_perFrameRootSignature->CreateDescriptorSet(DESCRIPTORSET_INDEX_PER_FRAME);
                 perFrame.ub = std::make_shared<Buffer<PerFrameUniformShaderParameters>>();
-                perFrame.descriptorSet->UpdateBuffer(PER_FRAME_BINDING_VIEW, perFrame.ub->GetBuffer());
+
+				RHIDescriptorUpdateInfo info{};
+				info.binding        = PER_FRAME_BINDING_VIEW;
+				info.index          = 0;
+				info.resourceType   = RESOURCE_TYPE_UNIFORM_BUFFER;
+                info.buffer         = perFrame.ub->GetBuffer();
+                info.bufferOffset   = 0;
+				info.bufferRange    = sizeof(PerFrameUniformShaderParameters);
+                perFrame.descriptorSet->UpdateDescriptor(info);
+
+                // HDR color attachment
+                RHITextureInfo hdrColorInfo{};
+                hdrColorInfo.format = HDR_COLOR_FORMAT;
+                hdrColorInfo.extent = { m_renderExtent.width, m_renderExtent.height, 1 };
+                hdrColorInfo.arrayLayers = 1;
+                hdrColorInfo.mipLevels = 1;
+                hdrColorInfo.memoryUsage = MemoryUsage::GPUOnly;
+                hdrColorInfo.type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_RENDER_TARGET | RESOURCE_TYPE_RW_TEXTURE;
+                perFrame.hdrColorTexture = RHI::Get()->CreateTexture(hdrColorInfo);
+
+                RHITextureViewInfo hdrViewInfo{};
+                hdrViewInfo.texture = perFrame.hdrColorTexture;
+                hdrViewInfo.format = HDR_COLOR_FORMAT;
+                hdrViewInfo.viewType = TextureViewType::View2D;
+                perFrame.hdrColorTextureView = RHI::Get()->CreateTextureView(hdrViewInfo);
+                
 
                 // color attachment
                 RHITextureInfo colorInfo{};
-                colorInfo.format = HDR_COLOR_FORMAT;
+                colorInfo.format = COLOR_FORMAT;
                 colorInfo.extent = { m_renderExtent.width, m_renderExtent.height, 1 };
                 colorInfo.arrayLayers = 1;
                 colorInfo.mipLevels = 1;
                 colorInfo.memoryUsage = MemoryUsage::GPUOnly;
-                colorInfo.type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_RENDER_TARGET;
+                colorInfo.type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_RENDER_TARGET | RESOURCE_TYPE_RW_TEXTURE;
                 perFrame.sceneColorTexture = RHI::Get()->CreateTexture(colorInfo);
 
                 RHITextureViewInfo viewInfo{};
                 viewInfo.texture = perFrame.sceneColorTexture;
-                viewInfo.format = HDR_COLOR_FORMAT;
+                viewInfo.format = COLOR_FORMAT;
                 viewInfo.viewType = TextureViewType::View2D;
                 perFrame.sceneColorTextureView = RHI::Get()->CreateTextureView(viewInfo);
-
+                
                 // depth attachment
-                RHITextureInfo depthInfo{};
-                depthInfo.format = DEPTH_FORMAT;
-                depthInfo.extent = { m_renderExtent.width, m_renderExtent.height, 1 };
-                depthInfo.arrayLayers = 1;
-                depthInfo.mipLevels = 1;
-                depthInfo.memoryUsage = MemoryUsage::GPUOnly;
-                depthInfo.type = RESOURCE_TYPE_TEXTURE;
-                perFrame.sceneDepthTexture = RHI::Get()->CreateTexture(depthInfo);
+                {
+                    RHITextureInfo depthInfo{};
+                    depthInfo.format = DEPTH_FORMAT;
+                    depthInfo.extent = { m_renderExtent.width, m_renderExtent.height, 1 };
+                    depthInfo.arrayLayers = 1;
+                    depthInfo.mipLevels = 1;
+                    depthInfo.memoryUsage = MemoryUsage::GPUOnly;
+                    depthInfo.type = RESOURCE_TYPE_TEXTURE;
+                    perFrame.sceneDepthTexture = RHI::Get()->CreateTexture(depthInfo);
 
-                RHITextureViewInfo depthViewInfo{};
-                depthViewInfo.texture = perFrame.sceneDepthTexture;
-                depthViewInfo.format = DEPTH_FORMAT;
-                depthViewInfo.viewType = TextureViewType::View2D;
-                perFrame.sceneDepthTextureView = RHI::Get()->CreateTextureView(depthViewInfo);
+                    RHITextureViewInfo depthViewInfo{};
+                    depthViewInfo.texture = perFrame.sceneDepthTexture;
+                    depthViewInfo.format = DEPTH_FORMAT;
+                    depthViewInfo.viewType = TextureViewType::View2D;
+                    perFrame.sceneDepthTextureView = RHI::Get()->CreateTextureView(depthViewInfo);
+                }
             }
         }
 

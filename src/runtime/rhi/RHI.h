@@ -25,6 +25,7 @@ namespace shzk
 	class RHICommandContextImmediate;
 	class RHITexture;
 	class RHIGraphicsPipeline;
+	class RHIComputePipeline;
 	class RHIResource;
 	class RHIRootSignature;
 	class RHISampler;
@@ -55,6 +56,7 @@ namespace shzk
 		virtual std::shared_ptr<RHIShader>	CreateShader(const RHIShaderInfo& info) = 0;
 		virtual std::shared_ptr<RHIRootSignature> CreateRootSignature(const RHIRootSignatureInfo& info) = 0;
 		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) = 0;
+		virtual std::shared_ptr<RHIComputePipeline> CreateComputePipeline(const RHIComputePipelineInfo& info) = 0;
 		virtual std::shared_ptr<RHISampler> CreateSampler(const RHISamplerInfo& info) = 0;
 
 		std::shared_ptr<RHICommandContextImmediate> GetCommandContextImmediate() const { return m_cmdContextImmediate; }	// TODO: RHICommandListImmediate
@@ -196,7 +198,7 @@ namespace shzk
 		virtual void RHISetLineWidth(float width) = 0;
 
 		virtual void RHISetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline) = 0;
-		// virtual void RHISetComputePipeline(RHIComputePipelineRef computePipeline) = 0;
+		virtual void RHISetComputePipeline(std::shared_ptr<RHIComputePipeline> computePipeline) = 0;
 
 		virtual void RHIBeginRendering(const RHIRenderPassInfo& info) = 0;
 		virtual void RHIEndRendering() = 0;
@@ -205,6 +207,8 @@ namespace shzk
 		virtual void RHIBindDescriptorSet(std::shared_ptr<RHIDescriptorSet> descriptor, uint32_t set = 0) = 0;
 		virtual void RHIBindVertexBuffer(std::shared_ptr<RHIBuffer> vertexBuffer, uint32_t streamIndex = 0, uint32_t offset = 0) = 0;
 		virtual void RHIBindIndexBuffer(std::shared_ptr<RHIBuffer> indexBuffer, uint32_t offset = 0) = 0;
+
+		virtual void RHIDispatch(uint32_t grouptCountX = 1, uint32_t groupCountY = 1, uint32_t groupCountZ = 1) = 0;
 
 		virtual void RHIDraw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) = 0;
 		virtual void RHIDrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) = 0;

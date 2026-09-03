@@ -41,6 +41,7 @@ namespace shzk
 		virtual std::shared_ptr<RHIShader> CreateShader(const RHIShaderInfo& info) override final;
 		virtual std::shared_ptr<RHIRootSignature> CreateRootSignature(const RHIRootSignatureInfo& info) override final;
 		virtual std::shared_ptr<RHIGraphicsPipeline> CreateGraphicsPipeline(const RHIGraphicsPipelineInfo& info) override final;
+		virtual std::shared_ptr<RHIComputePipeline> CreateComputePipeline(const RHIComputePipelineInfo& info) override final;
 		virtual std::shared_ptr<RHISampler> CreateSampler(const RHISamplerInfo& info) override final;
 
 		inline const VkInstance& GetInstance() { return m_instance; }
@@ -87,6 +88,7 @@ namespace shzk
 	};
 
 	class VulkanRHIGraphicsPipeline;
+	class VulkanRHIComputePipeline;
 
 	class VulkanRHICommandContext : public RHICommandContext
 	{
@@ -130,7 +132,7 @@ namespace shzk
 		virtual void RHISetLineWidth(float width) override final;
 
 		virtual void RHISetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline) override final;
-		// virtual void RHISetComputePipeline(RHIComputePipelineRef computePipeline) override final;
+		virtual void RHISetComputePipeline(std::shared_ptr<RHIComputePipeline> computePipeline) override final;
 
 		virtual void RHIBeginRendering(const RHIRenderPassInfo& info) override final;
 		virtual void RHIEndRendering() override final;
@@ -140,6 +142,8 @@ namespace shzk
 		virtual void RHIBindVertexBuffer(std::shared_ptr<RHIBuffer> vertexBuffer, uint32_t streamIndex = 0, uint32_t offset = 0) override final;
 		virtual void RHIBindIndexBuffer(std::shared_ptr<RHIBuffer> indexBuffer, uint32_t offset = 0) override final;
 
+		virtual void RHIDispatch(uint32_t groupCountX = 1, uint32_t groupCountY = 1, uint32_t groupCountZ = 1) override final;
+
 		virtual void RHIDraw(uint32_t vertexCount, uint32_t instanceCount = 1, uint32_t firstVertex = 0, uint32_t firstInstance = 0) override final;
 		virtual void RHIDrawIndexed(uint32_t indexCount, uint32_t instanceCount = 1, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) override final;
 
@@ -148,6 +152,7 @@ namespace shzk
 		VkCommandBuffer m_cmdBuffer;
 
 		std::shared_ptr<VulkanRHIGraphicsPipeline> m_currentGraphicsPipeline = nullptr;
+		std::shared_ptr<VulkanRHIComputePipeline> m_currentComputePipeline = nullptr;
 	};
 
 	class VulkanRHICommandContextImmediate : public RHICommandContextImmediate

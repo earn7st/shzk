@@ -50,6 +50,7 @@ add_library(
     "runtime/render/passes/ForwardPass.cpp"
     "runtime/render/passes/DepthPrePass.cpp"
     "runtime/render/passes/SkyPass.cpp"
+    "runtime/render/passes/PostProcessPass.cpp"
     
     # rhi
     "runtime/rhi/RHI.cpp"

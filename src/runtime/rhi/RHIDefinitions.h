@@ -26,6 +26,9 @@ namespace shzk
 	class RHITexture;
 	class RHITextureView;
 	class RHIShader;
+	class RHISampler;
+	class RHIGraphicsPipeline;
+	class RHIComputePipeline;
 	class RHIDescriptorSet;
 	class RHIRootSignature;
 
@@ -42,6 +45,7 @@ namespace shzk
 		DescriptorSet,
 
 		GraphicsPipeline,
+		ComputePipeline,
 
 		Max,
 	};
@@ -70,7 +74,7 @@ namespace shzk
 		TransferDst,
 		VertexBuffer,
 		IndexBuffer,
-		DepthStencilAttachment,	// not impl
+		DepthStencilAttachment,
 		UnorderedAccess,		// not impl
 		ShaderResource,			// not impl
 		IndirectArgument,		// not impl
@@ -730,6 +734,21 @@ namespace shzk
 		std::vector<uint8_t> code;
 	} RHIShaderInfo;
 
+	typedef struct RHIDescriptorUpdateInfo
+	{
+		uint32_t binding = 0;
+		uint32_t index = 0;
+
+		ResourceType resourceType = RESOURCE_TYPE_NONE;
+
+		std::shared_ptr<RHIBuffer> buffer;
+		std::shared_ptr<RHITextureView> textureView;
+		std::shared_ptr<RHISampler> sampler;
+
+		uint64_t bufferOffset = 0;
+		uint64_t bufferRange = 0;
+	} RHIDescriptorUpdateInfo;
+
 	typedef struct VertexElement
 	{
 		uint8_t streamIndex = 0;
@@ -935,6 +954,17 @@ namespace shzk
 		}
 
 	} RHIGraphicsPipelineInfo;
+
+	typedef struct RHIComputePipelineInfo
+	{
+		std::shared_ptr<RHIShader> computeShader;
+		std::shared_ptr<RHIRootSignature> rootSignature;
+		friend bool operator== (const RHIComputePipelineInfo& a, const RHIComputePipelineInfo& b)
+		{
+			return  a.computeShader.get() == b.computeShader.get() &&
+				a.rootSignature.get() == b.rootSignature.get();
+		}
+	} RHIComputePipelineInfo;
 
 // Cast helper
 // TODO: Type Traits - learnt but decided not to implement, because not all RHIthings are RHIResouce

@@ -189,6 +189,14 @@ namespace shzk
 		return pipeline;
 	}
 
+	std::shared_ptr<RHIComputePipeline> VulkanRHI::CreateComputePipeline(const RHIComputePipelineInfo& info)
+	{
+		std::shared_ptr<RHIComputePipeline> pipeline = std::make_shared<VulkanRHIComputePipeline>(info, *this);
+		assert(pipeline);
+		RegisterResource(pipeline);
+		return pipeline;
+	}
+
 	std::shared_ptr<RHISampler> VulkanRHI::CreateSampler(const RHISamplerInfo& info)
 	{
 		std::shared_ptr<RHISampler> sampler = std::make_shared<VulkanRHISampler>(info, *this);
@@ -421,7 +429,6 @@ namespace shzk
 		poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT |
 						VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 							
-
 		VK_CHECK(vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool));
 	}
 
@@ -436,14 +443,14 @@ namespace shzk
 	inline VkPipelineLayout VulkanRHICommandContext::GetCurrentPipelineLayout()
 	{
 		if (m_currentGraphicsPipeline) return m_currentGraphicsPipeline->GetLayout();
-		// TODO: Compute, RayTracing ..
+		if (m_currentComputePipeline)  return m_currentComputePipeline->GetLayout();
 		return {};
 	}
 
 	inline VkPipelineBindPoint VulkanRHICommandContext::GetCurrentPipelineBindPoint()
 	{
-		if (m_currentGraphicsPipeline) return VK_PIPELINE_BIND_POINT_GRAPHICS;
-		// TODO: Compute, RayTracing ..
+		if (m_currentGraphicsPipeline)	return VK_PIPELINE_BIND_POINT_GRAPHICS;
+		if (m_currentComputePipeline)	return VK_PIPELINE_BIND_POINT_COMPUTE;
 		return VK_PIPELINE_BIND_POINT_GRAPHICS;
 	}
 
@@ -612,7 +619,15 @@ namespace shzk
 	void VulkanRHICommandContext::RHISetGraphicsPipeline(std::shared_ptr<RHIGraphicsPipeline> graphicsPipeline)
 	{
 		m_currentGraphicsPipeline = CastTo<VulkanRHIGraphicsPipeline>(graphicsPipeline);
+		m_currentComputePipeline = nullptr;
 		m_currentGraphicsPipeline->Bind(m_cmdBuffer);
+	}
+
+	void VulkanRHICommandContext::RHISetComputePipeline(std::shared_ptr<RHIComputePipeline> computePipeline)
+	{
+		m_currentGraphicsPipeline = nullptr;
+		m_currentComputePipeline = CastTo<VulkanRHIComputePipeline>(computePipeline);
+		m_currentComputePipeline->Bind(m_cmdBuffer);
 	}
 
 	void VulkanRHICommandContext::RHIBeginRendering(const RHIRenderPassInfo& renderPass)
@@ -703,6 +718,11 @@ namespace shzk
 	{
 		vkCmdBindIndexBuffer(m_cmdBuffer,
 			CastTo<VulkanRHIBuffer>(indexBuffer)->GetHandle(), 0, VK_INDEX_TYPE_UINT32);	// Use fixed uint32
+	}
+
+	void VulkanRHICommandContext::RHIDispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
+	{
+		vkCmdDispatch(m_cmdBuffer, groupCountX, groupCountY, groupCountZ);
 	}
 
 	void VulkanRHICommandContext::RHIDraw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)

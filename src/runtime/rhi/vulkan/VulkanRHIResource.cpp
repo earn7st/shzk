@@ -234,54 +234,58 @@ namespace shzk
         VK_CHECK(vkAllocateDescriptorSets(rhi.GetDevice(), &allocInfo, &m_handle));
     }
 
-    void VulkanRHIDescriptorSet::UpdateBuffer(uint32_t binding, std::shared_ptr<RHIBuffer> buffer)
+    RHIDescriptorSet& VulkanRHIDescriptorSet::UpdateDescriptor(const RHIDescriptorUpdateInfo& descriptorUpdateInfo)
     {
-        if (!buffer)
-        {
-            SHZK_LOG_WARN("null RHIBuffer!");
-            return;
+        VkWriteDescriptorSet descriptorWrite = {};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = m_handle;
+        descriptorWrite.dstBinding = descriptorUpdateInfo.binding;
+        descriptorWrite.dstArrayElement = descriptorUpdateInfo.index;
+        descriptorWrite.descriptorType = VulkanUtil::ResourceTypeToVkDescriptorType(descriptorUpdateInfo.resourceType);
+        descriptorWrite.descriptorCount = 1;
+
+        VkDescriptorImageInfo imageDescriptor = {};
+        VkDescriptorBufferInfo bufferDescriptor = {};
+        VkWriteDescriptorSetAccelerationStructureKHR accelerationDescriptor = {};
+
+        switch (descriptorUpdateInfo.resourceType) {
+
+        case RESOURCE_TYPE_SAMPLER:
+            imageDescriptor.sampler = CastTo<VulkanRHISampler>(descriptorUpdateInfo.sampler)->GetHandle();
+            descriptorWrite.pImageInfo = &imageDescriptor;
+            break;
+
+        case RESOURCE_TYPE_TEXTURE:
+        case RESOURCE_TYPE_RW_TEXTURE:
+        case RESOURCE_TYPE_TEXTURE_CUBE:
+            imageDescriptor.imageView = CastTo<VulkanRHITextureView>(descriptorUpdateInfo.textureView)->GetHandle();
+            imageDescriptor.imageLayout = VulkanUtil::ResourceTypeToVkImageLayout(descriptorUpdateInfo.resourceType);
+            descriptorWrite.pImageInfo = &imageDescriptor;
+            break;
+
+        case RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER:
+            imageDescriptor.sampler = CastTo<VulkanRHISampler>(descriptorUpdateInfo.sampler)->GetHandle();
+            imageDescriptor.imageView = CastTo<VulkanRHITextureView>(descriptorUpdateInfo.textureView)->GetHandle();
+            imageDescriptor.imageLayout = VulkanUtil::ResourceTypeToVkImageLayout(descriptorUpdateInfo.resourceType);
+            descriptorWrite.pImageInfo = &imageDescriptor;
+            break;
+
+        case RESOURCE_TYPE_BUFFER:
+        case RESOURCE_TYPE_RW_BUFFER:
+        case RESOURCE_TYPE_UNIFORM_BUFFER:
+            bufferDescriptor.buffer = CastTo<VulkanRHIBuffer>(descriptorUpdateInfo.buffer)->GetHandle();
+            bufferDescriptor.offset = descriptorUpdateInfo.bufferOffset;
+            bufferDescriptor.range = (descriptorUpdateInfo.bufferRange > 0) ? descriptorUpdateInfo.bufferRange : VK_WHOLE_SIZE;
+            descriptorWrite.pBufferInfo = &bufferDescriptor;
+            break;
+
+
+        default:    SHZK_LOG_ERROR("Unsupported resource type!"); assert(false); break;
         }
 
-        VkDescriptorBufferInfo bufferInfo{};
-        bufferInfo.buffer = CastTo<VulkanRHIBuffer>(buffer)->GetHandle();
-        bufferInfo.offset = 0;
-        bufferInfo.range = VK_WHOLE_SIZE;
+        vkUpdateDescriptorSets(VULKAN_RHI()->GetDevice(), 1, &descriptorWrite, 0, nullptr);
 
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.dstSet = m_handle;
-        write.dstBinding = binding;
-        write.dstArrayElement = 0;
-        write.descriptorCount = 1;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        write.pBufferInfo = &bufferInfo;
-
-        vkUpdateDescriptorSets(VULKAN_RHI()->GetDevice(), 1, &write, 0, nullptr);
-    }
-
-    void VulkanRHIDescriptorSet::UpdateTexture(uint32_t binding, std::shared_ptr<RHITextureView> view, std::shared_ptr<RHISampler> sampler)
-    {
-        if (!view || !sampler)
-        {
-            SHZK_LOG_WARN("null RHITextureView or RHISampler!");
-            return;
-        }
-
-        VkDescriptorImageInfo imageInfo{};
-        imageInfo.imageView = CastTo<VulkanRHITextureView>(view)->GetHandle();
-        imageInfo.sampler = CastTo<VulkanRHISampler>(sampler)->GetHandle();
-        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        VkWriteDescriptorSet write{};
-        write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write.dstSet = m_handle;
-        write.dstBinding = binding;
-        write.dstArrayElement = 0;
-        write.descriptorCount = 1;
-        write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        write.pImageInfo = &imageInfo;
-
-        vkUpdateDescriptorSets(VULKAN_RHI()->GetDevice(), 1, &write, 0, nullptr);
+        return *this;
     }
 
     void VulkanRHIDescriptorSet::Destroy()
@@ -591,6 +595,50 @@ namespace shzk
         vkDestroyPipelineLayout(VULKAN_RHI()->GetDevice(), m_layout, nullptr);
 	}
 
-    
+    VulkanRHIComputePipeline::VulkanRHIComputePipeline(const RHIComputePipelineInfo& info, VulkanRHI& rhi)
+		: RHIComputePipeline(info)
+    {
+        // Pipeline Layout
+        std::vector<VkPushConstantRange> pushConstantRanges;
+        std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
+        for (const auto& pushConstant : info.rootSignature->GetInfo().GetPushConstants())
+        {
+            pushConstantRanges.push_back(VulkanUtil::PushConstantInfoToVk(pushConstant));
+        }
+        for (const auto& layout : CastTo<VulkanRHIRootSignature>(info.rootSignature)->GetLayouts())
+        {
+            descriptorSetLayouts.push_back(layout.handle);
+        }
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorSetLayouts.size();
+        pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts.data();
+        pipelineLayoutInfo.pushConstantRangeCount = (uint32_t)pushConstantRanges.size();
+        pipelineLayoutInfo.pPushConstantRanges = pushConstantRanges.data();
+        VK_CHECK(vkCreatePipelineLayout(VULKAN_RHI()->GetDevice(), &pipelineLayoutInfo, nullptr, &m_layout));
+
+        // shader
+        VkPipelineShaderStageCreateInfo shaderStage = CastTo<VulkanRHIShader>(info.computeShader)->GetShaderStageCreateInfo();
+
+        VkComputePipelineCreateInfo pipelineInfo = {};
+        pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+        pipelineInfo.basePipelineIndex = -1;
+        pipelineInfo.stage = shaderStage;
+        pipelineInfo.layout = m_layout;
+
+        VK_CHECK(vkCreateComputePipelines(VULKAN_RHI()->GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, VK_NULL_HANDLE, &m_handle));
+    }
+
+    void VulkanRHIComputePipeline::Bind(VkCommandBuffer cmdBuffer)
+    {
+        vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, m_handle);
+	}
+
+    void VulkanRHIComputePipeline::Destroy()
+    {
+        vkDestroyPipeline(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
+		vkDestroyPipelineLayout(VULKAN_RHI()->GetDevice(), m_layout, nullptr);
+    }
 
 }

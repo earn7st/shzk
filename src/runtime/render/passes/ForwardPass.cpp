@@ -48,10 +48,10 @@ namespace shzk
 		m_renderPassInfo.layerCount = 1;
 		m_renderPassInfo.viewMask = m_viewMask;
 
-		std::shared_ptr<RHITextureView> sceneColorView =
-			RenderResourceManager::Get()->GetCurrentSceneColorTextureView();
+		std::shared_ptr<RHITextureView> hdrColorView =
+			RenderResourceManager::Get()->GetCurrentHDRColorTextureView();
 		auto& color = m_renderPassInfo.colorAttachments[0];
-		color.view = sceneColorView;
+		color.view = hdrColorView;
 		color.layout = RHIResourceState::ColorAttachment;
 		color.loadOp = AttachmentLoadOp::Clear;
 		color.storeOp = AttachmentStoreOp::Store;
@@ -70,7 +70,7 @@ namespace shzk
 	void ForwardPass::Execute(std::shared_ptr<RHICommandList> cmd)
 	{
 		cmd->TextureBarrier({
-		  RenderResourceManager::Get()->GetCurrentSceneColorTexture(),
+		  RenderResourceManager::Get()->GetCurrentHDRColorTexture(),
 		  RHIResourceState::Undefined,
 		  RHIResourceState::ColorAttachment
 			});
@@ -128,8 +128,8 @@ namespace shzk
 				batch,
 				material,
 				renderState,
-				vertexShader != nullptr ? vertexShader->m_shader : m_pass->GetVertexShader()->m_shader,
-				fragmentShader != nullptr ? fragmentShader->m_shader : m_pass->GetFragmentShader()->m_shader,
+				vertexShader != nullptr ? vertexShader->GetRHIShader() : m_pass->GetVertexShader()->GetRHIShader(),
+				fragmentShader != nullptr ? fragmentShader->GetRHIShader() : m_pass->GetFragmentShader()->GetRHIShader(),
 				material->GetRasterizerCullMode(),
 				material->GetRasterizerFillMode());
 		}

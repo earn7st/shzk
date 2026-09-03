@@ -252,6 +252,21 @@ namespace shzk
             return usage;
         }
 
+        static VkImageLayout ResourceTypeToVkImageLayout(ResourceType type)
+        {
+            switch (type)
+            {
+            case RESOURCE_TYPE_TEXTURE:
+            case RESOURCE_TYPE_TEXTURE_CUBE:
+            case RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER:
+                return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            case RESOURCE_TYPE_RW_TEXTURE:
+                return VK_IMAGE_LAYOUT_GENERAL;
+            default:
+                return VK_IMAGE_LAYOUT_UNDEFINED;
+            }
+        }
+
         static VkDescriptorType ResourceTypeToVkDescriptorType(ResourceType resourceType)
         {
             VkDescriptorType descriptorType;

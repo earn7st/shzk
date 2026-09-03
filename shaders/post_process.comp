@@ -1,0 +1,131 @@
+#version 460
+
+layout(set = 0, binding = 0, rgba16f) uniform image2D inputHDRTexture;  // R16G16B16A16_SFLOAT
+layout(set = 0, binding = 1, rgba8)   uniform image2D outputColor;      // R8G8B8A8_UNORM
+
+#define THREAD_SIZE_X 16
+#define THREAD_SIZE_Y 16
+#define THREAD_SIZE_Z 1
+layout (local_size_x = THREAD_SIZE_X, 
+		local_size_y = THREAD_SIZE_Y, 
+		local_size_z = THREAD_SIZE_Z) in;
+
+// Reinhard
+vec3 Tonemap(vec3 x)
+{
+	return x / (x + vec3(1.0));
+}
+
+// ACES
+vec3 ACESToneMap(vec3 x)
+{
+	const float a = 2.51;
+	const float b = 0.03;
+	const float c = 2.43;
+	const float d = 0.59;
+	const float e = 0.14;
+	return clamp((x * (a * x + b)) / (x * (c * x + d) + e), 0.0, 1.0);
+}
+
+// Uncharted2
+vec3 Uncharted2ToneMap(vec3 x)
+{
+    const float A = 0.15;
+    const float B = 0.50;
+    const float C = 0.10;
+    const float D = 0.20;
+    const float E = 0.02;
+    const float F = 0.30;
+    return ((x * (A * x + C * B) + D * E) / (x * (A * x + B) + D * F)) - E / F;
+}
+
+vec3 FilmicToneMap(vec3 x)
+{
+    const vec3 W = vec3(7);    // adjustable
+    const vec3 whiteScale = vec3(1.0) / Uncharted2ToneMap(W);
+    return Uncharted2ToneMap(x) * whiteScale;
+}
+
+// 线性 sRGB -> AgX 空间
+vec3 agxBase(vec3 x)
+{
+    const mat3 agxMat = mat3(
+        0.842479062253094,  0.0423282422610123, 0.0423756549057051,
+        0.0784335999999992, 0.878468636469772,  0.0784336,
+        0.0792237451477643, 0.0791661274605434, 0.879142973793104
+    );
+    const float minEv = -12.47393;
+    const float maxEv = 4.026069;
+    vec3 y = max(agxMat * x, 1e-10);   // 避免 log(0)
+    y = log2(y);
+    y = (y - minEv) / (maxEv - minEv); // 归一化到 [0,1]
+    return y;
+}
+
+// AgX 的 "Default" look（对比度曲线）
+vec3 agxLook(vec3 x)
+{
+    vec3 x2 = x * x;
+    vec3 x4 = x2 * x2;
+    return + 15.5  * x4 * x2
+            - 40.14 * x4 * x
+            + 31.96 * x4
+            - 6.868 * x2 * x
+            + 0.4298* x2
+            + 0.1191* x
+            - 0.00232;
+}
+
+// AgX -> 显示线性（EOTF）
+vec3 agxEotf(vec3 x)
+{
+    const mat3 agxMatInv = mat3(
+        1.19687900512017,  -0.0528968517574562, -0.0529716355144438,
+        -0.0980208811401368, 1.15190312990417,   -0.0980434501171241,
+        -0.0990297440797205, -0.0989611768448433, 1.15107367264116
+    );
+    const float minEv = -12.47393;
+    const float maxEv = 4.026069;
+    vec3 y = x * (maxEv - minEv) + minEv;
+    y = exp2(y);
+    return agxMatInv * y;
+}
+
+vec3 AgXToneMap(vec3 x)
+{
+    x = agxBase(x);
+    x = agxLook(x);
+    x = agxEotf(x);
+    return x;
+}
+
+vec3 ApplyTonemap(vec3 color, uint mode)
+{
+    switch (mode)
+    {
+    case 0: return Tonemap(color);       // Reinhard
+    case 1: return ACESToneMap(color);   // ACES (Narkowicz)
+    case 2: return FilmicToneMap(color); // Filmic (Hable)
+    case 3: return AgXToneMap(color);    // AgX
+    }
+    return color;
+}
+
+void main()
+{
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 size  = imageSize(inputHDRTexture);
+
+    // border
+    if (any(greaterThanEqual(pixel, size)))
+        return;
+
+    vec3 color = imageLoad(inputHDRTexture, pixel).rgb;
+
+    // color *= pc.exposure;
+
+    color = ApplyTonemap(color, 2);
+
+    color = pow(color, vec3(1.0 / 2.2));
+    imageStore(outputColor, pixel, vec4(color, 1.0));
+}

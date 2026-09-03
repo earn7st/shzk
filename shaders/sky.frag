@@ -10,13 +10,11 @@ layout(set = 0, binding = 0) uniform PerFrameUBO {
     mat4 viewProj;
 } perFrame;
 
-layout(set = 1, binding = 10) uniform samplerCube texCube;     // sRGB
+layout(set = 1, binding = 10) uniform samplerCube texCube;
 
 void main()
 {
     vec3 color = texture(texCube, normalize(vWorldDir)).rgb;
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2));
 
     outColor = vec4(color, 1.0);
 }

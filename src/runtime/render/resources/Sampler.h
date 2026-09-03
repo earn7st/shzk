@@ -15,7 +15,10 @@ namespace shzk
 				SamplerAddressMode addressMode = SamplerAddressMode::Repeat,
 				float maxAnisotropy = 0.f);
 		~Sampler() = default;
+	
+		inline std::shared_ptr<RHISampler> GetRHISampler() const { return m_sampler; }
 
+	private:
 		std::shared_ptr<RHISampler> m_sampler;
 	};
 }
