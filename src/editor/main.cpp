@@ -31,24 +31,74 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 		std::shared_ptr<shzk::SkyBoxComponent> skyboxComp = std::make_shared<shzk::SkyBoxComponent>();
 		skybox->AddComponent(skyboxComp);
 
-		std::vector<std::string> restingPlacePaths = {
+		// climbing gym
+		if (false)
+		{
+			std::vector<std::string> climbingGymPaths = {
 			SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/CubeMap_4K/px.png",
 			SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/CubeMap_4K/nx.png",
 			SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/CubeMap_4K/py.png",
 			SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/CubeMap_4K/ny.png",
 			SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/CubeMap_4K/pz.png",
 			SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/CubeMap_4K/nz.png" };
-		std::shared_ptr<shzk::Texture> restingPlaceCubeMap = std::make_shared<shzk::Texture>(restingPlacePaths, shzk::TextureType::TypeCube, shzk::RHIFormat::FORMAT_R8G8B8A8_SRGB);
+			std::shared_ptr<shzk::Texture> climbingGymCubeMap = std::make_shared<shzk::Texture>(climbingGymPaths, shzk::TextureType::TypeCube, shzk::RHIFormat::FORMAT_R8G8B8A8_SRGB);
 
-		std::shared_ptr<shzk::Material> skyboxMaterial = skyboxComp->GetMaterial();
-		skyboxMaterial->SetTextureCubeSlot(0, restingPlaceCubeMap);
+			std::shared_ptr<shzk::Material> skyboxMaterial = skyboxComp->GetMaterial();
+			skyboxMaterial->SetTextureCubeSlot(0, climbingGymCubeMap);
+
+			// Environment Map for SkyLight
+			std::shared_ptr<shzk::SkyLightComponent> skyLight = std::make_shared<shzk::SkyLightComponent>();
+
+			std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/climbing_gym_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R16G16B16A16_SFLOAT);
+			skyLight->SetEnvironmentMap(skyLightHDR);
+			skybox->AddComponent(skyLight);
+		}
 		
-		// Environment Map for SkyLight
-		std::shared_ptr<shzk::SkyLightComponent> skyLight = std::make_shared<shzk::SkyLightComponent>();
+		// industrial
+		if (false)
+		{
+			std::vector<std::string> industrialsPaths = {
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/px.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/nx.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/py.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/ny.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/pz.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/nz.png" };
+			std::shared_ptr<shzk::Texture> industrialCubeMap = std::make_shared<shzk::Texture>(industrialsPaths, shzk::TextureType::TypeCube, shzk::RHIFormat::FORMAT_R8G8B8A8_SRGB);
 
-		std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/climbing_gym_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R16G16B16A16_SFLOAT);
-		skyLight->SetEnvironmentMap(skyLightHDR);
-		skybox->AddComponent(skyLight);
+			std::shared_ptr<shzk::Material> skyboxMaterial = skyboxComp->GetMaterial();
+			skyboxMaterial->SetTextureCubeSlot(0, industrialCubeMap);
+
+			// Environment Map for SkyLight
+			std::shared_ptr<shzk::SkyLightComponent> skyLight = std::make_shared<shzk::SkyLightComponent>();
+
+			std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/industrial/industrial_pipe_and_valve_01_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R16G16B16A16_SFLOAT);
+			skyLight->SetEnvironmentMap(skyLightHDR);
+			skybox->AddComponent(skyLight);
+		}
+
+		// resting place
+		if (true)
+		{
+			std::vector<std::string> restingPlacePaths = {
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/px.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/nx.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/py.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/ny.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/pz.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/nz.png" };
+			std::shared_ptr<shzk::Texture> restingPlaceCubeMap = std::make_shared<shzk::Texture>(restingPlacePaths, shzk::TextureType::TypeCube, shzk::RHIFormat::FORMAT_R8G8B8A8_SRGB);
+
+			std::shared_ptr<shzk::Material> skyboxMaterial = skyboxComp->GetMaterial();
+			skyboxMaterial->SetTextureCubeSlot(0, restingPlaceCubeMap);
+
+			// Environment Map for SkyLight
+			std::shared_ptr<shzk::SkyLightComponent> skyLight = std::make_shared<shzk::SkyLightComponent>();
+
+			std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/resting_place/resting_place_2_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R16G16B16A16_SFLOAT);
+			skyLight->SetEnvironmentMap(skyLightHDR);
+			skybox->AddComponent(skyLight);
+		}
 
 		scene->AddNode(skybox);
 	}

@@ -12,6 +12,9 @@ layout(set = 0, binding = 0) uniform PerFrameUBO {
     mat4 proj;
     mat4 viewProj;
 } perFrame;
+layout(set = 0, binding = 1) uniform samplerCube irradianceMap;
+layout(set = 0, binding = 2) uniform samplerCube prefilteredMap;
+layout(set = 0, binding = 3) uniform sampler2D brdfLUT;
 
 layout(set = 1, binding = 0) uniform MaterialUBO {
     vec4  baseColor;
@@ -76,6 +79,11 @@ vec3 FresnelSchlick(float cosTheta, vec3 F0)
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }
 
+vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+
 vec3 GetNormalFromMap()
 {
     vec3 N = normalize(fragNormal);
@@ -127,9 +135,16 @@ void main()
 
     vec3 emissive = material.emission.rgb * texture(texEmissive, fragTexcoord).rgb;
 
-    vec3 ambientColor = mix(vec3(0.4), vec3(0.17, 0.37, 0.65), N.y * 0.5 + 0.5) * 0.3;
-    vec3 metalFloor   = mix(vec3(0.04), albedo, metallic);
-    vec3 ambient      = ambientColor * mix(albedo, metalFloor, metallic) * ao;
+    vec3 irradiance  = texture(irradianceMap, N).rgb;
+    vec3 diffuseIBL  = irradiance * albedo;
+
+    vec3 R = reflect(-V, N);
+    const float MAX_REFLECTION_LOD = 4.0;   // = IBL_SPEC_MIPS - 1
+    vec3 prefiltered = textureLod(prefilteredMap, R, roughness * MAX_REFLECTION_LOD).rgb;
+    vec2 envBRDF     = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
+    vec3 specularIBL = prefiltered * (F * envBRDF.x + envBRDF.y);
+
+    vec3 ambient = (kD * diffuseIBL + specularIBL) * ao;
 
     vec3 color    = ambient + Lo + emissive;
 

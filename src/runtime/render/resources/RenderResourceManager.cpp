@@ -93,7 +93,7 @@ namespace shzk
             m_materialRootSignature = RHI::Get()->CreateRootSignature(matInfo);
         }
         
-        // per frame resources
+        // per frame resources and binding
         {
             for (int i = 0; i < FRAMES_IN_FLIGHT; ++i)
             {
@@ -110,31 +110,6 @@ namespace shzk
                 info.bufferOffset   = 0;
 				info.bufferRange    = sizeof(PerFrameUniformShaderParameters);
                 perFrame.descriptorSet->UpdateDescriptor(info);
-
-                // IBL
-                RHIDescriptorUpdateInfo irr{};
-                irr.binding = PER_FRAME_BINDING_IBL_IRRADIANCE;
-                irr.index = 0;
-                irr.resourceType = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER;
-                irr.sampler = m_samplers[1]->GetRHISampler();   // clamp ²ÉÑùÆ÷
-                irr.textureView = m_iblDiffuseView;
-                perFrame.descriptorSet->UpdateDescriptor(irr);
-
-                RHIDescriptorUpdateInfo spec{};
-                spec.binding = PER_FRAME_BINDING_IBL_SPECULAR;
-                spec.index = 0;
-                spec.resourceType = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER;
-                spec.sampler = m_samplers[1]->GetRHISampler();
-                spec.textureView = m_iblSpecularView;
-                perFrame.descriptorSet->UpdateDescriptor(spec);
-
-                RHIDescriptorUpdateInfo lut{};
-                lut.binding = PER_FRAME_BINDING_IBL_BRDF_LUT;
-                lut.index = 0;
-                lut.resourceType = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER;
-                lut.sampler = m_samplers[1]->GetRHISampler();
-                lut.textureView = m_brdfLUT->GetRHITextureView();
-                perFrame.descriptorSet->UpdateDescriptor(lut);
 
                 // HDR color attachment
                 RHITextureInfo hdrColorInfo{};
@@ -188,48 +163,109 @@ namespace shzk
             }
         }
 
-        // multiframe resources
+        InitSamplers();
+        InitIBLResources();
+
+        UpdateIBLShaderBindings();
+    }
+
+    void RenderResourceManager::InitSamplers()
+    {
+        // default sampler
+        m_samplers.push_back(std::make_shared<Sampler>(   // [0] repeat
+            FilterType::Linear,
+            SamplerMipmapMode::Linear,
+            SamplerAddressMode::Repeat,
+            0.f));
+        m_samplers.push_back(std::make_shared<Sampler>(   // [1] clamp
+            FilterType::Linear,
+            SamplerMipmapMode::Linear,
+            SamplerAddressMode::ClampToEdge,
+            0.f));
+    }
+
+    void RenderResourceManager::InitIBLResources()
+    {
+
+        RHITextureInfo irr{};
+        irr.format = FORMAT_R16G16B16A16_SFLOAT;
+        irr.extent = { IBL_IRR_SIZE, IBL_IRR_SIZE, 1 };
+        irr.arrayLayers = 6;
+        irr.mipLevels = 1;
+        irr.memoryUsage = MemoryUsage::GPUOnly;
+        irr.type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_TEXTURE_CUBE | RESOURCE_TYPE_RW_TEXTURE;
+        m_iblDiffuse = RHI::Get()->CreateTexture(irr);
+
+        RHITextureViewInfo irrV{};
+        irrV.texture = m_iblDiffuse;
+        irrV.format = irr.format;
+        irrV.viewType = TextureViewType::ViewCube;
+        irrV.subresourceRange = { TEXTURE_ASPECT_COLOR, 0, 1, 0, 6 };
+        m_iblDiffuseView = RHI::Get()->CreateTextureView(irrV);
+
+        RHITextureInfo spec{};
+        spec.format = FORMAT_R16G16B16A16_SFLOAT;
+        spec.extent = { IBL_SPEC_SIZE, IBL_SPEC_SIZE, 1 };
+        spec.arrayLayers = 6;
+        spec.mipLevels = IBL_SPEC_MIPS;
+        spec.memoryUsage = MemoryUsage::GPUOnly;
+        spec.type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_TEXTURE_CUBE | RESOURCE_TYPE_RW_TEXTURE;
+        m_iblSpecular = RHI::Get()->CreateTexture(spec);
+
+        RHITextureViewInfo specV{};
+        specV.texture = m_iblSpecular;
+        specV.format = spec.format;
+        specV.viewType = TextureViewType::ViewCube;
+        specV.subresourceRange = { TEXTURE_ASPECT_COLOR, 0, IBL_SPEC_MIPS, 0, 6 };
+        m_iblSpecularView = RHI::Get()->CreateTextureView(specV);
+
+        RHITextureInfo lut{};
+        lut.format = FORMAT_R16G16B16A16_SFLOAT;
+        lut.extent = { IBL_LUT_SIZE, IBL_LUT_SIZE, 1 };
+        lut.arrayLayers = 1;
+        lut.mipLevels = 1;
+        lut.memoryUsage = MemoryUsage::GPUOnly;
+        lut.type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_RW_TEXTURE;
+        m_brdfLUT = RHI::Get()->CreateTexture(lut);
+
+        RHITextureViewInfo lutV{};
+        lutV.texture = m_brdfLUT;
+        lutV.format = lut.format;
+        lutV.viewType = TextureViewType::View2D;
+        lutV.subresourceRange = { TEXTURE_ASPECT_COLOR, 0, 1, 0, 1 };
+        m_brdfLUTView = RHI::Get()->CreateTextureView(lutV);
+        
+    }
+
+    void RenderResourceManager::UpdateIBLShaderBindings()
+    {
+        for (int i = 0; i < FRAMES_IN_FLIGHT; ++i)
         {
-            // default sampler
-            m_samplers.push_back(std::make_shared<Sampler>(
-                FilterType::Linear,
-                SamplerMipmapMode::Linear,
-                SamplerAddressMode::Repeat,
-                0.f));
-
+            auto& perFrame = m_perFrameResources[i];
             // IBL
-            {
-                RHITextureInfo irr{};
-                irr.format = FORMAT_R16G16B16A16_SFLOAT;
-                irr.extent = { IBL_IRR_SIZE, IBL_IRR_SIZE, 1 };
-                irr.arrayLayers = 6;
-                irr.mipLevels = 1;
-                irr.memoryUsage = MemoryUsage::GPUOnly;
-                irr.type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_TEXTURE_CUBE | RESOURCE_TYPE_RW_TEXTURE;
-                m_iblDiffuse = RHI::Get()->CreateTexture(irr);
+            RHIDescriptorUpdateInfo irr{};
+            irr.binding = PER_FRAME_BINDING_IBL_IRRADIANCE;
+            irr.index = 0;
+            irr.resourceType = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER;
+            irr.sampler = m_samplers[1]->GetRHISampler();   // clamp
+            irr.textureView = m_iblDiffuseView;
+            perFrame.descriptorSet->UpdateDescriptor(irr);
 
-                RHITextureViewInfo irrV{};
-                irrV.texture = m_iblDiffuse; irrV.format = irr.format;
-                irrV.viewType = TextureViewType::ViewCube;
-                irrV.subresourceRange = { TEXTURE_ASPECT_COLOR, 0, 1, 0, 6 };
-                m_iblDiffuseView = RHI::Get()->CreateTextureView(irrV);
+            RHIDescriptorUpdateInfo spec{};
+            spec.binding = PER_FRAME_BINDING_IBL_SPECULAR;
+            spec.index = 0;
+            spec.resourceType = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER;
+            spec.sampler = m_samplers[1]->GetRHISampler();
+            spec.textureView = m_iblSpecularView;
+            perFrame.descriptorSet->UpdateDescriptor(spec);
 
-                RHITextureInfo spec{};
-                spec.format = FORMAT_R16G16B16A16_SFLOAT;
-                spec.extent = { IBL_SPEC_SIZE, IBL_SPEC_SIZE, 1 };
-                spec.arrayLayers = 6;
-                spec.mipLevels = IBL_SPEC_MIPS;
-                spec.memoryUsage = MemoryUsage::GPUOnly;
-                spec.type = RESOURCE_TYPE_TEXTURE | RESOURCE_TYPE_TEXTURE_CUBE | RESOURCE_TYPE_RW_TEXTURE;
-                m_iblSpecular = RHI::Get()->CreateTexture(spec);
-
-                RHITextureViewInfo specV{};
-                specV.texture = m_iblSpecular; specV.format = spec.format;
-                specV.viewType = TextureViewType::ViewCube;
-                specV.subresourceRange = { TEXTURE_ASPECT_COLOR, 0, IBL_SPEC_MIPS, 0, 6 };
-                m_iblSpecularView = RHI::Get()->CreateTextureView(specV);
-            }
+            RHIDescriptorUpdateInfo lut{};
+            lut.binding = PER_FRAME_BINDING_IBL_BRDF_LUT;
+            lut.index = 0;
+            lut.resourceType = RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER;
+            lut.sampler = m_samplers[1]->GetRHISampler();
+            lut.textureView = m_brdfLUTView;
+            perFrame.descriptorSet->UpdateDescriptor(lut);
         }
-
     }
 }

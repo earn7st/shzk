@@ -14,41 +14,46 @@ namespace shzk
 		// Resources
 		m_resources[0].shader = std::make_shared<Shader>(SHZK_SPIRV_DIR "ibl_diffuse.comp.spv", SHADER_FREQUENCY_COMPUTE, "main");
 		m_resources[1].shader = std::make_shared<Shader>(SHZK_SPIRV_DIR "ibl_specular.comp.spv", SHADER_FREQUENCY_COMPUTE, "main");
+		m_resources[2].shader = std::make_shared<Shader>(SHZK_SPIRV_DIR "brdf_lut.comp.spv", SHADER_FREQUENCY_COMPUTE, "main");
 
-		RHIRootSignatureInfo info{};
-		info.AddPushConstant({ .offset = 0, .size = 128, .frequency = SHADER_FREQUENCY_COMPUTE });
-		info.AddEntry({ 0, 0, 1, SHADER_FREQUENCY_COMPUTE, RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
-			.AddEntry({ 0, 1, 1, SHADER_FREQUENCY_COMPUTE, RESOURCE_TYPE_RW_TEXTURE });
-		m_resources[0].rs = RHI::Get()->CreateRootSignature(info);
-		m_resources[1].rs = m_resources[0].rs;
-
-		m_diffuseDescSet = m_resources[0].rs->CreateDescriptorSet(0);
-		for (uint32_t mip = 0; mip < IBL_SPEC_MIPS; ++mip)
-			m_specularDescSets[mip] = m_resources[1].rs->CreateDescriptorSet(0);
-		
-		RHIComputePipelineInfo infoDiffuse{};
-		infoDiffuse.computeShader = m_resources[0].shader->GetRHIShader();
-		infoDiffuse.rootSignature = m_resources[0].rs;
-		m_resources[0].pipeline = RHI::Get()->CreateComputePipeline(infoDiffuse);
-
-		RHIComputePipelineInfo infoSpecular{};
-		infoSpecular.computeShader = m_resources[1].shader->GetRHIShader();
-		infoSpecular.rootSignature = m_resources[1].rs;
-		m_resources[1].pipeline = RHI::Get()->CreateComputePipeline(infoSpecular);
-
+		// irradiance
 		{
+			RHIRootSignatureInfo info{};
+			info.AddPushConstant({ .offset = 0, .size = 128, .frequency = SHADER_FREQUENCY_COMPUTE });
+			info.AddEntry({ 0, 0, 1, SHADER_FREQUENCY_COMPUTE, RESOURCE_TYPE_COMBINED_IMAGE_SAMPLER })
+				.AddEntry({ 0, 1, 1, SHADER_FREQUENCY_COMPUTE, RESOURCE_TYPE_RW_TEXTURE });
+			m_resources[0].rs = RHI::Get()->CreateRootSignature(info);
+			
+			RHIComputePipelineInfo pipelineInfo{};
+			pipelineInfo.computeShader = m_resources[0].shader->GetRHIShader();
+			pipelineInfo.rootSignature = m_resources[0].rs;
+			m_resources[0].pipeline = RHI::Get()->CreateComputePipeline(pipelineInfo);
+
+			m_diffuseDescSet = m_resources[0].rs->CreateDescriptorSet(0);
+
 			m_diffuseView = RenderResourceManager::Get()->GetIBLDiffuseTextureView();
-			RHIDescriptorUpdateInfo info{};
-			info.binding = 1;
-			info.index = 0;
-			info.resourceType = RESOURCE_TYPE_RW_TEXTURE;
-			info.textureView = m_diffuseView;
-			m_diffuseDescSet->UpdateDescriptor(info);
+			RHIDescriptorUpdateInfo descInfo{};
+			descInfo.binding = 1;
+			descInfo.index = 0;
+			descInfo.resourceType = RESOURCE_TYPE_RW_TEXTURE;
+			descInfo.textureView = m_diffuseView;
+			m_diffuseDescSet->UpdateDescriptor(descInfo);
 		}
-		
+
+		// specular
 		{
+			m_resources[1].rs = m_resources[0].rs;
+
+			RHIComputePipelineInfo infoSpecular{};
+			infoSpecular.computeShader = m_resources[1].shader->GetRHIShader();
+			infoSpecular.rootSignature = m_resources[1].rs;
+			m_resources[1].pipeline = RHI::Get()->CreateComputePipeline(infoSpecular);
+
+			for (uint32_t mip = 0; mip < IBL_SPEC_MIPS; ++mip)
+				m_specularDescSets[mip] = m_resources[1].rs->CreateDescriptorSet(0);
+
 			std::shared_ptr<RHITexture> specularTex = RenderResourceManager::Get()->GetIBLSpecularTexture();
-			for (uint32_t mip = 0; mip < IBL_SPEC_MIPS; ++mip) 
+			for (uint32_t mip = 0; mip < IBL_SPEC_MIPS; ++mip)
 			{
 				RHITextureViewInfo v{};
 				v.texture = specularTex;
@@ -66,7 +71,25 @@ namespace shzk
 			}
 		}
 
-		m_brdfLUT = std::make_shared<Texture>(SHZK_ASSETS_DIR "_builtin/BRDF_LUT.png", TextureType::Type2D, FORMAT_R8G8B8A8_UNORM);
+		// brdf lut
+		{
+			RHIRootSignatureInfo info{};
+			info.AddEntry({ 0, 0, 1, SHADER_FREQUENCY_COMPUTE, RESOURCE_TYPE_RW_TEXTURE });
+			m_resources[2].rs = RHI::Get()->CreateRootSignature(info);
+
+			RHIComputePipelineInfo infoLUT{};
+			infoLUT.computeShader = m_resources[2].shader->GetRHIShader();
+			infoLUT.rootSignature = m_resources[2].rs;
+			m_resources[2].pipeline = RHI::Get()->CreateComputePipeline(infoLUT);
+
+			m_lutDescSet = m_resources[2].rs->CreateDescriptorSet(0);
+			RHIDescriptorUpdateInfo lutWrite{};
+			lutWrite.binding = 0;
+			lutWrite.index = 0;
+			lutWrite.resourceType = RESOURCE_TYPE_RW_TEXTURE;
+			lutWrite.textureView = RenderResourceManager::Get()->GetBRDFLUTTextureView();
+			m_lutDescSet->UpdateDescriptor(lutWrite);
+		}
 	}
 
 	void IBLPass::Prepare()
@@ -74,6 +97,16 @@ namespace shzk
 
 	void IBLPass::Execute(std::shared_ptr<RHICommandList> cmd)
 	{
+		// generate brdf lut
+		if (m_bFirstTimeExecute)
+		{
+			cmd->TextureBarrier({ RenderResourceManager::Get()->GetBRDFLUTTexture(), RHIResourceState::Undefined, RHIResourceState::UnorderedAccess });
+			cmd->SetComputePipeline(m_resources[2].pipeline);
+			cmd->BindDescriptorSet(m_lutDescSet, 0);
+			cmd->Dispatch(IBL_LUT_SIZE / 16, IBL_LUT_SIZE / 16, 1);
+			cmd->TextureBarrier({ RenderResourceManager::Get()->GetBRDFLUTTexture(), RHIResourceState::UnorderedAccess, RHIResourceState::ShaderResource });
+		}
+
 		if (!m_envMap || !m_bEnvMapChanged) return;
 		m_bEnvMapChanged = false;
 
@@ -94,9 +127,7 @@ namespace shzk
 
 		cmd->SetComputePipeline(m_resources[0].pipeline);
 		cmd->BindDescriptorSet(m_diffuseDescSet, 0);
-		{
-			cmd->PushConstants(&m_setting, sizeof(m_setting), SHADER_FREQUENCY_COMPUTE);
-		}
+		cmd->PushConstants(&m_setting, sizeof(m_setting), SHADER_FREQUENCY_COMPUTE);
 		cmd->Dispatch(IBL_IRR_SIZE / 16, IBL_IRR_SIZE / 16, 6);
 
 		cmd->SetComputePipeline(m_resources[1].pipeline);

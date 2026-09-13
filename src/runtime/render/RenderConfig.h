@@ -10,5 +10,5 @@ namespace shzk
 
 	static const glm::vec4 CLEAR_COLOR = { 0.1f, 0.2f, 0.4f, 1.0f };
 
-	static const uint32_t IBL_IRR_SIZE = 32, IBL_SPEC_SIZE = 128, IBL_SPEC_MIPS = 5;
+	static const uint32_t IBL_IRR_SIZE = 32, IBL_SPEC_SIZE = 128, IBL_SPEC_MIPS = 5, IBL_LUT_SIZE = 512;
 }

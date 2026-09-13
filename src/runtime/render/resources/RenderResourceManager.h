@@ -55,17 +55,23 @@ namespace shzk
 		inline std::shared_ptr<RHITextureView> GetCurrentSceneDepthTextureView() const { return m_perFrameResources[m_frameIndex].sceneDepthTextureView; }
 
 		// multiframe resources
-		inline const std::shared_ptr<Sampler> GetDefaultSampler() const { return m_samplers[0]; }
+		inline std::shared_ptr<Sampler> GetDefaultSampler() const { return m_samplers[0]; }
+		inline std::shared_ptr<Sampler> GetSampler(uint32_t idx) const { assert(idx < m_samplers.size());  return m_samplers[idx]; }
 		inline std::shared_ptr<RHITexture> GetIBLDiffuseTexture() const { return m_iblDiffuse; }
 		inline std::shared_ptr<RHITextureView> GetIBLDiffuseTextureView() const { return m_iblDiffuseView; }
 		inline std::shared_ptr<RHITexture> GetIBLSpecularTexture() const { return m_iblSpecular; }
 		inline std::shared_ptr<RHITextureView> GetIBLSpecularTextureView() const { return m_iblSpecularView; }
-
+		inline std::shared_ptr<RHITexture> GetBRDFLUTTexture() const { return m_brdfLUT; }
+		inline std::shared_ptr<RHITextureView> GetBRDFLUTTextureView() const { return m_brdfLUTView; }
+			 
 		inline Extent2D GetRenderExtent() const { return m_renderExtent; }
 		inline void SetRenderExtent(Extent2D extent) { m_renderExtent = extent; }
 
 	private:
 		void InitGlobalResources();
+		void InitSamplers();
+		void InitIBLResources();
+		void UpdateIBLShaderBindings();
 
 		// global Shader cache
 		std::unordered_map<std::string, std::shared_ptr<RHIShader>> m_rhiShaderMap;
@@ -104,7 +110,8 @@ namespace shzk
 		std::shared_ptr<RHITextureView> m_iblDiffuseView;
 		std::shared_ptr<RHITexture> m_iblSpecular;
 		std::shared_ptr<RHITextureView> m_iblSpecularView;
-
+		std::shared_ptr<RHITexture> m_brdfLUT;
+		std::shared_ptr<RHITextureView> m_brdfLUTView;
 
 		// render extent
 		Extent2D m_renderExtent{1280, 720};

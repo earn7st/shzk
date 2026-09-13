@@ -40,8 +40,8 @@ namespace shzk
 			std::shared_ptr<RHIRootSignature> rs;
 			std::shared_ptr<RHIComputePipeline> pipeline;
 		};
-		std::array<IBLPassResources, 2> m_resources; // 0: diffuse 1: specular
-
+		std::array<IBLPassResources, 3> m_resources; // 0: diffuse 1: specular 2: lut
+			 
 		struct IBLSetting 
 		{
 			glm::vec4 front, up;
@@ -57,10 +57,11 @@ namespace shzk
 
 		std::shared_ptr<RHIDescriptorSet> m_diffuseDescSet;
 		std::array<std::shared_ptr<RHIDescriptorSet>, IBL_SPEC_MIPS> m_specularDescSets;
+		std::shared_ptr<RHIDescriptorSet> m_lutDescSet;
 
 		std::shared_ptr<Texture> m_envMap;
 		bool m_bEnvMapChanged = false;
 
-		std::shared_ptr<Texture> m_brdfLUT;
+		bool m_bFirstTimeExecute = true;
 	};
 }
