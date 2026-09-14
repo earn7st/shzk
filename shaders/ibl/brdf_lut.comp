@@ -5,8 +5,8 @@ layout(set = 0, binding = 0, rgba16f) uniform image2D OUT_COLOR;   // BRDF LUT: 
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-const uint  SAMPLE_COUNT = 1024u;
-const float LUT_SIZE     = 512.0;
+const uint  SAMPLE_COUNT = 4096u;
+const float LUT_SIZE     = 1024.0;  // IBL_LUT_SIZE = 1024
 
 float RadicalInverseVdC(uint bits)
 {
@@ -79,7 +79,7 @@ void main()
 
         if (NdotL > 0.0) {
             float G     = GeometrySmith(N, V, L, roughness);
-            float G_Vis = (G * VdotH) / (NdotH * NdotV);
+            float G_Vis = (G * VdotH) / (NdotH * max(NdotV, 0.01));
             float Fc    = pow(1.0 - VdotH, 5.0);
             A += (1.0 - Fc) * G_Vis;
             B += Fc * G_Vis;

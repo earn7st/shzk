@@ -21,7 +21,6 @@
 
 void InitScene(std::shared_ptr<shzk::Scene>& scene)
 {
-
 	if (true)
 	{
 		// SkyBox
@@ -49,21 +48,21 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 			// Environment Map for SkyLight
 			std::shared_ptr<shzk::SkyLightComponent> skyLight = std::make_shared<shzk::SkyLightComponent>();
 
-			std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/climbing_gym_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R16G16B16A16_SFLOAT);
+			std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/climbing_gym/climbing_gym_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R32G32B32A32_SFLOAT);
 			skyLight->SetEnvironmentMap(skyLightHDR);
 			skybox->AddComponent(skyLight);
 		}
 		
 		// industrial
-		if (false)
+		if (true)
 		{
 			std::vector<std::string> industrialsPaths = {
-			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/px.png",
-			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/nx.png",
-			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/py.png",
-			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/ny.png",
-			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/pz.png",
-			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_2K/nz.png" };
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_4K/px.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_4K/nx.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_4K/py.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_4K/ny.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_4K/pz.png",
+			SHZK_ASSETS_DIR "_builtin/environment/industrial/CubeMap_4K/nz.png" };
 			std::shared_ptr<shzk::Texture> industrialCubeMap = std::make_shared<shzk::Texture>(industrialsPaths, shzk::TextureType::TypeCube, shzk::RHIFormat::FORMAT_R8G8B8A8_SRGB);
 
 			std::shared_ptr<shzk::Material> skyboxMaterial = skyboxComp->GetMaterial();
@@ -72,21 +71,21 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 			// Environment Map for SkyLight
 			std::shared_ptr<shzk::SkyLightComponent> skyLight = std::make_shared<shzk::SkyLightComponent>();
 
-			std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/industrial/industrial_pipe_and_valve_01_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R16G16B16A16_SFLOAT);
+			std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/industrial/industrial_pipe_and_valve_01_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R32G32B32A32_SFLOAT);
 			skyLight->SetEnvironmentMap(skyLightHDR);
 			skybox->AddComponent(skyLight);
 		}
 
 		// resting place
-		if (true)
+		if (false)
 		{
 			std::vector<std::string> restingPlacePaths = {
-			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/px.png",
-			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/nx.png",
-			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/py.png",
-			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/ny.png",
-			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/pz.png",
-			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_2K/nz.png" };
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_4K/px.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_4K/nx.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_4K/py.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_4K/ny.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_4K/pz.png",
+			SHZK_ASSETS_DIR "_builtin/environment/resting_place/CubeMap_4K/nz.png" };
 			std::shared_ptr<shzk::Texture> restingPlaceCubeMap = std::make_shared<shzk::Texture>(restingPlacePaths, shzk::TextureType::TypeCube, shzk::RHIFormat::FORMAT_R8G8B8A8_SRGB);
 
 			std::shared_ptr<shzk::Material> skyboxMaterial = skyboxComp->GetMaterial();
@@ -95,7 +94,7 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 			// Environment Map for SkyLight
 			std::shared_ptr<shzk::SkyLightComponent> skyLight = std::make_shared<shzk::SkyLightComponent>();
 
-			std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/resting_place/resting_place_2_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R16G16B16A16_SFLOAT);
+			std::shared_ptr<shzk::Texture> skyLightHDR = std::make_shared<shzk::Texture>(SHZK_ASSETS_DIR "_builtin/environment/resting_place/resting_place_2_4k.hdr", shzk::TextureType::TypeEquirectangular, shzk::RHIFormat::FORMAT_R32G32B32A32_SFLOAT);
 			skyLight->SetEnvironmentMap(skyLightHDR);
 			skybox->AddComponent(skyLight);
 		}
@@ -104,7 +103,7 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 	}
 
 	// Damaged Helmet
-	if (true)
+	if (true	)
 	{
 		shzk::GltfLoadResult helmetResult;
 		shzk::GltfLoader::Get()->Load(SHZK_ASSETS_DIR "DamagedHelmet/glTF/DamagedHelmet.gltf", helmetResult);
@@ -159,6 +158,48 @@ void InitScene(std::shared_ptr<shzk::Scene>& scene)
 		}
 
 		scene->AddNode(sponza);
+	}
+
+	// Environment Test
+	if (false)
+	{
+		shzk::GltfLoadResult envTestResult;
+		shzk::GltfLoader::Get()->Load(SHZK_ASSETS_DIR "EnvironmentTest/glTF/EnvironmentTest.gltf", envTestResult);
+		shzk::AssetManager::Get()->ProcessGltfLoadResult(envTestResult);
+
+		std::shared_ptr<shzk::Node> envTest = std::make_shared<shzk::Node>(1, "env_test");
+		shzk::Transform transform{};
+		{
+			std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
+			transformComp->SetTransform(transform);
+			envTest->AddComponent(transformComp);
+			std::shared_ptr<shzk::MeshComponent> meshComp = std::make_shared<shzk::MeshComponent>();
+			meshComp->SetModel(envTestResult.models[0]);
+			envTest->AddComponent(meshComp);
+		}
+
+		scene->AddNode(envTest);
+	}
+
+	// Metal Rough Spheres
+	if (false)
+	{
+		shzk::GltfLoadResult mrsResult;
+		shzk::GltfLoader::Get()->Load(SHZK_ASSETS_DIR "MetalRoughSpheres/glTF/MetalRoughSpheres.gltf", mrsResult);
+		shzk::AssetManager::Get()->ProcessGltfLoadResult(mrsResult);
+
+		std::shared_ptr<shzk::Node> mrs = std::make_shared<shzk::Node>(1, "mrs");
+		shzk::Transform transform{};
+		{
+			std::shared_ptr<shzk::TransformComponent> transformComp = std::make_shared<shzk::TransformComponent>();
+			transformComp->SetTransform(transform);
+			mrs->AddComponent(transformComp);
+			std::shared_ptr<shzk::MeshComponent> meshComp = std::make_shared<shzk::MeshComponent>();
+			meshComp->SetModel(mrsResult.models[0]);
+			mrs->AddComponent(meshComp);
+		}
+
+		scene->AddNode(mrs);
 	}
 
 }

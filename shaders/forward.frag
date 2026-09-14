@@ -37,6 +37,7 @@ layout(set = 1, binding = 4) uniform sampler2D texOcclusion;
 layout(set = 1, binding = 5) uniform sampler2D texEmissive;
 
 const float kPi = 3.14159265359;
+const float MAX_REFLECTION_LOD = 4.0;   // = IBL_SPEC_MIPS - 1
 
 struct DirectionalLight {
     vec3 L    ;
@@ -134,12 +135,11 @@ void main()
     vec3  Lo  = (kD * albedo / kPi + specular) * sun.radiance * NdL;
 
     vec3 emissive = material.emission.rgb * texture(texEmissive, fragTexcoord).rgb;
-
+    
     vec3 irradiance  = texture(irradianceMap, N).rgb;
     vec3 diffuseIBL  = irradiance * albedo;
 
     vec3 R = reflect(-V, N);
-    const float MAX_REFLECTION_LOD = 4.0;   // = IBL_SPEC_MIPS - 1
     vec3 prefiltered = textureLod(prefilteredMap, R, roughness * MAX_REFLECTION_LOD).rgb;
     vec2 envBRDF     = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
     vec3 specularIBL = prefiltered * (F * envBRDF.x + envBRDF.y);

@@ -15,7 +15,8 @@ layout(push_constant) uniform IBLSetting {
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-const uint SAMPLE_COUNT = 1024u;
+const uint SAMPLE_COUNT = 4096u;
+const float MAX_ENV_LOD = 12.0; // hdri map: 4096
 
 vec2 DirToEquirectUV(vec3 d)
 {
@@ -86,7 +87,10 @@ void main()
 
         float NdotL = max(dot(N, L), 0.0);
         if (NdotL > 0.0) {
-            color += textureLod(envMap, DirToEquirectUV(L), 0.0).rgb * NdotL;
+            vec3 sampled = textureLod(envMap, DirToEquirectUV(L), SETTING.roughness * MAX_ENV_LOD).rgb;
+            sampled = min(sampled, vec3(20.0));
+            color += sampled * NdotL;
+            //color += textureLod(envMap, DirToEquirectUV(L), SETTING.roughness * MAX_ENV_LOD).rgb * NdotL;
             totalWeight += NdotL;
         }
     }

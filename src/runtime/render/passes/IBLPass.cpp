@@ -105,6 +105,7 @@ namespace shzk
 			cmd->BindDescriptorSet(m_lutDescSet, 0);
 			cmd->Dispatch(IBL_LUT_SIZE / 16, IBL_LUT_SIZE / 16, 1);
 			cmd->TextureBarrier({ RenderResourceManager::Get()->GetBRDFLUTTexture(), RHIResourceState::UnorderedAccess, RHIResourceState::ShaderResource });
+			m_bFirstTimeExecute = false;
 		}
 
 		if (!m_envMap || !m_bEnvMapChanged) return;
@@ -127,6 +128,7 @@ namespace shzk
 
 		cmd->SetComputePipeline(m_resources[0].pipeline);
 		cmd->BindDescriptorSet(m_diffuseDescSet, 0);
+		m_setting.mipSize = IBL_IRR_SIZE;
 		cmd->PushConstants(&m_setting, sizeof(m_setting), SHADER_FREQUENCY_COMPUTE);
 		cmd->Dispatch(IBL_IRR_SIZE / 16, IBL_IRR_SIZE / 16, 6);
 

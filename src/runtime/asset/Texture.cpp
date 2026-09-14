@@ -192,17 +192,43 @@ namespace shzk
 		}
 
 		m_name = std::filesystem::path(m_paths[0]).filename().generic_string();
-		m_extent = { (uint32_t)width, (uint32_t)height, 1 };
-		m_mipLevels = 1;
 		m_arrayLayer = 1;
 
-		InitRHI();
+		if (!m_rhiInitialized)	// for TextureType::Cube, RHITexture should only be created once
+		{
+			m_extent = { (uint32_t)width, (uint32_t)height, 1 };
+			m_mipLevels = (uint32_t)(std::floor(std::log2(std::max(width, height)))) + 1;
+			InitRHI();
+
+			m_rhiInitialized = true;
+		}
 
 		const uint32_t texelCount = (uint32_t)width * height;
-		const uint32_t bufferSize = texelCount * 4 * sizeof(uint16_t);
-		std::vector<uint16_t> halfPixels(texelCount * 4);
-		for (uint32_t i = 0; i < texelCount * 4; ++i)
-			halfPixels[i] = Float32ToFloat16(pixels[i]);
+		const bool bFloat32 = (m_format == RHIFormat::FORMAT_R32G32B32A32_SFLOAT);
+
+		std::vector<uint16_t> halfPixels;
+		const void* uploadData = nullptr;
+		uint32_t    bufferSize = 0;
+
+		if (bFloat32)
+		{
+			bufferSize = texelCount * 4 * sizeof(float);
+			uploadData = pixels;                        
+		}
+		else
+		{
+			halfPixels.resize(texelCount * 4);
+			for (uint32_t i = 0; i < texelCount * 4; ++i)
+				halfPixels[i] = Float32ToFloat16(std::min(pixels[i], 65504.0f));	// clamp
+			bufferSize = texelCount * 4 * sizeof(uint16_t);
+			uploadData = halfPixels.data();
+		}
+
+		/*
+		float maxVal = 0.f;
+		for (uint32_t i = 0; i < texelCount * 4; ++i) maxVal = std::max(maxVal, pixels[i]);
+		SHZK_LOG_INFO("HDR max value = {}", maxVal);
+		*/
 
 		RHIBufferInfo bufferInfo = {
 			.size = bufferSize,
@@ -211,15 +237,23 @@ namespace shzk
 			.creationFlag = BUFFER_CREATION_PERSISTENT_MAP
 		};
 		std::shared_ptr<RHIBuffer> stagingBuffer = RHI::Get()->CreateBuffer(bufferInfo);
-		memcpy(stagingBuffer->Map(), halfPixels.data(), bufferSize);
+		memcpy(stagingBuffer->Map(), uploadData, bufferSize);
 
 		auto immediateCmd = RHI::Get()->GetCommandContextImmediate();
 		immediateCmd->RHITextureBarrierCommand(
 			{ m_texture, RHIResourceState::Undefined, RHIResourceState::TransferDst,
 			  { TEXTURE_ASPECT_COLOR, 0, m_mipLevels, 0, 1 } });
 		immediateCmd->RHICopyBufferToTexture(stagingBuffer, 0, m_texture, { TEXTURE_ASPECT_COLOR, 0, 0, 1 });
+		immediateCmd->RHISubmit();
+
+		// generate mipmaps
+		immediateCmd->RHITextureBarrierCommand({ m_texture,
+				RHIResourceState::TransferDst, RHIResourceState::TransferSrc,
+						{TEXTURE_ASPECT_COLOR, 0, m_mipLevels, 0, m_arrayLayer} });
+		immediateCmd->RHIGenerateMips(m_texture);
+
 		immediateCmd->RHITextureBarrierCommand(
-			{ m_texture, RHIResourceState::TransferDst, RHIResourceState::ShaderResource,
+			{ m_texture, RHIResourceState::TransferSrc, RHIResourceState::ShaderResource,
 			  { TEXTURE_ASPECT_COLOR, 0, m_mipLevels, 0, 1 } });
 		immediateCmd->RHISubmit();
 
