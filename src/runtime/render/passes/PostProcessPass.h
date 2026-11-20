@@ -20,6 +20,7 @@ namespace shzk
 		virtual void Init() override final;
 		virtual void Prepare() override final;
 		virtual void Execute(std::shared_ptr<RHICommandList> cmd) override final;
+		void SetOutputIsSRGB(bool outputIsSRGB) { m_outputIsSRGB = outputIsSRGB; }
 
 	private:
 		// TODO: ProcessProcess Setting Uniform Buffer
@@ -38,5 +39,6 @@ namespace shzk
 		std::shared_ptr<RHIRootSignature> m_rootSignature;
 		std::array<std::shared_ptr<RHIDescriptorSet>, FRAMES_IN_FLIGHT> m_descriptorSets;
 		std::shared_ptr<RHIComputePipeline> m_pipeline;
+		bool m_outputIsSRGB = true;
 	};
 }

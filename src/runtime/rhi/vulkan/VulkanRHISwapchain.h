@@ -25,7 +25,7 @@ namespace shzk
 		inline const VkSwapchainKHR& GetHandle() { return m_handle; }
 
 	private:
-		VkSurfaceFormatKHR ChooseSwapchainSurfaceFormat(VkFormat targetFormat);
+		VkSurfaceFormatKHR ChooseSwapchainSurfaceFormat();
 		VkPresentModeKHR ChooseSwapchainPresentMode();
 		VkExtent2D ChooseSwapchainExtent();
 

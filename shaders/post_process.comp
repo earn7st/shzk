@@ -2,6 +2,9 @@
 
 layout(set = 0, binding = 0, rgba16f) uniform image2D inputHDRTexture;  // R16G16B16A16_SFLOAT
 layout(set = 0, binding = 1, rgba8)   uniform image2D outputColor;      // R8G8B8A8_UNORM
+layout(push_constant) uniform PostProcessSettings {
+	uint outputIsSRGB;
+} SETTINGS;
 
 #define THREAD_SIZE_X 16
 #define THREAD_SIZE_Y 16
@@ -123,6 +126,7 @@ void main()
 
     color = ApplyTonemap(color, 1);
 
-    color = pow(color, vec3(1.0 / 2.2));
+	if (SETTINGS.outputIsSRGB == 0u)
+		color = pow(color, vec3(1.0 / 2.2));
     imageStore(outputColor, pixel, vec4(color, 1.0));
 }

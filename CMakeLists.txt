@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 
 project(shzk LANGUAGES C CXX)
-
+    
 #
 # C++ Settings
 #
@@ -160,3 +160,5 @@ add_custom_target(
     Shaders ALL
     DEPENDS ${SPIRV_BINARY_FILES}
 )
+
+set_target_properties(Shaders PROPERTIES FOLDER "Build")

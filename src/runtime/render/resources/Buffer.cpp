@@ -62,7 +62,7 @@ namespace shzk
 
     IndexBuffer::IndexBuffer(const std::vector<uint32_t>& indices)
     {
-        m_indexNum = indices.size();
+        m_indexNum = (uint32_t)indices.size();
 
         uint32_t bufferSize = m_indexNum * sizeof(uint32_t);
 

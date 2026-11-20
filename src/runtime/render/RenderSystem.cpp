@@ -5,6 +5,7 @@
 #include "runtime/rhi/RHIDefinitions.h"
 #include "runtime/rhi/RHI.h"
 #include "runtime/rhi/RHICommandList.h"
+#include "runtime/rhi/RHIUtil.h"
 #include "runtime/render/SceneRenderer.h"
 #include "runtime/render/resources/RenderResourceManager.h"
 
@@ -73,8 +74,7 @@ namespace shzk
 
 		cmd->TextureBarrier({ sceneColorTexture, RHIResourceState::Common, RHIResourceState::TransferSrc });
 		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::Undefined, RHIResourceState::TransferDst });
-		cmd->CopyTexture(sceneColorTexture, sceneColorTexture->GetDefaultSubresourceLayers(), currentSwapchainTexture, currentSwapchainTexture->GetDefaultSubresourceLayers());
-		//cmd->BlitTexture(sceneColorTexture, currentSwapchainTexture, sceneColorTexture->GetDefaultSubresourceLayers(), sceneColorTexture->GetDefaultSubresourceLayers(), FilterType::Linear);
+		cmd->BlitTexture(sceneColorTexture, currentSwapchainTexture, sceneColorTexture->GetDefaultSubresourceLayers(), currentSwapchainTexture->GetDefaultSubresourceLayers(), FilterType::Nearest);
 		cmd->TextureBarrier({ currentSwapchainTexture, RHIResourceState::TransferDst, RHIResourceState::Present });
 
 		cmd->EndCommand();
@@ -107,10 +107,12 @@ namespace shzk
 		swapchainInfo.presentQueue = m_rhiGraphicsQueue;
 		swapchainInfo.imageCount = FRAMES_IN_FLIGHT;
 		swapchainInfo.extent = m_rhiSurface->GetExetent();
-		swapchainInfo.format = COLOR_FORMAT;
 		m_rhiSwapchain = RHI::Get()->CreateSwapchain(swapchainInfo);
 
-		RenderResourceManager::Get()->SetRenderExtent(swapchainInfo.extent);
+		// swapchain 内部会把 extent 修正为 surface 的实际像素尺寸（如 macOS MoltenVK 的 drawable size）
+		// 创建后回读真实 extent，并按它创建 render targets，保证与 swapchain image 尺寸一致
+		RenderResourceManager::Get()->SetRenderExtent(m_rhiSwapchain->GetInfo().extent);
+		RenderResourceManager::Get()->InitRenderTargets();
 
 		RHICommandPoolInfo cmdPoolInfo{};
 		cmdPoolInfo.queue = m_rhiGraphicsQueue;
@@ -147,8 +149,10 @@ namespace shzk
 		m_passes[(size_t)PassType::Sky] = m_meshPasses[(size_t)PassType::Sky];
 		
 		// Other Render Passes
-		m_passes[(size_t)PassType::PostProcess] = std::make_shared<PostProcessPass>();
-		m_passes[(size_t)PassType::PostProcess]->Init();
+		auto postProcessPass = std::make_shared<PostProcessPass>();
+		postProcessPass->Init();
+		postProcessPass->SetOutputIsSRGB(RHIUtil::IsSRGBFormat(m_rhiSwapchain->GetTexture(0)->GetInfo().format));
+		m_passes[(size_t)PassType::PostProcess] = postProcessPass;
 		m_passes[(size_t)PassType::IBL] = std::make_shared<IBLPass>();
 		m_passes[(size_t)PassType::IBL]->Init();
 		

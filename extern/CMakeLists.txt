@@ -63,3 +63,12 @@ target_include_directories(mikktspace
       PUBLIC
           ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+#
+# IDE 文件夹分组（Xcode/VS 导航器）
+#
+set_target_properties(
+    fmt imgui mikktspace
+    vk-bootstrap fastgltf
+    stb
+    PROPERTIES FOLDER "extern")

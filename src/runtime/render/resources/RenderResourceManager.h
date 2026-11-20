@@ -30,6 +30,7 @@ namespace shzk
 		static std::shared_ptr<GraphicsPipelineCache>& GetGraphicsPipelineCache() { return g_renderResourceManager->m_graphicsPipelineCache; }
 
 		void Init();
+		void InitRenderTargets();
 		void BeginFrame(uint32_t frameIdx);
 		uint32_t GetCurrentFrameIndex() const { return m_frameIndex; }
 

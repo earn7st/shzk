@@ -45,6 +45,20 @@ namespace shzk
 			return !IsDepthFormat(format) && !IsStencilFormat(format);
 		}
 
+		static bool IsSRGBFormat(RHIFormat format)
+		{
+			switch (format) {
+			case FORMAT_R8_SRGB:
+			case FORMAT_R8G8_SRGB:
+			case FORMAT_R8G8B8_SRGB:
+			case FORMAT_R8G8B8A8_SRGB:
+			case FORMAT_B8G8R8A8_SRGB:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		static bool IsRWFormat(RHIFormat format)
 		{
 			switch (format) {

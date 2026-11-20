@@ -63,7 +63,7 @@ namespace shzk
 		depth.view = depthView;
 		depth.layout = RHIResourceState::DepthStencilAttachment;
 		depth.loadOp = AttachmentLoadOp::Load;
-		depth.storeOp = AttachmentStoreOp::DontCare;
+		depth.storeOp = AttachmentStoreOp::Store;
 		depth.clearDepth = 0.f;	// reverse-z
 	}
 

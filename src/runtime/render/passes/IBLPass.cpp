@@ -97,6 +97,26 @@ namespace shzk
 
 	void IBLPass::Execute(std::shared_ptr<RHICommandList> cmd)
 	{
+		if (!m_bEnabled)
+		{
+			if (m_bFirstTimeExecute)
+			{
+				auto brdfLUT = RenderResourceManager::Get()->GetBRDFLUTTexture();
+				auto diffuse = RenderResourceManager::Get()->GetIBLDiffuseTexture();
+				auto specular = RenderResourceManager::Get()->GetIBLSpecularTexture();
+
+				for (auto& texture : { brdfLUT, diffuse, specular })
+				{
+					cmd->TextureBarrier({ texture, RHIResourceState::Undefined, RHIResourceState::TransferDst });
+					cmd->TextureClearColor(texture, { 0.0f, 0.0f, 0.0f, 1.0f });
+					cmd->TextureBarrier({ texture, RHIResourceState::TransferDst, RHIResourceState::ShaderResource });
+				}
+
+				m_bFirstTimeExecute = false;
+			}
+			return;
+		}
+
 		// generate brdf lut
 		if (m_bFirstTimeExecute)
 		{

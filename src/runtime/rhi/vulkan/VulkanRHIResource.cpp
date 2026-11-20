@@ -574,7 +574,7 @@ namespace shzk
         info.logicOp            = VK_LOGIC_OP_COPY;
         info.attachmentCount    = attachmentCount;
         info.pAttachments       = m_blendStates.data();
-        info.blendConstants;
+        // info.blendConstants;
 
         return info;
     }

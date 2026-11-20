@@ -71,6 +71,8 @@ namespace shzk
 			});
 		cmd->SetComputePipeline(m_pipeline);
 		cmd->BindDescriptorSet(m_descriptorSets[RenderResourceManager::Get()->GetCurrentFrameIndex()], 0);
+		uint32_t outputIsSRGB = m_outputIsSRGB ? 1u : 0u;
+		cmd->PushConstants(&outputIsSRGB, sizeof(outputIsSRGB), SHADER_FREQUENCY_COMPUTE);
 
 		Extent2D extent = RenderResourceManager::Get()->GetRenderExtent();
 		uint32_t groupX = (extent.width + 16 - 1) / 16;

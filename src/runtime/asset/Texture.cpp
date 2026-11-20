@@ -135,7 +135,7 @@ namespace shzk
 			stbi_uc* pixels = stbi_load(path.c_str(), &width, &height, &channels, 4);
 			if (!pixels)
 			{
-				SHZK_LOG_ERROR("Texture::LoadFromFile ¡ª failed to load: {}", path);
+				SHZK_LOG_ERROR("Texture::LoadFromFile failed to load: {}", path);
 				return;
 			}
 

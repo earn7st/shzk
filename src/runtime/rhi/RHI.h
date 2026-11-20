@@ -116,6 +116,8 @@ namespace shzk
 		RHISwapchain(const RHISwapchainInfo& info) : m_info(info) {}
 		~RHISwapchain() = default;
 
+		inline const RHISwapchainInfo& GetInfo() const { return m_info; }
+
 		virtual void Destroy() = 0;
 
 		virtual uint32_t GetCurrentFrameIndex() = 0;

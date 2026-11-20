@@ -120,7 +120,7 @@ namespace shzk
             data.get(), m_basePath, fastgltf::Options::LoadExternalBuffers);
 
         if (assetResult.error() != fastgltf::Error::None) {
-            SHZK_LOG_ERROR("Failed to parse glTF: {} ¡ª error code: {}",
+            SHZK_LOG_ERROR("Failed to parse glTF: {} error code: {}",
                 path, static_cast<int>(assetResult.error()));
             return;
         }

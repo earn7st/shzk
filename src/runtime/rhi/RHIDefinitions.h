@@ -630,7 +630,6 @@ namespace shzk
 
 		uint32_t imageCount;
 		Extent2D extent;
-		RHIFormat format;
 	} RHISwapchainInfo;
 
 	typedef struct RHICommandPoolInfo

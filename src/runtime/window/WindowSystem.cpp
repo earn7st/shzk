@@ -14,8 +14,12 @@ namespace shzk
 			windowSystemInitInfo.width,
 			windowSystemInitInfo.height,
 			SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-		m_width = windowSystemInitInfo.width;
-		m_height = windowSystemInitInfo.height;
+
+		// 存储实际创建出的窗口尺寸：macOS 等平台可能因屏幕限制把窗口裁小（如请求 1920x1080 → 实际 1470x891）
+		int actualWidth = 0, actualHeight = 0;
+		SDL_GetWindowSize(m_window, &actualWidth, &actualHeight);
+		m_width = static_cast<uint32_t>(actualWidth);
+		m_height = static_cast<uint32_t>(actualHeight);
 	}
 
 	void WindowSystem::Shutdown()

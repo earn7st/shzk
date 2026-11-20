@@ -2,8 +2,11 @@
 # Core library
 # =========================
 
-add_library(
-    shzk_runtime
+# headers：仅用于 IDE（Xcode/VS）导航显示，不参与编译
+file(GLOB_RECURSE SHZK_RUNTIME_HEADERS
+    "${CMAKE_CURRENT_SOURCE_DIR}/runtime/*.h")
+
+set(SHZK_RUNTIME_SOURCES
 
     #core
     "runtime/core/Math.cpp"
@@ -34,7 +37,7 @@ add_library(
     "runtime/framework/components/DirectionalLightComponent.cpp"
     "runtime/framework/Node.cpp"
     "runtime/framework/Scene.cpp"
-    
+
     # render
     "runtime/render/RenderSystem.cpp"
     "runtime/render/SceneRenderer.cpp"
@@ -53,7 +56,7 @@ add_library(
     "runtime/render/passes/SkyPass.cpp"
     "runtime/render/passes/PostProcessPass.cpp"
     "runtime/render/passes/IBLPass.cpp"
-    
+
     # rhi
     "runtime/rhi/RHI.cpp"
     "runtime/rhi/RHICommandList.cpp"
@@ -74,7 +77,13 @@ add_library(
     "runtime/window/WindowSystem.cpp"
 )
 
-target_compile_definitions(shzk_runtime PUBLIC 
+add_library(
+    shzk_runtime
+    ${SHZK_RUNTIME_SOURCES}
+    ${SHZK_RUNTIME_HEADERS}
+)
+
+target_compile_definitions(shzk_runtime PUBLIC
     VK_NO_PROTOTYPES
     SHZK_ASSETS_DIR="${CMAKE_SOURCE_DIR}/assets/"
     SHZK_SPIRV_DIR="${CMAKE_SOURCE_DIR}/bin/shaders/")
@@ -118,11 +127,17 @@ add_dependencies(
 # Editor executable
 # =========================
 
+set(SHZK_EDITOR_SOURCES
+
+    "editor/Editor.cpp"
+    "editor/Editor.h"
+    "editor/main.cpp"
+)
+
 add_executable(
     shzk_editor
-    
-    "editor/Editor.cpp"
-    "editor/main.cpp"
+
+    ${SHZK_EDITOR_SOURCES}
 )
 
 target_link_libraries(
@@ -130,3 +145,15 @@ target_link_libraries(
     PRIVATE
         shzk_runtime
 )
+
+# Xcode：由 CMake 生成共享 scheme，⌘R 可直接 build + run
+# （Xcode 自动创建的 scheme 在 CONFIGURATION_BUILD_DIR 被重定向到 bin/<Config> 时
+#   可能解析不到可执行文件，导致只 build 不 run）
+set_target_properties(shzk_editor PROPERTIES
+    XCODE_GENERATE_SCHEME YES
+    XCODE_SCHEME_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+
+# Xcode/VS 导航器按真实目录树分组（替代平铺的 Source Files/Header Files）
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
+    ${SHZK_RUNTIME_SOURCES} ${SHZK_RUNTIME_HEADERS}
+    ${SHZK_EDITOR_SOURCES})

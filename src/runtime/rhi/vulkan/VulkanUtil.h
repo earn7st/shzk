@@ -292,7 +292,7 @@ namespace shzk
             VkAccessFlags accessFlags = VK_ACCESS_NONE;
             switch (state) {
             case RHIResourceState::Undefined:                   accessFlags = VK_ACCESS_NONE;                                           break;
-            case RHIResourceState::Common:                      accessFlags = VK_ACCESS_NONE;                                           break;
+            case RHIResourceState::Common:                      accessFlags = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT;                                           break;
             case RHIResourceState::TransferSrc:                 accessFlags = VK_ACCESS_TRANSFER_READ_BIT;                              break;
             case RHIResourceState::TransferDst:                 accessFlags = VK_ACCESS_TRANSFER_WRITE_BIT;                             break;
             case RHIResourceState::VertexBuffer:                accessFlags = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;                      break;
@@ -329,6 +329,9 @@ namespace shzk
 
         static VkPipelineStageFlags VkAccessFlagsToVkPipelineStageFlags(VkAccessFlags accessFlags)
         {
+            if (accessFlags & (VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT))
+                return VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
             VkPipelineStageFlags flags = 0;
 
             if (accessFlags & VK_ACCESS_INDIRECT_COMMAND_READ_BIT)      flags |= VK_PIPELINE_STAGE_DRAW_INDIRECT_BIT;

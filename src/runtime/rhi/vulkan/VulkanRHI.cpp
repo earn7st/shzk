@@ -45,7 +45,7 @@ namespace shzk
 		{
 			for (auto& queue : queueList)
 			{
-				queue->WaitIdle();
+				if (queue) queue->WaitIdle();
 			}
 		}
 
@@ -602,8 +602,8 @@ namespace shzk
 		}
 		if (clearRects.size() > 0)
 			vkCmdClearAttachments(m_cmdBuffer,
-				clearAttachments.size(), clearAttachments.data(),
-				clearRects.size(), clearRects.data());
+				(uint32_t)clearAttachments.size(), clearAttachments.data(),
+				(uint32_t)clearRects.size(), clearRects.data());
 	}
 
 	void VulkanRHICommandContext::RHISetDepthBias(float constantBias, float slopeBias, float clampBias)
@@ -933,22 +933,33 @@ namespace shzk
 		VkBufferCopy copy{};
 		copy.srcOffset = srcOffset;
 		copy.dstOffset = dstOffset;
-		copy.size = size;
+        copy.size = size;
 
 		vkCmdCopyBuffer(cmdBuffer,
 			CastTo<VulkanRHIBuffer>(src)->GetHandle(),
 			CastTo<VulkanRHIBuffer>(dst)->GetHandle(),
 			1, &copy);
 	}
-
+		
 	void RHICopyTextureImpl(VkCommandBuffer& cmdBuffer, std::shared_ptr<RHITexture> src, TextureSubresourceLayers srcSubresource, std::shared_ptr<RHITexture> dst, TextureSubresourceLayers dstSubresource)
 	{
+		VkImageSubresourceLayers srcSub = (srcSubresource.aspect == 0) ? VulkanUtil::SubresourceToVk(src->GetDefaultSubresourceLayers()) : VulkanUtil::SubresourceToVk(srcSubresource);
+		VkImageSubresourceLayers dstSub = (dstSubresource.aspect == 0) ? VulkanUtil::SubresourceToVk(dst->GetDefaultSubresourceLayers()) : VulkanUtil::SubresourceToVk(dstSubresource);
+
+		// copy extent 取 src/dst 各自 mip 尺寸的较小值，防止尺寸不一致时越界（如 macOS swapchain 与 sceneColor 失配）
+		Extent3D srcExtent = src->MipExtent(srcSub.mipLevel);
+		Extent3D dstExtent = dst->MipExtent(dstSub.mipLevel);
+		Extent3D copyExtent = {
+			std::min(srcExtent.width, dstExtent.width),
+			std::min(srcExtent.height, dstExtent.height),
+			std::min(srcExtent.depth, dstExtent.depth) };
+
 		VkImageCopy imageCopy = {};
 		imageCopy.srcOffset = { 0, 0, 0 };
 		imageCopy.dstOffset = { 0, 0, 0 };
-		imageCopy.srcSubresource = (srcSubresource.aspect == 0) ? VulkanUtil::SubresourceToVk(src->GetDefaultSubresourceLayers()) : VulkanUtil::SubresourceToVk(srcSubresource);
-		imageCopy.dstSubresource = (dstSubresource.aspect == 0) ? VulkanUtil::SubresourceToVk(dst->GetDefaultSubresourceLayers()) : VulkanUtil::SubresourceToVk(dstSubresource);
-		imageCopy.extent = VulkanUtil::ExtentToVk(src->MipExtent(srcSubresource.mipLevel));
+		imageCopy.srcSubresource = srcSub;
+		imageCopy.dstSubresource = dstSub;
+		imageCopy.extent = VulkanUtil::ExtentToVk(copyExtent);
 
 		vkCmdCopyImage(cmdBuffer,
 			CastTo<VulkanRHITexture>(src)->GetHandle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,

@@ -15,7 +15,7 @@ layout(push_constant) uniform IBLSetting {
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-const uint SAMPLE_COUNT = 4096u;
+const uint SAMPLE_COUNT = 256u;
 const float MAX_ENV_LOD = 12.0; // hdri map: 4096
 
 vec2 DirToEquirectUV(vec3 d)

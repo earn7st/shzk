@@ -11,6 +11,7 @@
 #include <iostream>
 #include <memory>
 #include <algorithm>
+#include <stdexcept>
 #include <volk/volk.h>
 
 namespace shzk
@@ -33,15 +34,16 @@ namespace shzk
         m_availablePresentModes.resize(formatCount);
         vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &formatCount, m_availablePresentModes.data());
 
-        VkSurfaceFormatKHR surfaceFormat = ChooseSwapchainSurfaceFormat(VulkanUtil::RHIFormatToVkFormat(info.format));
-        RHIFormat targetFormat = VulkanUtil::VkFormatToRHIFormat(surfaceFormat.format);
+        if ((m_capabilities.supportedUsageFlags & VK_IMAGE_USAGE_TRANSFER_DST_BIT) == 0)
+            throw std::runtime_error("Surface does not support swapchain transfer destinations");
 
-        if (targetFormat != info.format)
-        {
-            m_info.format = targetFormat;
-            SHZK_LOG_ERROR("Cant find swapchain image format support!");
-            assert(false);
-        }
+        VkSurfaceFormatKHR surfaceFormat = ChooseSwapchainSurfaceFormat();
+        RHIFormat selectedRhiFormat = VulkanUtil::VkFormatToRHIFormat(surfaceFormat.format);
+
+        if (selectedRhiFormat == FORMAT_UKNOWN)
+            throw std::runtime_error("Selected swapchain format is not mapped to an RHI format");
+
+        m_surfaceFormat = surfaceFormat;
 
         VkPresentModeKHR presentMode = ChooseSwapchainPresentMode();
 
@@ -49,11 +51,11 @@ namespace shzk
         if (extent.width != info.extent.width || extent.height != info.extent.height)
         {
             m_info.extent = { extent.width, extent.height };
-            SHZK_LOG_ERROR("Cant find suitable swapchain image extent!");
-            assert(false);
+            SHZK_LOG_WARN("Swapchain extent adjusted to surface pixel size: {}x{}", extent.width, extent.height);
         }
 
-        uint32_t requestImageCount = std::clamp(info.imageCount, m_capabilities.minImageCount, m_capabilities.maxImageCount);
+        uint32_t requestImageCount = std::clamp(info.imageCount, m_capabilities.minImageCount,
+            m_capabilities.maxImageCount == 0 ? std::numeric_limits<uint32_t>::max() : m_capabilities.maxImageCount);
 
         VkSwapchainCreateInfoKHR createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -63,11 +65,7 @@ namespace shzk
         createInfo.imageColorSpace = surfaceFormat.colorSpace;
         createInfo.imageExtent = extent;
         createInfo.imageArrayLayers = 1;
-        createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            VK_IMAGE_USAGE_SAMPLED_BIT |
-            VK_IMAGE_USAGE_STORAGE_BIT;
+        createInfo.imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
         createInfo.queueFamilyIndexCount = 0;
@@ -81,6 +79,10 @@ namespace shzk
 
         VK_CHECK(vkCreateSwapchainKHR(device, &createInfo, nullptr, &m_handle));
 
+        SHZK_LOG_INFO("Swapchain created with surface format {} and color space {}",
+            static_cast<int>(m_surfaceFormat.format),
+            static_cast<int>(m_surfaceFormat.colorSpace));
+
         vkGetSwapchainImagesKHR(device, m_handle, &m_info.imageCount, nullptr);
         m_images.resize(m_info.imageCount);
         vkGetSwapchainImagesKHR(device, m_handle, &m_info.imageCount, m_images.data());
@@ -91,7 +93,7 @@ namespace shzk
         for (uint32_t i = 0; i < m_info.imageCount; i++)
         {
             RHITextureInfo info = {
-                .format = targetFormat,
+                .format = selectedRhiFormat,
                 .extent = { extent.width, extent.height, 1},
                 .arrayLayers = 1,
                 .mipLevels = 1,
@@ -109,7 +111,15 @@ namespace shzk
 
     void VulkanRHISwapchain::Destroy()
     {
-        vkDestroySwapchainKHR(VULKAN_RHI()->GetDevice(), m_handle, nullptr);
+        if (m_handle == VK_NULL_HANDLE)
+            return;
+
+        VkDevice device = VULKAN_RHI()->GetDevice();
+        VK_CHECK(vkDeviceWaitIdle(device));
+        m_textures.clear();
+        m_images.clear();
+        vkDestroySwapchainKHR(device, m_handle, nullptr);
+        m_handle = VK_NULL_HANDLE;
         SHZK_LOG_INFO("VulkanRHISwapchain destroyed");
     }
 
@@ -152,21 +162,43 @@ namespace shzk
 
 
 
-    VkSurfaceFormatKHR VulkanRHISwapchain::ChooseSwapchainSurfaceFormat(VkFormat targetFormat)
+    VkSurfaceFormatKHR VulkanRHISwapchain::ChooseSwapchainSurfaceFormat()
     {
-        if (m_availableFormats.size() == 1 && m_availableFormats[0].format == VK_FORMAT_UNDEFINED) {
-            return { VK_FORMAT_R8G8B8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
-        }
+        if (m_availableFormats.empty())
+            throw std::runtime_error("Surface exposes no swapchain formats");
 
-        for (const auto& format : m_availableFormats)
+        const VkFormat preferredFormats[] = {
+            VK_FORMAT_B8G8R8A8_SRGB,
+            VK_FORMAT_R8G8B8A8_SRGB,
+            VK_FORMAT_B8G8R8A8_UNORM,
+            VK_FORMAT_R8G8B8A8_UNORM
+        };
+
+        for (VkFormat preferredFormat : preferredFormats)
         {
-            if (format.format == targetFormat && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-            {
-                return format;
-            }
+            auto it = std::find_if(
+                m_availableFormats.begin(), m_availableFormats.end(),
+                [preferredFormat](const VkSurfaceFormatKHR& available)
+                {
+                    return available.format == preferredFormat &&
+                           available.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+                });
+
+            if (it != m_availableFormats.end())
+                return *it;
         }
 
-        return m_availableFormats[0];
+        auto srgbColorSpace = std::find_if(
+            m_availableFormats.begin(), m_availableFormats.end(),
+            [](const VkSurfaceFormatKHR& available)
+            {
+                return available.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+            });
+
+        if (srgbColorSpace != m_availableFormats.end())
+            return *srgbColorSpace;
+
+        return m_availableFormats.front();
     }
 
     VkPresentModeKHR VulkanRHISwapchain::ChooseSwapchainPresentMode()

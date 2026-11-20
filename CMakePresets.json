@@ -1,5 +1,10 @@
 {
-  "version": 3,
+  "version": 4,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 23,
+    "patch": 0
+  },
   "configurePresets": [
     {
       "name": "macOS-Debug",
@@ -29,6 +34,92 @@
       "description": "x64 Windows with Ninja + MSVC",
       "generator": "Ninja",
       "binaryDir": "${sourceDir}/build/${presetName}"
+    },
+    {
+      "name": "xcode",
+      "displayName": "Xcode (macOS)",
+      "description": "macOS + Xcode 生成器：生成 .xcodeproj，Xcode 内开发/调试，Product → Profile 进 Instruments",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build/xcode",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "vs2022",
+      "displayName": "Visual Studio 2022 (Windows)",
+      "description": "Windows + Visual Studio 17 2022 生成器（x64）",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/vs2022",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "macOS-Debug",
+      "displayName": "macOS Debug",
+      "configurePreset": "macOS-Debug"
+    },
+    {
+      "name": "macOS-Release",
+      "displayName": "macOS Release",
+      "configurePreset": "macOS-Release"
+    },
+    {
+      "name": "Windows-Debug",
+      "displayName": "Windows Debug",
+      "configurePreset": "Windows-Debug"
+    },
+    {
+      "name": "xcode-debug",
+      "displayName": "Xcode Debug",
+      "configurePreset": "xcode",
+      "configuration": "Debug"
+    },
+    {
+      "name": "xcode-release",
+      "displayName": "Xcode Release",
+      "configurePreset": "xcode",
+      "configuration": "Release"
+    },
+    {
+      "name": "vs2022-debug",
+      "displayName": "VS2022 Debug",
+      "configurePreset": "vs2022",
+      "configuration": "Debug"
+    },
+    {
+      "name": "vs2022-release",
+      "displayName": "VS2022 Release",
+      "configurePreset": "vs2022",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "xcode-debug",
+      "displayName": "Xcode Debug Tests",
+      "configurePreset": "xcode",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "vs2022-debug",
+      "displayName": "VS2022 Debug Tests",
+      "configurePreset": "vs2022",
+      "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      }
     }
   ]
 }

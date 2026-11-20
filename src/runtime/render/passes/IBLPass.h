@@ -45,8 +45,8 @@ namespace shzk
 		struct IBLSetting 
 		{
 			glm::vec4 front, up;
-			float deltaPhi		= (2.0f * 3.14159265f) / 180.0f;
-			float deltaTheta	= (0.5f * 3.14159265f) / 64.0f;
+			float deltaPhi		= (2.0f * 3.14159265f) / 64.0f;
+			float deltaTheta	= (0.5f * 3.14159265f) / 16.0f;
 			float roughness		= 0.0f;
 			uint32_t mipSize	= 0;
 		};

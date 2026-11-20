@@ -1,3 +1,4 @@
+.claude/
 .vs/
 build/
 out/
@@ -5,3 +6,14 @@ bin/
 docs/
 
 CMakeFiles/
+
+# IDE generated projects (never commit these; CMakePresets.json is the source of truth)
+*.xcodeproj
+*.xcworkspace
+CMakeSettings.json
+
+# Local preset overrides (user-specific, per-machine)
+CMakeUserPresets.json
+
+# macOS
+.DS_Store

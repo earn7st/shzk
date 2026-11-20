@@ -60,9 +60,9 @@ namespace shzk
 
 	void RHI::DestroyAllResources()
 	{
-		for (auto& resources : m_resourceMap)
+		for (auto resourceType = m_resourceMap.rbegin(); resourceType != m_resourceMap.rend(); ++resourceType)
 		{
-			for (auto& res : resources)
+			for (auto& res : *resourceType)
 			{
 				if (!res) continue;
 				res->Destroy();
